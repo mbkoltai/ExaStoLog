@@ -1,4 +1,4 @@
-function [K_sparse,A_sparse_fast]=fcn_build_trans_matr(state_transitions_inds,transition_rates_table,nodes,kin_matr_flag)
+function [A_sparse_fast,K_sparse]=fcn_build_trans_matr(state_transitions_inds,transition_rates_table,nodes,kin_matr_flag)
 
 dim_matr=2^numel(nodes);
 

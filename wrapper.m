@@ -6,10 +6,15 @@ cd(path_to_toolbox)
 % ADD FUNCTIONS to PATH
 addpath('functions/') 
 % using these publicly available MATLAB toolboxes:
+% needed for PLOTS:
 addpath('heatmaps/') % https://mathworks.com/matlabcentral/fileexchange/24253-customizable-heat-maps
 addpath('redblue/'); % https://fr.mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap (for redblue colormaps)
+% optional for PLOTS and saving of PLOTS
 addpath('tight_subplot/') % optional. https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w (for subplots with smaller gaps)
 addpath('altmany-export_fig-acfd348') % Optional. mathworks.com/matlabcentral/fileexchange/23629-export_fig (export figures as EPS or PDF as they appear on plots)
+% optional for PARAMETER FITTING by simulated annealing
+addpath('tight_subplot/') 
+https://fr.mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm
 
 % format matlab eigen calculations:
 % eigvals stored as diag matrix, eigenvectors stacked as column vectors
@@ -68,9 +73,9 @@ transition_rates_table=fcn_trans_rates_table(nodes,uniform_or_rand,meanval,sd_va
 % transition_rates_table=fcn_trans_rates_table(nodes,'random',meanval,sd_val,chosen_rates,chosen_rates_vals)
 
 % build transition matrix A with parameter values
-tic; [~,A_sparse]=fcn_build_trans_matr(stg_table,transition_rates_table,nodes,''); toc
+tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,nodes,''); toc
 % if we want the kinetic matrix too, this is the 1st output of the function
-% tic; [K_sparse,A_sparse]=fcn_build_trans_matr(stg_table,transition_rates_table,nodes,'kinetic'); toc
+% tic; [A_sparse,K_sparse]=fcn_build_trans_matr(stg_table,transition_rates_table,nodes,'kinetic'); toc
 
 % density of transition matrix A
 % nnz(A_sparse)/numel(A_sparse)
@@ -379,7 +384,7 @@ fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,all_par_vals_lhs,stat
 
 transition_rates_table=fcn_trans_rates_table(nodes,'uniform',[],[],chosen_rates,chosen_rates_vals);
 % transition_rates_table=ones(size(transition_rates_table));
-tic; [~,A_sparse]=fcn_build_trans_matr(stg_table,transition_rates_table,nodes,''); toc; 
+tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,nodes,''); toc; 
 tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,transition_rates_table,x0); toc
 % 
 [stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol,nodes);
@@ -393,15 +398,19 @@ sel_nodes=setdiff(3:10,find(strcmp(nodes,'g2m_trans')));
 y_data = f_x; y_data(sel_nodes)=[0.55 0.6 0.6 0.6 0.4 0.4 0.6];
 
 transition_rates_table(scan_par_inds) = transition_rates_table(scan_par_inds)*20;
-anon_fcn_statsol = @(transition_rates_table)sum((y_data - fcn_calc_init_stat_nodevals(x0,split_calc_inverse(A_sparse,transition_rates_table,x0),nodes)).^2);
+% anon_fcn_statsol = @(transition_rates_table)sum((y_data - fcn_calc_init_stat_nodevals(x0,split_calc_inverse(A_sparse,transition_rates_table,x0),nodes)).^2);
+
+[a,b,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,nodes);
+chosen_rates_vals = ones(size(predictor_names));
+% create table
+% create function that calculates sum of squared deviations, composed of different fcns
+fcn_statsol_sum_sq_dev=@(x)sum((y_data - ...
+    fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,x),nodes,''),...
+    fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,x),x0),nodes)).^2);
+
 % evaluate
-transition_rates_table=ones(size(transition_rates_table)); anon_fcn_statsol(transition_rates_table)
-transition_rates_table=zeros(size(transition_rates_table)); anon_fcn_statsol(transition_rates_table)
+% fcn_statsol_sum_sq_dev(chosen_rates_vals)
+% fcn_statsol_sum_sq_dev(zeros(size(chosen_rates_vals))) 
 
-
-
-
-%          camel = @(x,y)(4-2.1*x.^2+x.^4/3).*x.^2+x.*y+4*(y.^2-1).*y.^2;
-%   camel(rand(5,5,1),rand(5,5,1)*3)
-%          loss = @(p)camel(p(1),p(2));
-%          [x f] = anneal(loss,[0 0])
+% annealing
+[optim_par_vals,best_error] = anneal(fcn_statsol_sum_sq_dev,chosen_rates_vals,struct('Verbosity',2));

@@ -14,7 +14,7 @@ lhs_scan_dim=size(all_par_vals_lhs,1);
 for k=1:lhs_scan_dim
 
 transition_rates_table_mod(trans_rate_scan_inds) = all_par_vals_lhs(k,:);
-[~,A_sparse]=fcn_build_trans_matr(stg_table,transition_rates_table_mod,nodes,'');
+[A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table_mod,nodes,'');
 [stat_sol,~,~]=split_calc_inverse(A_sparse,transition_rates_table_mod,x0);
 [stationary_node_vals,~]=fcn_calc_init_stat_nodevals(x0,stat_sol,nodes);
 stat_sol_lhs_parscan(k,:) = stationary_node_vals;
