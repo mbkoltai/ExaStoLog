@@ -1,0 +1,19 @@
+# ignore folders of other matlab toolboxes
+
+altmany-export_fig-acfd348
+heatmaps
+old_functions_materials
+redblue
+sample_plots
+tight_subplot
+# zip of existing files
+exact_stochlog_toolbox.zip
+
+# model in other extension
+krasmodel6.dat
+
+# M~ files
+*m~
+
+wrapper_suppl.m
+examples.m
