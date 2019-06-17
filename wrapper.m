@@ -7,8 +7,8 @@ cd(path_to_toolbox)
 addpath('functions/') 
 % using these publicly available MATLAB toolboxes:
 addpath('heatmaps/') % https://mathworks.com/matlabcentral/fileexchange/24253-customizable-heat-maps
-addpath('redblue/'); % https://mathworks.com/matlabcentral/fileexchange/23629-export_fig
-addpath('altmany-export_fig-acfd348') % export figures as EPS or PDF as they appear on plots
+addpath('redblue/'); % https://fr.mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap (redblue colormaps)
+addpath('altmany-export_fig-acfd348') % mathworks.com/matlabcentral/fileexchange/23629-export_fig (export figures as EPS or PDF as they appear on plots)
 addpath('tight_subplot/') % optional. https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w
 
 % matlab eigen calculations
