@@ -1,4 +1,4 @@
-function [init_node_vals,stationary_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol,nodes)
+function [stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol,nodes)
 
 init_node_vals=[];
 n=numel(nodes); truth_table_inputs=rem(floor([0:((2^n)-1)].'*pow2(0:-1:-n+1)),2); 

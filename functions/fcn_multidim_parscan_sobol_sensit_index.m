@@ -14,7 +14,6 @@ M=size(all_par_vals_lhs,1)/2;
 end
 
 A=all_par_vals_lhs(1:M,:); B=all_par_vals_lhs(M+1:2*M,:);
-% f_B_i_store=zeros(M,numel(nodes),size(all_par_vals_lhs,2)); 
 tau_i=zeros(size(all_par_vals_lhs,2),numel(sel_nodes));
 transition_rates_table=ones(2,numel(nodes));
 
@@ -23,7 +22,6 @@ for k = 1:size(all_par_vals_lhs,2)
     B_i = A; B_i(:,k) = B(:,k);
     % rerun calculations
     f_B_i=fcn_calc_paramsample_table(B_i,scan_params,scan_params_up_down,transition_rates_table,stg_table,x0,nodes);
-    % f_B_i_store(:,:,k) = f_B_i;
     % sensit index
 for varcount=1:numel(sel_nodes)
     diff_fA_fBi=( stat_sol_lhs_parscan(1:M,sel_nodes(varcount))-f_B_i(:,sel_nodes(varcount)) );

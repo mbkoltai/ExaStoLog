@@ -18,6 +18,7 @@ else
     plot(1:numel(predictor_names), predictorImportance_vals,'LineWidth',2,'Marker','o'); 
 end
 set(gca,'XTick',1:numel(predictor_names)); set(gca,'xticklabel',strrep(predictor_names,'_','\_')); 
+ylabel('predictor importance','FontSize',fontsize); title('Predictor importance by regression tree','FontWeight','normal','FontSize',fontsize*1.5);
 if size(scan_values,2)==numel(nodes)
     legend(nodes(sel_nodes),'FontWeight','normal','FontSize',fontsize,'Interpreter','none','Interpreter','none'); 
 else
@@ -39,9 +40,7 @@ else
 title(strcat('state ',num2str(sel_nodes(k))),'FontWeight','normal','FontSize',fontsize,'Interpreter','none'); 
 end
 
-
-ylim([0 1.1*max_y_val]);
-h=gca; 
+ylim([0 1.1*max_y_val]); h=gca; 
 if k>=numel(sel_nodes)-n_col_plot+1; h.XTickLabel=predictor_names; h.XTickLabelRotation = 45; h.TickLabelInterpreter = 'none';end 
 % xlabel('Predictors'); 
 if rem(k,n_col_plot)==1; ylabel('predictor importance'); end

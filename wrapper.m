@@ -7,11 +7,11 @@ cd(path_to_toolbox)
 addpath('functions/') 
 % using these publicly available MATLAB toolboxes:
 addpath('heatmaps/') % https://mathworks.com/matlabcentral/fileexchange/24253-customizable-heat-maps
-addpath('redblue/'); % https://fr.mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap (redblue colormaps)
-addpath('altmany-export_fig-acfd348') % mathworks.com/matlabcentral/fileexchange/23629-export_fig (export figures as EPS or PDF as they appear on plots)
-addpath('tight_subplot/') % optional. https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w
+addpath('redblue/'); % https://fr.mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap (for redblue colormaps)
+addpath('tight_subplot/') % optional. https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w (for subplots with smaller gaps)
+addpath('altmany-export_fig-acfd348') % Optional. mathworks.com/matlabcentral/fileexchange/23629-export_fig (export figures as EPS or PDF as they appear on plots)
 
-% matlab eigen calculations
+% format matlab eigen calculations:
 % eigvals stored as diag matrix, eigenvectors stacked as column vectors
 % lambda=eig(M_rand); [eigvect, lambda]=eig(M_rand);
 % M_rand*eigvect
@@ -113,7 +113,7 @@ truth_table_inputs(stat_sol>0,:)
 % initial conditions: x0
 % stat_sol: stationary solution for all the states
 % nodes: list of nodes
-[init_node_vals,stationary_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol,nodes);
+[stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol,nodes);
 
 % can check results by doing direct matrix exponentiation, for systems up to ~10 nodes, but only if there are no cycles!!
 % x_sol=((x0')*A_sparse^1e5)';
@@ -256,9 +256,9 @@ sensit_cutoff=0.15; % minimal value for response coefficient (local sensitivity)
 nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))'; 
 param_settings=[12 14]; % fontsize for 
 plot_types={'lineplot','heatmap'}; var_types={'nodes','states'}; readout_types={'values','sensitivity'};
-k=1; % SET whether you want to show the stationary value of the STATES or NODES of the model
+k=1; % SET whether you want to show the stationary value of the NODES or STATES of the model
 if k==1; scan_variable=stationary_node_vals_onedimscan; else scan_variable=stationary_state_vals_onedimscan; end
-resp_coeffs=fcn_onedim_plot_parsensit(plot_types{2},var_types{k},readout_types{1},...
+resp_coeffs=fcn_onedim_plot_parsensit(plot_types{1},var_types{k},readout_types{1},...
                                       scan_variable,nonzero_states_inds,parscan_matrix,nodes,scan_params,scan_params_up_down,sensit_cutoff,param_settings);
 
 % get indices of parameters that have a response coefficient with an absolute value lt some threshold for at least one variable (or state)
@@ -352,15 +352,16 @@ predictorImportance_vals=cell2mat(arrayfun(@(x) predictorImportance(...
     fitrtree(all_par_vals_lhs,scan_values(:,x),'PredictorNames',predictor_names)), sel_nodes,'un',0)');
 
 % CALCULATE and PLOT predictor importance
-plot_type_flag='bar';
+plot_type_flags={'line','bar'};
 [predictor_names,predictorImportance_vals]=fcn_multidim_parscan_predictorimport(scan_params,scan_params_up_down,...
-                                                all_par_vals_lhs,scan_values,nodes,sel_nodes,plot_type_flag);
+                                                all_par_vals_lhs,scan_values,nodes,sel_nodes,plot_type_flags{1});
 
 %% Sobol total sensitivity metric                                            
 
-% on Sobol total sensitivity index see: https://en.wikipedia.org/wiki/Variance-based_sensitivity_analysis
-% this metric indicates how much of the variance in a variable is due to variation in a given parameter
-% numerical approximation of analytical equivalent from Monte Carlo sampling
+% On Sobol total sensitivity index see: https://en.wikipedia.org/wiki/Variance-based_sensitivity_analysis
+% This metric indicates how much of the total variance in a variable is due to variation in a given parameter
+% Numerical approximation of analytical equivalent from Monte Carlo sampling.
+% From the LHS sampling above we take the matrices of parameter sets and variable values:
 % [parameter sets, variable values]: [all_par_vals_lhs,stat_sol_lhs_parscan]
 
 % Sobol total sensitivity: calculated for one variable at a time
@@ -376,3 +377,31 @@ fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,all_par_vals_lhs,stat
 
 %% FITTING?
 
+transition_rates_table=fcn_trans_rates_table(nodes,'uniform',[],[],chosen_rates,chosen_rates_vals);
+% transition_rates_table=ones(size(transition_rates_table));
+tic; [~,A_sparse]=fcn_build_trans_matr(stg_table,transition_rates_table,nodes,''); toc; 
+tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,transition_rates_table,x0); toc
+% 
+[stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol,nodes);
+
+% define parameters to vary
+[scan_par_table,scan_par_inds,~]=fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,nodes);
+% defined data vector
+% to calculate node values in 1 step
+f_x = fcn_calc_init_stat_nodevals(x0,split_calc_inverse(A_sparse,transition_rates_table,x0),nodes);
+sel_nodes=setdiff(3:10,find(strcmp(nodes,'g2m_trans')));
+y_data = f_x; y_data(sel_nodes)=[0.55 0.6 0.6 0.6 0.4 0.4 0.6];
+
+transition_rates_table(scan_par_inds) = transition_rates_table(scan_par_inds)*20;
+anon_fcn_statsol = @(transition_rates_table)sum((y_data - fcn_calc_init_stat_nodevals(x0,split_calc_inverse(A_sparse,transition_rates_table,x0),nodes)).^2);
+% evaluate
+transition_rates_table=ones(size(transition_rates_table)); anon_fcn_statsol(transition_rates_table)
+transition_rates_table=zeros(size(transition_rates_table)); anon_fcn_statsol(transition_rates_table)
+
+
+
+
+%          camel = @(x,y)(4-2.1*x.^2+x.^4/3).*x.^2+x.*y+4*(y.^2-1).*y.^2;
+%   camel(rand(5,5,1),rand(5,5,1)*3)
+%          loss = @(p)camel(p(1),p(2));
+%          [x f] = anneal(loss,[0 0])

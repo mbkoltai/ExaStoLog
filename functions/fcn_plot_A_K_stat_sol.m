@@ -1,7 +1,7 @@
 % function that plots A (trans matrix), K (kinetic matrix) and solutions
 function fcn_plot_A_K_stat_sol(A, nodes, sel_nodes, stat_sol, x0, min_max_col,fontsize,barwidth_states_val,nonzero_flag)
 
-[init_node_vals,stationary_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol,nodes);
+[stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol,nodes);
 min_col=min_max_col(1); max_col=min_max_col(2);
 if isempty(sel_nodes)
     sel_nodes=1:numel(nodes); 
