@@ -22,7 +22,7 @@ for k=1:scan_size
         [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table_mod,nodes,'');
         [stat_sol,~,~]=split_calc_inverse(A_sparse,transition_rates_table,x0);
         % sols per node
-        [stationary_node_vals,~]=fcn_calc_init_stat_nodevals(x0,stat_sol,nodes);
+        [stationary_node_vals,~]=fcn_calc_init_stat_nodevals(x0,stat_sol);
         stationary_node_vals_scan(k,val_counter,:)=stationary_node_vals;
         if k==1 && val_counter==1
             stationary_state_vals_scan=zeros( numel(scan_par_inds),size(parscan_matrix,1), sum(stat_sol>0) );

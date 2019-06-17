@@ -7,21 +7,13 @@ cd(path_to_toolbox)
 addpath('functions/') 
 % using these publicly available MATLAB toolboxes:
 % needed for PLOTS:
-addpath('heatmaps/') % https://mathworks.com/matlabcentral/fileexchange/24253-customizable-heat-maps
-addpath('redblue/'); % https://fr.mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap (for redblue colormaps)
+addpath('heatmaps') % https://mathworks.com/matlabcentral/fileexchange/24253-customizable-heat-maps
+addpath('redblue'); % https://fr.mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap (for redblue colormaps)
 % optional for PLOTS and saving of PLOTS
-addpath('tight_subplot/') % optional. https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w (for subplots with smaller gaps)
+addpath('tight_subplot') % optional. https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w (for subplots with smaller gaps)
 addpath('altmany-export_fig-acfd348') % Optional. mathworks.com/matlabcentral/fileexchange/23629-export_fig (export figures as EPS or PDF as they appear on plots)
 % optional for PARAMETER FITTING by simulated annealing
-addpath('tight_subplot/') 
-https://fr.mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm
-
-% format matlab eigen calculations:
-% eigvals stored as diag matrix, eigenvectors stacked as column vectors
-% lambda=eig(M_rand); [eigvect, lambda]=eig(M_rand);
-% M_rand*eigvect
-% transpose(eigval*transpose(eigvect))
-% eigvect*transpose(eigval)
+addpath('anneal') % https://fr.mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% model set-up
@@ -118,7 +110,7 @@ truth_table_inputs(stat_sol>0,:)
 % initial conditions: x0
 % stat_sol: stationary solution for all the states
 % nodes: list of nodes
-[stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol,nodes);
+[stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol);
 
 % can check results by doing direct matrix exponentiation, for systems up to ~10 nodes, but only if there are no cycles!!
 % x_sol=((x0')*A_sparse^1e5)';
@@ -380,37 +372,39 @@ sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],all_par_vals_lhs,s
 fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,all_par_vals_lhs,stat_sol_lhs_parscan,sample_size,...
                                 scan_params,scan_params_up_down,stg_table,x0,nodes,sel_nodes,plot_settings);
 
-%% FITTING?
+%% PARAMETER FITTING
 
-transition_rates_table=fcn_trans_rates_table(nodes,'uniform',[],[],chosen_rates,chosen_rates_vals);
-% transition_rates_table=ones(size(transition_rates_table));
-tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,nodes,''); toc; 
-tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,transition_rates_table,x0); toc
-% 
-[stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol,nodes);
+% transition_rates_table=fcn_trans_rates_table(nodes,'uniform',[],[],chosen_rates,chosen_rates_vals); % transition_rates_table=ones(size(transition_rates_table));
+% tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,nodes,''); toc; 
+% tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,transition_rates_table,x0); toc
+% [stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol);
+% [scan_par_table,scan_par_inds,~]=fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,nodes);
 
-% define parameters to vary
-[scan_par_table,scan_par_inds,~]=fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,nodes);
-% defined data vector
-% to calculate node values in 1 step
-f_x = fcn_calc_init_stat_nodevals(x0,split_calc_inverse(A_sparse,transition_rates_table,x0),nodes);
-sel_nodes=setdiff(3:10,find(strcmp(nodes,'g2m_trans')));
-y_data = f_x; y_data(sel_nodes)=[0.55 0.6 0.6 0.6 0.4 0.4 0.6];
-
-transition_rates_table(scan_par_inds) = transition_rates_table(scan_par_inds)*20;
-% anon_fcn_statsol = @(transition_rates_table)sum((y_data - fcn_calc_init_stat_nodevals(x0,split_calc_inverse(A_sparse,transition_rates_table,x0),nodes)).^2);
-
+% define parameters to vary (predictor_names)
 [a,b,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,nodes);
-chosen_rates_vals = ones(size(predictor_names));
-% create table
+% define data vector
+y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table,nodes,''),transition_rates_table,x0));
+sel_nodes=setdiff(3:10,find(strcmp(nodes,'g2m_trans'))); 
+y_data(sel_nodes)=[repmat(0.1,1,4)+rand(1,4)/30 1-(repmat(0.1,1,2)+rand(1,2)/30) repmat(0.1,1,1)+rand(1,1)/30];
+
 % create function that calculates sum of squared deviations, composed of different fcns
-fcn_statsol_sum_sq_dev=@(x)sum((y_data - ...
-    fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,x),nodes,''),...
-    fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,x),x0),nodes)).^2);
+fcn_statsol_sum_sq_dev=@(x)sum((y_data - fcn_calc_init_stat_nodevals(x0,...
+    split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,x),nodes,''),...
+    fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,x),x0) )).^2);
+% function to calculate stationary values
+fcn_statsol_values=@(x)fcn_calc_init_stat_nodevals(x0,...
+    split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,x),nodes,''),...
+    fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,x),x0) );
 
-% evaluate
-% fcn_statsol_sum_sq_dev(chosen_rates_vals)
-% fcn_statsol_sum_sq_dev(zeros(size(chosen_rates_vals))) 
+% evaluate/test
+% abs(fcn_statsol_sum_sq_dev(chosen_rates_vals) - fcn_statsol_sum_sq_dev(zeros(size(chosen_rates_vals))) )
 
-% annealing
-[optim_par_vals,best_error] = anneal(fcn_statsol_sum_sq_dev,chosen_rates_vals,struct('Verbosity',2));
+% FITTING by simulated annealing (look at arguments in anneal/anneal.m)
+init_vals=ones(size(predictor_names)); [optim_par_vals,best_error,T_loss] = anneal(fcn_statsol_sum_sq_dev,init_vals,struct('Verbosity',2));
+plot(1:find(T_loss(:,2)<1e-3,1), T_loss(1:find(T_loss(:,2)<1e-3,1),:),'LineWidth',4); legend({'temperature', 'MSE'},'FontSize',22); 
+xlabel('number of iterations','FontSize',16); set(gca,'FontSize',16)
+
+% check again if correct: sum or mean sq error
+sum((y_data - fcn_statsol_values(optim_par_vals)).^2) % mean((y_data - fcn_statsol_values(optim_par_vals)).^2)
+% normalized by values: mean fractional error
+mean(abs(y_data - fcn_statsol_values(optim_par_vals))./fcn_statsol_values(optim_par_vals))
