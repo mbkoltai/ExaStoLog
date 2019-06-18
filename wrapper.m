@@ -260,10 +260,11 @@ sensit_cutoff=0.15; % minimal value for response coefficient (local sensitivity)
 nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))'; 
 param_settings=[12 14]; % [fontsize_axes,fontsize_title]
 plot_types={'lineplot','heatmap'}; var_types={'nodes','states'}; readout_types={'values','sensitivity'};
-[resp_coeff,scan_pars_sensit,scan_params_sensit_up_down]=fcn_onedim_parscan_plot_parsensit(plot_types{1},var_types{2},readout_types{1},stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
-                    nonzero_states_inds,parscan_matrix,nodes,scan_params,scan_params_up_down,sensit_cutoff,param_settings);                
-% <resp_coeffs> dimensions: (parameters, values,nodes), so eg.
-% resp_coeffs(:,:,7) are the resp. coeff values across the param ranges for the 7th node
+[resp_coeff,scan_pars_sensit,scan_params_sensit_up_down]=fcn_onedim_parscan_plot_parsensit(plot_types{2},var_types{1},readout_types{2},...
+                                                          stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
+                                                          nonzero_states_inds,parscan_matrix,nodes,scan_params,scan_params_up_down,sensit_cutoff,param_settings);                
+
+% <resp_coeffs> dimensions: (parameters, values,nodes), so resp_coeffs(:,:,7) are the resp. coeff values across the param ranges for the 7th node
 
 %% multidimensional parameter scan: LATIN HYPERCUBE SAMPLING (random multidimensional sampling within given parameter ranges)
 
