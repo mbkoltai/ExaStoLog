@@ -289,19 +289,19 @@ max_stdev=2; % repmat(0.5,1,numel(cell2mat(scan_params_up_down(:))));
 [all_par_vals_lhs,stat_sol_lhs_parscan,...
     stat_sol_states_lhs_parscan,stat_sol_states_lhs_parscan_cell]=fcn_multidim_parscan_latinhypcube(par_min_mean,max_stdev,sampling_type,...
                                                     lhs_scan_dim,scan_params,scan_params_up_down,transition_rates_table,stg_table,x0,nodes);
-
-% <stat_sol_states_lhs_parscan_cell> contains indices of non-zero states, if
-% they are always the same then it is a 1-row array, otherwise a cell with
-% the non-empty elements nonzero_states_inds{k,1} contain values of nonzero
-% states, elements nonzero_states_inds{k,2} their indices 
+% <all_par_vals_lhs>: table of parameter sets
+% <stat_sol_lhs_parscan>: stationary values of nodes
+% <stat_sol_states_lhs_parscan>: stationary values of states
+% <stat_sol_states_lhs_parscan_cell>: indices of non-zero states, if they are always the same the variable is a 1-row array, 
+% otherwise a cell with the non-empty elements stat_sol_states_lhs_parscan_cell{k,1} contain values of nonzero
+% states, elements stat_sol_states_lhs_parscan_cell{k,2} their indices 
 
 %% SCATTERPLOTS of STATE or NODE values as a function of the selected parameters, with the trendline shown (average value per parameter bin)
 
 var_ind=3; % which STATE or NODE to plot
 % <all_par_vals_lhs>: parameter sets
 param_settings = [50 4 stat_sol_states_lhs_parscan_cell]; % [number_bins_for_mean,trendline_width,<index of nonzero states (if same for all param sets)>]
-% STATES or NODES?
-% <scan_values>: values to be plotted
+% STATES or NODES? - <scan_values>: values to be plotted
 scan_values=stat_sol_lhs_parscan; % stat_sol_states_lhs_parscan
 % PLOT
 sampling_type=sampling_types{3}; % sampling_types={'lognorm','linear','logunif'};
@@ -319,13 +319,15 @@ sel_nodes=3:10; plot_settings=[15 16]; % [fontsize on plot, fontsize on axes/lab
 plot_type_flag={'var_var','heatmap'}; % this is plotting the heatmap of correlations between variables
 [varvar_corr_matr,p_matrix_vars]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_lhs_parscan,...
                                             nodes,sel_nodes,scan_params,scan_params_up_down,[],plot_settings);
-% scatterplots of selected variables [i,j]: var_i VS var_j
+
+%% scatterplots of selected variables [i,j]: var_i VS var_j
 sel_nodes=[3 5 7 8 10]; plot_settings=[10 12]; % [fontsize on axes, fontsize of titles]
 plot_type_flag={'var_var','scatter'}; % this is plotting the scatterplots of variables with correlation values
 fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_lhs_parscan,...
                                     nodes,sel_nodes,scan_params,scan_params_up_down,[],plot_settings);
 
-% linear or lin-log regression of VARIABLES as fcn of PARAMETERS: VARIABLE=f(PARAMETER), the function plots R squared
+%% linear or lin-log regression of VARIABLES as fcn of PARAMETERS: VARIABLE=f(PARAMETER), the function plots R squared
+
 plot_type_flag={'par_var','heatmap','r_sq'}; % {'par_var','heatmap'/'lineplot','r_sq'/'slope'}
 sel_nodes=setdiff(3:10,9); 
 % plot_settings=[fontsize,maximum value for heatmap colors], if plot_settings(2)=NaN, then max color automatically selected
@@ -349,7 +351,7 @@ sel_nodes=3:10; % STATES or NODES to be analyzed
 % CALCULATE and PLOT predictor importance
 plot_type_flags={'line','bar'};
 [predictor_names,predictorImportance_vals]=fcn_multidim_parscan_predictorimport(scan_params,scan_params_up_down,...
-                                                all_par_vals_lhs,scan_values,nodes,sel_nodes,plot_type_flags{1});
+                                                all_par_vals_lhs,scan_values,nodes,sel_nodes,plot_type_flags{2});
 
 %% Sobol total sensitivity metric                                            
 
@@ -360,14 +362,17 @@ plot_type_flags={'line','bar'};
 % [parameter sets, variable values]: [all_par_vals_lhs,stat_sol_lhs_parscan]
 
 % Sobol total sensitivity: calculated for one variable at a time
-sel_nodes=setdiff(3:10,8); % selected nodes to display
+sel_vars=setdiff(3:10,find(strcmp(nodes,'g2m_trans'))); % selected nodes to display
+sel_vars=[]; % if left empty, all nodes/states are analyzed
 sample_size=500; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
-plot_settings=[14 14 22]; % [fontsize on plot, fontsize on axes, fontsize title];
+plot_settings=[14 14 22]; %  0 0.5 % [fontsize on plot, fontsize on axes, fontsize title, min_color(optional), max_color(optional)];
+var_types={'nodes','states'};
 % to calculate Sobol total sensitivity we need <sample_size*numel(scan_params_up_down)> evaluations of the model
-sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],all_par_vals_lhs,stat_sol_lhs_parscan,sample_size,...
-                                scan_params,scan_params_up_down,stg_table,x0,nodes,sel_nodes,plot_settings);
+sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{2},all_par_vals_lhs,stat_sol_lhs_parscan,stat_sol_states_lhs_parscan,sample_size,...
+                                scan_params,scan_params_up_down,stg_table,x0,nodes,sel_vars,plot_settings);
+
 % if we have already calculated <sobol_sensit_index>, provide it as the FIRST argument <sobol_sensit_index> and only plot
-fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,all_par_vals_lhs,stat_sol_lhs_parscan,sample_size,...
+fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{1},all_par_vals_lhs,stat_sol_lhs_parscan,stat_sol_states_lhs_parscan,sample_size,...
                                 scan_params,scan_params_up_down,stg_table,x0,nodes,sel_nodes,plot_settings);
 
 %% PARAMETER FITTING

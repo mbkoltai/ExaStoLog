@@ -1,10 +1,25 @@
-function tau_i=fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,all_par_vals_lhs,stat_sol_lhs_parscan,sample_size,...
-                                        scan_params,scan_params_up_down,stg_table,x0,nodes,sel_nodes,plot_settings)
+function tau_i=fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_type,all_par_vals_lhs,stat_sol_lhs_parscan,stat_sol_states_lhs_parscan,...
+                                                        sample_size,scan_params,scan_params_up_down,stg_table,x0,nodes,sel_nodes,plot_settings)
+
 
 par_ind_table=[repelem(scan_params, cellfun(@(x) numel(x),scan_params_up_down))', horzcat(scan_params_up_down{:})'];
 prefix={'u_','d_'}; predictor_names=arrayfun(@(x) strcat(prefix(par_ind_table(x,2)), nodes(par_ind_table(x,1))), 1:size(par_ind_table,1),'un',0);
-predictor_names=vertcat(predictor_names{:})';
-                                    
+predictor_names=vertcat(predictor_names{:})'; 
+    
+if strfind(var_type,'node')
+    scan_values=stat_sol_lhs_parscan;
+    if isempty(sel_nodes)
+        sel_nodes=1:size(scan_values,2);
+    end
+    x_ax_string=nodes(sel_nodes);
+else
+    scan_values=stat_sol_states_lhs_parscan;
+    if isempty(sel_nodes)
+        sel_nodes=1:size(scan_values,2);
+    end
+    x_ax_string=arrayfun(@(x) strcat('state #',num2str(x)), sel_nodes,'un',0);
+end
+
 if isempty(sobol_sensit_index)
 
 if ~isempty(sample_size)
@@ -21,11 +36,15 @@ for k = 1:size(all_par_vals_lhs,2)
     %%%%
     B_i = A; B_i(:,k) = B(:,k);
     % rerun calculations
-    f_B_i=fcn_calc_paramsample_table(B_i,scan_params,scan_params_up_down,transition_rates_table,stg_table,x0,nodes);
+    if strfind(var_type,'node')
+        [f_B_i,~]=fcn_calc_paramsample_table(B_i,scan_params,scan_params_up_down,transition_rates_table,stg_table,x0);
+    elseif strfind(var_type,'states')
+        [~,f_B_i]=fcn_calc_paramsample_table(B_i,scan_params,scan_params_up_down,transition_rates_table,stg_table,x0);
+    end
     % sensit index
 for varcount=1:numel(sel_nodes)
-    diff_fA_fBi=( stat_sol_lhs_parscan(1:M,sel_nodes(varcount))-f_B_i(:,sel_nodes(varcount)) );
-	tau_i(k,varcount)=(diff_fA_fBi'*diff_fA_fBi)/( 2*M*var(stat_sol_lhs_parscan(1:M,sel_nodes(varcount))) );
+    diff_fA_fBi=( scan_values(1:M,sel_nodes(varcount))-f_B_i(:,sel_nodes(varcount)) );
+	tau_i(k,varcount)=(diff_fA_fBi'*diff_fA_fBi)/( 2*M*var(scan_values(1:M,sel_nodes(varcount))) );
 end
 disp(k)
 end
@@ -34,7 +53,12 @@ else
     tau_i=sobol_sensit_index;
 end
 
-num_size_plot=plot_settings(1); min_col_val=0; maxval_color=1; % 1.05*max(tau_i(:))
-heatmap(tau_i,nodes(sel_nodes),predictor_names,'%0.2f','TickAngle',90,'Colormap','redblue',...
+num_size_plot=plot_settings(1); 
+if length(plot_settings)==5
+min_col_val=plot_settings(4); maxval_color=plot_settings(5); % 1.05*max(tau_i(:))
+else
+    min_col_val=0; maxval_color=1; % 1.05*max(tau_i(:))
+end
+heatmap(tau_i,x_ax_string,predictor_names,'%0.2f','TickAngle',90,'Colormap','redblue',...
     'MinColorValue',min_col_val,'MaxColorValue',maxval_color,'GridLines','-','FontSize',num_size_plot,'ShowAllTicks',true,'colorbar',true)
 set(gca,'FontSize',plot_settings(2)); title('Sobol total sensitivity index', 'Fontweight','normal', 'FontSize',plot_settings(3));

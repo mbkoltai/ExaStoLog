@@ -20,7 +20,7 @@ for k=1:scan_size
     for val_counter=1:numel(parscan_matrix(:,k))
         transition_rates_table_mod=transition_rates_table; 
         transition_rates_table_mod(scan_par_inds(k))=parscan_matrix(val_counter,k);
-        [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table_mod,nodes,'');
+        [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table_mod,'');
         [stat_sol,~,~]=split_calc_inverse(A_sparse,transition_rates_table,x0);
         % sols per node
         [stationary_node_vals,~]=fcn_calc_init_stat_nodevals(x0,stat_sol);

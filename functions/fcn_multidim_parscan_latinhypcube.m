@@ -52,7 +52,7 @@ trans_rate_scan_inds=sub2ind(size(transition_rates_table),par_ind_table(:,2),par
 transition_rates_table_mod=transition_rates_table;
 stat_sol_lhs_parscan=zeros(size(all_par_vals_lhs,1),numel(nodes));
 
-[A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table_mod,nodes,'');
+[A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table_mod,'');
 [stat_sol,~,~]=split_calc_inverse(A_sparse,transition_rates_table_mod,x0);
 nonzero_states_inds=find(stat_sol>0);
 stat_sol_states_lhs_parscan=zeros(size(all_par_vals_lhs,1),sum(stat_sol>0));
@@ -65,7 +65,7 @@ cell_counter=0;
 for k=1:lhs_scan_dim
 
 transition_rates_table_mod(trans_rate_scan_inds) = all_par_vals_lhs(k,:);
-[A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table_mod,nodes,'');
+[A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table_mod,'');
 [stat_sol,~,~]=split_calc_inverse(A_sparse,transition_rates_table_mod,x0);
 [stationary_node_vals,~]=fcn_calc_init_stat_nodevals(x0,stat_sol);
 stat_sol_lhs_parscan(k,:)=stationary_node_vals;
