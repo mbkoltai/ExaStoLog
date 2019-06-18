@@ -10,6 +10,5 @@ else
 error('Check sampling type, it has to be ''log/lognorm'' or ''lin/linear''.')    
 end
 
-
 par_scan_vals=repmat(par_range,numel(scan_par_inds),1)';
 

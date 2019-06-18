@@ -207,13 +207,13 @@ else % readout type (value or sensitivity)
 end
 
 sensit_params_table=arrayfun(@(x) max(abs(resp_coeff(:,:,x)'))>sensit_cutoff, 1:size(resp_coeff,3),'un',0); sensit_params_table=vertcat(sensit_params_table{:});
-% sensit_pars=find(sum(sensit_params_table)>0);
+sensit_pars=find(sum(sensit_params_table)>0);
 [scan_par_table,~,~]= fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,nodes);
 % sensitive parameters
 scan_pars_sensit=unique(scan_par_table(sum(sensit_params_table)>0,1))';
+% scan_params_sensit_up_down=cell(1,numel(scan_pars_sensit));
 % for k=1:numel(scan_pars_sensit)
-%     scan_params_sensit_up_down{k}=scan_par_table(sensit_pars(scan_par_table(sensit_pars,1)==scan_pars_sensit(k)),2)';
-%     % sensit_par_lengths=cell2mat(arrayfun(@(x) numel(scan_params_up_down_sensit{x}), 1:numel(scan_params_up_down_sensit),'un',0));
+%     scan_params_sensit_up_down{k} = scan_par_table(sensit_pars(scan_par_table(sensit_pars,1)==scan_pars_sensit(k)), 2)';
 % end
 
-scan_params_sensit_up_down=arrayfun(@(x) scan_par_table(scan_par_table(:,1)==x,2)', scan_pars_sensit,'un',0);
+scan_params_sensit_up_down=arrayfun(@(x) scan_par_table(sensit_pars(scan_par_table(sensit_pars,1)==x), 2), scan_pars_sensit, 'un', 0);

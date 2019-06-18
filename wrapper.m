@@ -232,7 +232,7 @@ parscan_min_max = [1e-2 1e2];
 % resolution of the scan
 n_steps=30;
 % linear of logarithmic sampling
-sampling_types={'lognorm','linear'}; 
+sampling_types={'log','linear'}; 
 
 % FUNCTION for generating matrix of ordered values for the parameters to scan in
 % [scan_par_table,scan_par_inds,~]= fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,transition_rates_table);
@@ -260,7 +260,7 @@ sensit_cutoff=0.15; % minimal value for response coefficient (local sensitivity)
 nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))'; 
 param_settings=[12 14]; % [fontsize_axes,fontsize_title]
 plot_types={'lineplot','heatmap'}; var_types={'nodes','states'}; readout_types={'values','sensitivity'};
-[resp_coeff,scan_pars_sensit,scan_params_sensit_up_down]=fcn_onedim_parscan_plot_parsensit(plot_types{2},var_types{1},readout_types{2},...
+[resp_coeff,scan_pars_sensit,scan_params_sensit_up_down]=fcn_onedim_parscan_plot_parsensit(plot_types{1},var_types{1},readout_types{2},...
                                                           stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
                                                           nonzero_states_inds,parscan_matrix,nodes,scan_params,scan_params_up_down,sensit_cutoff,param_settings);                
 
