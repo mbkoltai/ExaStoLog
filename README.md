@@ -4,6 +4,11 @@ Exact calculation of stationary states and parameter analysis of stochastic logi
 0. [Requirements](#markdown-header-0-toc)
 1. [Model creation](#toc-model_creation)
 2. [Calculation of stationary solution](#toc-calc-stat-sol)
+3. [Visualizing the stationary solution](#toc-vis-stat-sol)
+4. [Visualizing the state transition graph](#toc-vis-stg)
+5. [Parameter sensitivity analysis: one-dimensional scans](#param-sens-1dim)
+6. [Parameter sensitivity analysis: multi-dimensional scans](#param-sens-multidim)
+7. [Parameter fitting by simulated annealing](#param-fitting)
 
 ### [Requirements](#markdown-header-0-toc)
 
@@ -32,3 +37,7 @@ addpath('anneal')
 ### [Model creation](#toc-model_creation)
 
 ### [Calculation of stationary solution](#toc-calc-stat-sol)
+
+### [Visualizing the stationary solution](#toc-vis-stat-sol)
+
+### [Visualizing the state transition graph](#toc-vis-stg)

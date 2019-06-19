@@ -68,9 +68,9 @@ transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,
 % meanval=1; sd_val=1; transition_rates_table=fcn_trans_rates_table(nodes,'random',meanval,sd_val,chosen_rates,chosen_rates_vals)
 
 % build transition matrix A with parameter values
-tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,nodes,''); toc
+tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,''); toc
 % if we want the kinetic matrix too, this is the 2nd output of the function
-% tic; [A_sparse,K_sparse]=fcn_build_trans_matr(stg_table,transition_rates_table,nodes,'kinetic'); toc
+% tic; [A_sparse,K_sparse]=fcn_build_trans_matr(stg_table,transition_rates_table,'kinetic'); toc
 
 % density of transition matrix A
 % nnz(A_sparse)/numel(A_sparse)
@@ -82,7 +82,7 @@ n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:
 % define initial values
 x0=zeros(1,2^n_nodes)'; 
 % defining a dominant initial state (eg. dom_prob=0.8, ie. 80% probability)
-dom_prob=0.8; initial_state=[1 1 1 0 0 0 0 0 0 0]; 
+dom_prob=0.8; initial_state=[1 1 1 zeros(1,numel(nodes)-3)];
 x0(ismember(truth_table_inputs,initial_state,'rows'))=dom_prob; 
 % take those states where first 3 variables have a value of 1, and we want them to have a nonzero probability
 sel_states=all(truth_table_inputs(:,1:3)');
@@ -132,11 +132,12 @@ truth_table_inputs(stat_sol>0,:) % logical states that are nonzero
 % barwidth_states_val: width of the bars for bar plot of stationary solutions of states
 % sel_nodes: nodes to show. If left empty, all nodes are shown
 sel_nodes=[]; min_max_col=[-1 1];barwidth_states_val=2;fontsize=[10 20]; % fontsize_hm,fontsize_stat_sol
+% CAREFUL! if more than 12 nodes, generating the figure for A_sparse can be time-consuming
 fcn_plot_A_K_stat_sol(A_sparse, nodes, sel_nodes, stat_sol, x0, min_max_col,fontsize,barwidth_states_val,[])
 
 % PLOT stationary solutions (without A/K matrix)
 % nonzero_flag: if non-empty, only the nonzero states are shown
-sel_nodes=3:10; nonzero_flag='nonzero_only';
+sel_nodes=3:numel(nodes); nonzero_flag='nonzero_only';
 barwidth_states_val=0.8; % for 3 nonzero states ~0.8 is a good value
 % if init_node_vals='', then only shows stationary solution
 % nonzero_flag: if this is non-empty, then we only plot the nonzero states, this is useful for visibility if there are many states
@@ -374,7 +375,7 @@ fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{2},[],[],[]
 
 % recall relevant functions:
 % transition_rates_table=fcn_trans_rates_table(nodes,'uniform',[],[],chosen_rates,chosen_rates_vals); % transition_rates_table=ones(size(transition_rates_table));
-% tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,nodes,''); toc; 
+% tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,''); toc; 
 % tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,transition_rates_table,x0); toc
 % [stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol);
 
@@ -383,7 +384,7 @@ fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{2},[],[],[]
 % define data vector (generate some data OR load from elsewhere)
 sel_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
 transition_rates_table=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,sel_param_vals);
-y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table,nodes,''),transition_rates_table,x0));
+y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table,''),transition_rates_table,x0));
 
 % create functions that calculate sum of squared deviations & values of
 % variables (composed of different fcns) - RERUN THIS if you want to fit to new data or new non-fitted transition rates!!
