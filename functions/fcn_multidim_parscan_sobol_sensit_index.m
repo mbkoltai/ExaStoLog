@@ -12,50 +12,59 @@ if strfind(var_type,'node')
         sel_nodes=1:size(scan_values,2);
     end
     x_ax_string=nodes(sel_nodes);
-else
+elseif strfind(var_type,'state')
     scan_values=stat_sol_states_lhs_parscan;
     if isempty(sel_nodes)
         sel_nodes=1:size(scan_values,2);
     end
     x_ax_string=arrayfun(@(x) strcat('state #',num2str(x)), sel_nodes,'un',0);
+else
+    error('<var_type> must be ''states'' or ''nodes''.')
 end
 
 if isempty(sobol_sensit_index)
 
 if ~isempty(sample_size)
-M=sample_size;
+    M=sample_size;
 else
-M=size(all_par_vals_lhs,1)/2; 
+    M=size(all_par_vals_lhs,1)/2; 
 end
 
 A=all_par_vals_lhs(1:M,:); B=all_par_vals_lhs(M+1:2*M,:);
 tau_i=zeros(size(all_par_vals_lhs,2),numel(sel_nodes));
 transition_rates_table=ones(2,numel(nodes));
 
-for k = 1:size(all_par_vals_lhs,2)
+        if numel(plot_settings)==6
+            disp_var=plot_settings(6);
+        else
+            disp_var=[];
+        end
+
+    for k=1:size(all_par_vals_lhs,2)
     %%%%
+    fprintf(strcat('\n','recalculating variance for parameter #',num2str(k),'\n\n'))
     B_i = A; B_i(:,k) = B(:,k);
-    % rerun calculations
-    if strfind(var_type,'node')
-        [f_B_i,~]=fcn_calc_paramsample_table(B_i,scan_params,scan_params_up_down,transition_rates_table,stg_table,x0);
-    elseif strfind(var_type,'states')
-        [~,f_B_i]=fcn_calc_paramsample_table(B_i,scan_params,scan_params_up_down,transition_rates_table,stg_table,x0);
+        % rerun calculations
+      if strfind(var_type,'node')
+          [f_B_i,~]=fcn_calc_paramsample_table(B_i,scan_params,scan_params_up_down,transition_rates_table,stg_table,x0,disp_var);
+      elseif strfind(var_type,'state')
+          [~,f_B_i]=fcn_calc_paramsample_table(B_i,scan_params,scan_params_up_down,transition_rates_table,stg_table,x0,disp_var);
+      end
+        % sensit index
+        for varcount=1:numel(sel_nodes)
+            diff_fA_fBi=( scan_values(1:M,sel_nodes(varcount)) - f_B_i(:,sel_nodes(varcount)) );
+            tau_i(k,varcount)=(diff_fA_fBi'*diff_fA_fBi)/( 2*M*var(scan_values(1:M,sel_nodes(varcount))) );
+        end
+    
     end
-    % sensit index
-for varcount=1:numel(sel_nodes)
-    diff_fA_fBi=( scan_values(1:M,sel_nodes(varcount))-f_B_i(:,sel_nodes(varcount)) );
-	tau_i(k,varcount)=(diff_fA_fBi'*diff_fA_fBi)/( 2*M*var(scan_values(1:M,sel_nodes(varcount))) );
-end
-disp(k)
-end
 
 else
     tau_i=sobol_sensit_index;
 end
 
 num_size_plot=plot_settings(1); 
-if length(plot_settings)==5
-min_col_val=plot_settings(4); maxval_color=plot_settings(5); % 1.05*max(tau_i(:))
+if length(plot_settings)>=5 && ~isnan(plot_settings(4)) && ~isnan(plot_settings(5))
+    min_col_val=plot_settings(4); maxval_color=plot_settings(5); % 1.05*max(tau_i(:))
 else
     min_col_val=0; maxval_color=1; % 1.05*max(tau_i(:))
 end

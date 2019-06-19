@@ -24,7 +24,6 @@ set(0,'DefaultAxesTitleFontWeight','normal');
 % A) by entering the list of nodes and their
 % corresponding rules as a cell of strings, using MATLAB logical notation ('&', '|', '~', '(', ')'),
 % for instance:
-
 % nodes = {'cc','kras', 'dna_dam', 'chek1', 'mk2', 'atm_atr', 'hr','cdc25b', 'g2m_trans', 'cell_death'};
 % rules={'cc',...
 % 'kras',...
@@ -49,7 +48,7 @@ truth_table_filename='fcn_truthtable.m'; fcn_write_logicrules(nodes,rules,truth_
 
 % from the model we generate the STG table, that is independent of values of transition rates
 tic; [stg_table,~,~]=fcn_build_stg_table(truth_table_filename,nodes,'',''); toc
-% tic; [~,K_sparse,A_sparse]=fcn_build_stg_sparse(truth_table_filename,nodes,transition_rates_table,'matrix'); toc
+% [state_transitions_inds,K_sparse,A_sparse_fast]=fcn_build_stg_table(truth_table_filename,nodes,transition_rates_table,'num_matrix');
 
 %% generate from already existing STG table (filling in values)
 
@@ -60,15 +59,15 @@ chosen_rates={'u_cdc25b','d_dna_dam'}; chosen_rates_vals=[0.25, 0.15];
 % then we generate the table of transition rates: first row is the 'up'
 % rates, second row 'down' rates, in the order of 'nodes'
 % ARGUMENTS
-uniform_or_rand='uniform'; % uniform assigns a value of 1 to all params. other option: 'random'
+distr_type={'uniform','random'}; % uniform assigns a value of 1 to all params. other option: 'random'
 meanval=[]; sd_val=[]; % if 'random' is chosen, the mean and standard dev of a normal distrib has to be defined 
 % transition_rates_table=fcn_trans_rates_table(nodes,uniform_or_rand,meanval,sd_val,chosen_rates,chosen_rates_vals);
-transition_rates_table=fcn_trans_rates_table(nodes,uniform_or_rand,meanval,sd_val,[],[]);
-% transition_rates_table=fcn_trans_rates_table(nodes,'random',meanval,sd_val,chosen_rates,chosen_rates_vals)
+transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,[],[]);
+% meanval=1; sd_val=1; transition_rates_table=fcn_trans_rates_table(nodes,'random',meanval,sd_val,chosen_rates,chosen_rates_vals)
 
 % build transition matrix A with parameter values
 tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,nodes,''); toc
-% if we want the kinetic matrix too, this is the 1st output of the function
+% if we want the kinetic matrix too, this is the 2nd output of the function
 % tic; [A_sparse,K_sparse]=fcn_build_trans_matr(stg_table,transition_rates_table,nodes,'kinetic'); toc
 
 % density of transition matrix A
@@ -85,7 +84,7 @@ dom_prob=0.8; initial_state=[1 1 1 0 0 0 0 0 0 0];
 x0(ismember(truth_table_inputs,initial_state,'rows'))=dom_prob; 
 % take those states where first 3 variables have a value of 1, and we want them to have a nonzero probability
 sel_states=all(truth_table_inputs(:,1:3)');
-% create a vector of random probabilities for these states, with a sum of 1-dom_prob
+% create a vector of random probabilities for these states, with a sum of (1-dom_prob)
 rand_vect=abs(rand(sum(sel_states)-1,1)); rand_vect=rand_vect/( sum(rand_vect)/(1-dom_prob) );
 x0(~ismember(truth_table_inputs,initial_state,'rows') & sel_states') = rand_vect;
 
@@ -104,8 +103,8 @@ tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,trans
 % cell_subgraphs: indices of states belonging to disconnected subgraphs (if any)
 
 % nonzero states can be quickly queried by:
-stat_sol(stat_sol>0)
-truth_table_inputs(stat_sol>0,:)
+stat_sol(stat_sol>0) % probability values of nonzero states
+truth_table_inputs(stat_sol>0,:) % logical states that are nonzero
 
 % sum the probabilities of nonzero states by nodes, both for the initial condition and the stationary solution
 % ARGUMENTS
@@ -114,10 +113,10 @@ truth_table_inputs(stat_sol>0,:)
 % nodes: list of nodes
 [stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol);
 
-% can check results by doing direct matrix exponentiation, for systems up to ~10 nodes, but only if there are no cycles!!
+% can check results by doing direct matrix exponentiation, for systems up to ~10 nodes, but only if there are no cycles.
 % x_sol=((x0')*A_sparse^1e5)';
 % stationary_node_vals=x_sol'*truth_table_inputs;
-% checked with MaBoSS simuls, results are identical (up to 1% dev.) as they have to be!
+% checked with MaBoSS simuls, results are identical (up to 1% dev.) as they have to be
 
 %% PLOTTING RESULTS
 
@@ -211,10 +210,7 @@ B_state_transitions_inds=fcn_stg_table_subgraph(stg_table,cell_subgraphs,counter
 % figure(); 
 plot_STG_sel_param(B,'',nodes,'','all',B_state_transitions_inds,default_settings,highlight_settings,limits,'yes',tight_subplot_pars)
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% param scan: parameters 1-by-1
-
+%% Parameter sensitivity analysis: one-dimensional parameter scans
 
 % select the nodes whose parameters we want to scan in:
 % all nodes that have actual transitions
@@ -227,17 +223,13 @@ scan_params_up_down=arrayfun(@(x) par_inds_table(par_inds_table(:,1)==x,2)', sca
 % num2cell(2*ones(1,numel(scan_params))); % only down
 % {[1 2], 1, [1 2]}; % manually selected
 
-% min and max of range of values
-parscan_min_max = [1e-2 1e2];
-% resolution of the scan
-n_steps=30;
-% linear of logarithmic sampling
-sampling_types={'log','linear'}; 
+% min and max of range of values; resolution of the scan; linear or logarithmic sampling
+parscan_min_max = [1e-2 1e2]; n_steps=30; sampling_types={'log','linear'}; 
 
 % FUNCTION for generating matrix of ordered values for the parameters to scan in
 % [scan_par_table,scan_par_inds,~]= fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,transition_rates_table);
 parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_down,nodes,sampling_types{1},parscan_min_max,n_steps);
-% set values in one/more columns manually: order is {3,1}->{3,2}->{4,1} etc
+% set values in one/more columns manually (order is {3,1}->{3,2}->{4,1}->{4,2} etc)
 % parscan_matrix(:,2)=logspace(-1,1,size(parscan_matrix,1));
 % entire matrix can be made a random matrix
 
@@ -321,7 +313,8 @@ plot_type_flag={'var_var','heatmap'}; % this is plotting the heatmap of correlat
                                             nodes,sel_nodes,scan_params,scan_params_up_down,[],plot_settings);
 
 %% scatterplots of selected variables [i,j]: var_i VS var_j
-sel_nodes=[3 5 7 8 10]; plot_settings=[10 12]; % [fontsize on axes, fontsize of titles]
+
+sel_nodes=[3 5 7 8 10]; plot_settings=[10 12]; % [fontsize_axes, fontsize_titles]
 plot_type_flag={'var_var','scatter'}; % this is plotting the scatterplots of variables with correlation values
 fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_lhs_parscan,...
                                     nodes,sel_nodes,scan_params,scan_params_up_down,[],plot_settings);
@@ -357,27 +350,27 @@ plot_type_flags={'line','bar'};
 
 % On Sobol total sensitivity index see: https://en.wikipedia.org/wiki/Variance-based_sensitivity_analysis
 % This metric indicates how much of the total variance in a variable is due to variation in a given parameter
-% Numerical approximation of analytical equivalent from Monte Carlo sampling.
+% We calculate here the usual numerical approximation of analytical equivalent from Monte Carlo sampling.
 % From the LHS sampling above we take the matrices of parameter sets and variable values:
 % [parameter sets, variable values]: [all_par_vals_lhs,stat_sol_lhs_parscan]
 
 % Sobol total sensitivity: calculated for one variable at a time
-sel_vars=setdiff(3:10,find(strcmp(nodes,'g2m_trans'))); % selected nodes to display
+sel_vars=setdiff(1:numel(nodes),find(sum(cell2mat(arrayfun(@(x) strcmp(nodes,x), {'cc','kras','g2m_trans'},'un',0)')))); % selected nodes to display
 sel_vars=[]; % if left empty, all nodes/states are analyzed
 sample_size=500; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
-plot_settings=[14 14 22]; %  0 0.5 % [fontsize on plot, fontsize on axes, fontsize title, min_color(optional), max_color(optional)];
-var_types={'nodes','states'};
+plot_settings=[14 14 22 NaN NaN 10]; % [fontsize_plot,fontsize_axes,fontsize_title, min_color(optional), max_color(opt), progress_calcul_every_x_% (opt)];
+var_types={'nodes','states'}; % analysis for states or nodes
 % to calculate Sobol total sensitivity we need <sample_size*numel(scan_params_up_down)> evaluations of the model
-sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{2},all_par_vals_lhs,stat_sol_lhs_parscan,stat_sol_states_lhs_parscan,sample_size,...
-                                scan_params,scan_params_up_down,stg_table,x0,nodes,sel_vars,plot_settings);
+tic; sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{2},all_par_vals_lhs,stat_sol_lhs_parscan,stat_sol_states_lhs_parscan,sample_size,...
+                                scan_params,scan_params_up_down,stg_table,x0,nodes,sel_vars,plot_settings); toc;
 
-% if we have already calculated <sobol_sensit_index>, provide it as the FIRST argument <sobol_sensit_index> and only plot
-fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{1},all_par_vals_lhs,stat_sol_lhs_parscan,stat_sol_states_lhs_parscan,sample_size,...
-                                scan_params,scan_params_up_down,stg_table,x0,nodes,sel_nodes,plot_settings);
+% if we have already calculated <sobol_sensit_index> and only want to plot results, provide it as the FIRST argument <sobol_sensit_index>
+fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{2},[],[],[],[],...
+                                scan_params,scan_params_up_down,[],[],nodes,sel_nodes,plot_settings);
 
 %% PARAMETER FITTING
 
-% relevant functions
+% recall relevant functions:
 % transition_rates_table=fcn_trans_rates_table(nodes,'uniform',[],[],chosen_rates,chosen_rates_vals); % transition_rates_table=ones(size(transition_rates_table));
 % tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,nodes,''); toc; 
 % tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,transition_rates_table,x0); toc
@@ -389,12 +382,11 @@ fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{1},all_par_
 sel_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
 transition_rates_table=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,sel_param_vals);
 y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table,nodes,''),transition_rates_table,x0));
-% sel_nodes=setdiff(3:10,find(strcmp(nodes,'g2m_trans')));y_data(sel_nodes)=[repmat(0.1,1,4)+rand(1,4)/30 1-(repmat(0.1,1,2)+rand(1,2)/30) repmat(0.1,1,1)+rand(1,1)/30];
 
-% create functions that calculate sum of squared deviations & values of variables (composed of different fcns)
+% create functions that calculate sum of squared deviations & values of
+% variables (composed of different fcns) - RERUN THIS if you want to fit to new data or new non-fitted transition rates!!
 [fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_simul_anneal(y_data,x0,stg_table,nodes,predictor_names);
-% evaluate/test
-% abs(fcn_statsol_sum_sq_dev(chosen_rates_vals) - fcn_statsol_sum_sq_dev(zeros(size(chosen_rates_vals))) )
+% evaluate/test: abs(fcn_statsol_sum_sq_dev(chosen_rates_vals) - fcn_statsol_sum_sq_dev(zeros(size(chosen_rates_vals))) )
 
 % FITTING by simulated annealing (look at arguments in anneal/anneal.m)
 % initial guess for parameters
@@ -406,8 +398,7 @@ tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_vals,
 thres=1e-4; semilogy(1:find(T_loss(:,2)<thres,1), T_loss(1:find(T_loss(:,2)<thres,1),:),'LineWidth',4); legend({'temperature', 'SSE'},'FontSize',22);
 xlabel('number of iterations','FontSize',16); set(gca,'FontSize',16); title('Parameter fitting by simulated annealing','FontSize',22)
 
-% check again if correct (sum or mean sq error): sum((y_data - fcn_statsol_values(optim_par_vals)).^2) % mean((y_data - fcn_statsol_values(optim_par_vals)).^2)
 % normalized by values: mean absolute fractional error
-mean( abs(y_data - fcn_statsol_values(optim_par_vals))./fcn_statsol_values(optim_par_vals) )
+mean( abs(y_data - fcn_statsol_values(optim_par_vals))./y_data )
 % distance of found params from true values (fractional difference)
 abs(optim_par_vals - sel_param_vals)./sel_param_vals

@@ -1,5 +1,5 @@
 function [stat_sol_lhs_parscan,stat_sol_states_lhs_parscan]=fcn_calc_paramsample_table(all_par_vals_lhs,scan_params,scan_params_up_down,...
-                                                                transition_rates_table,stg_table,x0)
+                                                                transition_rates_table,stg_table,x0,disp_var)
 
 par_ind_table=[repelem(scan_params, cellfun(@(x) numel(x),scan_params_up_down))', horzcat(scan_params_up_down{:})'];
 trans_rate_scan_inds=sub2ind(size(transition_rates_table),par_ind_table(:,2),par_ind_table(:,1));
@@ -25,8 +25,10 @@ transition_rates_table_mod(trans_rate_scan_inds) = all_par_vals_lhs(k,:);
 stat_sol_lhs_parscan(k,:) = stationary_node_vals;
 stat_sol_states_lhs_parscan{k} = stat_sol(stat_sol>0);
 
-if rem(100*k/lhs_scan_dim,1)==0
+if ~isempty(disp_var)
+if rem(disp_var*k/lhs_scan_dim,1)==0
     disp(strcat(num2str(round(100*k/lhs_scan_dim)),'% done'))
+end
 end
 
 end
