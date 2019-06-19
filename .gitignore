@@ -16,6 +16,7 @@ krasmodel6.dat
 # M~ files
 *m~
 *md~
+*dat
 
 wrapper_suppl.m
 examples.m
