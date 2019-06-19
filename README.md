@@ -6,12 +6,11 @@ Exact calculation of stationary states and parameter analysis of stochastic logi
 
 ### [Requirements](#markdown-header-0-toc)
 
-#### - MATLAB version 2015b or later required.
+#### * MATLAB version 2015b or later
 
-#### - the following freely available MATLAB toolboxes need to be downloaded and added to the path:
+#### * the following freely available MATLAB toolboxes need to be downloaded and added to the path:
 
-Required for heatmaps:
-[Customizable heatmaps](https://mathworks.com/matlabcentral/fileexchange/24253-customizable-heat-maps)  
+    * [Customizable heatmaps](https://mathworks.com/matlabcentral/fileexchange/24253-customizable-heat-maps)  
 addpath('heatmaps')
 
 [Redblue colormap](https://mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap)  
