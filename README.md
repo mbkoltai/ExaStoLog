@@ -2,6 +2,7 @@
 Exact calculation of stationary states and parameter analysis of stochastic logical models
 
 0. [Requirements](#markdown-header-0-toc)
+1. [Model creation](#1-toc)
 
 ### [Requirements](#markdown-header-0-toc)
 
@@ -25,3 +26,6 @@ addpath('altmany-export_fig-acfd348')
 
 [Simulated annealing](https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm) (parameter fitting by simulated annealing)  
 addpath('anneal') 
+
+### [Model creation](#1-toc)
+
