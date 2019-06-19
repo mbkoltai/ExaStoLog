@@ -3,6 +3,8 @@ Exact calculation of stationary states and parameter analysis of stochastic logi
 
 0. [Requirements](#markdown-header-0-toc)
 
+### [Requirements](#markdown-header-0-toc)
+
 #### - MATLAB version 2015b or later required.
 
 #### - the following freely available MATLAB toolboxes need to be downloaded and added to the path:
