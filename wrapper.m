@@ -10,9 +10,11 @@ addpath('functions/')
 addpath('heatmaps') % https://mathworks.com/matlabcentral/fileexchange/24253-customizable-heat-maps
 addpath('redblue'); % https://fr.mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap (for redblue colormaps)
 % optional for PLOTS and saving of PLOTS
-addpath('tight_subplot') % optional. https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w (for subplots with smaller gaps)
-addpath('altmany-export_fig-acfd348') % Optional. mathworks.com/matlabcentral/fileexchange/23629-export_fig (export figures as EPS or PDF as they appear on plots)
-% optional for PARAMETER FITTING by simulated annealing
+% for subplots with smaller gaps:
+addpath('tight_subplot') % https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w
+% export figures as EPS or PDF as they appear on plots:
+addpath('altmany-export_fig-acfd348') % Optional. https://mathworks.com/matlabcentral/fileexchange/23629-export_fig 
+% optional for PARAMETER FITTING by simulated annealing:
 addpath('anneal') % https://fr.mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm
 
 set(0,'DefaultAxesTitleFontWeight','normal');
@@ -37,7 +39,7 @@ set(0,'DefaultAxesTitleFontWeight','normal');
 % 'cell_death | (dna_dam & g2m_trans)'}; 
 
 % OR B) the model can be read in from an existing BOOLNET file
-[nodes,rules]=fcn_bnet_readin('krasmodel6.bnet');
+[nodes,rules]=fcn_bnet_readin('krasmodel15vars.bnet'); % krasmodel10vars.bnet
 
 % once we have the list of nodes and their logical rules, we can check if
 % all variables referred to by rules are found in the list of nodes:
