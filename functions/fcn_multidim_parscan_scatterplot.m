@@ -15,13 +15,18 @@ end
 up_down_str = {'u_','d_'}; 
 xlim_val_log=[min(all_par_vals_lhs(:)) max(all_par_vals_lhs(:))]; % min and max of x-axis of subplots
 logrange=log10(xlim_val_log);
+if ~isnan(param_settings(3))
+    label_fontsize = param_settings(3);
+else
+    label_fontsize =14;
+end
 
 for k=1:n_pars
     subplot(n_row_plot,n_col_plot,k);
     % scatter: parameter-variable value
     scatter(all_par_vals_lhs(:,k), scan_values(:,var_ind)); ylim([0 1]); % xlim(xlim_val_log); 
     % title( strrep(strcat(nodes{var_ind},', rate: ',up_down_str(par_ind_table(k,2)),nodes(par_ind_table(k,1)) ),'_','\_'), 'FontWeight', 'normal') 
-    xlabel( strrep(strcat(up_down_str(par_ind_table(k,2)),nodes(par_ind_table(k,1)) ),'_','\_')); % grid on
+    xlabel( strcat(up_down_str(par_ind_table(k,2)),nodes(par_ind_table(k,1))),'Interpreter','none', 'FontSize', label_fontsize ); % grid on
     % plot means
         % n_bins=round(sqrt(size(all_par_vals_lhs,1)));
         
@@ -38,20 +43,17 @@ for k=1:n_pars
         [a,b]=histc(all_par_vals_lhs(:,k),mean_range_vals); mean_range_vals=mean_range_vals(a>0);
         var_bin_means=cell2mat(arrayfun(@(x) mean( scan_values(b==x,var_ind) ), 1:n_bins,'un',0)); var_bin_means=var_bin_means(a>0);
         hold on; plot(mean_range_vals,var_bin_means,'LineWidth',linewidth_val); 
-
+        hold off;
     if rem(k,n_col_plot)==1 && size(scan_values,2)==numel(nodes)
-            ylabel(strrep(nodes{var_ind},'_','\_'))
-        % else
-            % state_names=param_settings(3:end); ylabel(strcat('p(',num2str( truth_table_inputs(state_names(var_ind),:) ),')') );
+            ylabel(nodes{var_ind},'Interpreter','none','FontSize',label_fontsize);
     end
-    % , 'Interpreter', 'latex' 
 end
 
-if size(scan_values,2)~=numel(nodes)
+if size(scan_values,2)==numel(nodes)
+        h_supt=suptitle( strcat(nodes{var_ind},' stationary value') ); set(h_supt,'FontSize',label_fontsize*1.5,'FontWeight','normal','Interpreter','none')
+elseif size(scan_values,2)~=numel(nodes)
     n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2);
-    state_names=param_settings(3:end); suptitle(strcat('state #',num2str(state_names(var_ind)),', ',...
-        'p([',num2str( truth_table_inputs(state_names(var_ind),:) ),'])') );
+    state_names=param_settings(4:end);
+    suptitle(strcat('state #',num2str(state_names(var_ind)),', ','p([',num2str( truth_table_inputs(state_names(var_ind),:) ),'])') );
 end
 
-
-hold off;

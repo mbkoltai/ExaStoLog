@@ -14,7 +14,9 @@ Exact calculation of stationary states and parameter analysis of stochastic logi
 
 #### - MATLAB version 2015b or later
 
-#### - the following freely available MATLAB toolboxes need to be downloaded and added to the path:
+#### - clone the repository and add the folder 'functions' to your path: addpath('functions')
+
+#### - the following freely available MATLAB toolboxes also need to be downloaded and added to the path:
 
 - [Customizable heatmaps](https://mathworks.com/matlabcentral/fileexchange/24253-customizable-heat-maps)  
 addpath('heatmaps')
@@ -32,7 +34,6 @@ addpath('altmany-export_fig-acfd348')
 - [Simulated annealing](https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm) (parameter fitting by simulated annealing)  
 addpath('anneal') 
 
-#### - add the folder 'functions' to your path: addpath('anneal') 
 
 ### [Model creation](#toc-model_creation)
 

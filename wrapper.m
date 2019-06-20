@@ -38,6 +38,9 @@ set(0,'DefaultAxesTitleFontWeight','normal');
 % 'g2m_trans | cdc25b',...
 % 'cell_death | (dna_dam & g2m_trans)'}; 
 
+% name of the model
+model_name='kras15vars';
+
 % OR B) the model can be read in from an existing BOOLNET file
 [nodes,rules]=fcn_bnet_readin('krasmodel15vars.bnet'); % krasmodel10vars.bnet
 
@@ -151,13 +154,23 @@ fcn_plot_A_K_stat_sol([], nodes, sel_nodes, stat_sol, x0, min_max_col,fontsize,b
 % term_verts_cell: which subgraph to plot if there are disconnected ~
 % num_size_plot: font size of 0/1s on the heatmap
 % hor_gap: horizontal gap between terminal SCCs, bottom_marg: bottom margin, left_marg: left margin
-% figure()
 numsize_plot=16; fontsize=12; hor_gap=0.02; bottom_marg=0.14; left_marg=0.06; 
 param_settings=[numsize_plot fontsize hor_gap bottom_marg left_marg];
-statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,term_verts_cell{4},nodes,param_settings);
+% idnex of nonempty subgraph, check by <term_verts_cell>
+nonempty_subraph=4;
+% want to use tight subplot?
+tight_subplot_flag='yes';
+% nodes to show
+sel_nodes=3:numel(nodes);
+% probability threshold for states to show (if left empty, all states shown)
+prob_thresh=0.05;  % []; % 0.05;
+% PLOT
+statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,term_verts_cell{nonempty_subraph},nodes,sel_nodes,param_settings,tight_subplot_flag);
 % export_fig sink_states_kras_model_heatmap.eps -transparent
 
 %% plot of STG (state transition graph)
+
+% for models larger than 12 nodes generating these plots can be very time consuming
 
 % PLOT the STG of the model. 
 % show the full STG and a selected (counter) subgraph
@@ -174,8 +187,9 @@ plot_STG(A_sparse,subgraph_index,default_settings,xlim_vals,ylim_vals,titles,sou
 
 % PLOT a single STG (that can be a selected subgraph of entire STG)
 % cropping (optional)
-xlim_vals=[-4 5]; ylim_vals = [-5 5]; titles ={'subgraph #4'};
-A_sub=A_sparse(cell_subgraphs{4},cell_subgraphs{4});
+xlim_vals=[-4 5]; ylim_vals = [-5 5]; 
+titles ={strcat('subgraph #',num2str(subgraph_index))};
+A_sub=A_sparse(cell_subgraphs{subgraph_index},cell_subgraphs{subgraph_index});
 default_settings=[20 1 7 5 8]; % fontsize,linewidth_val, arrowsize, default_markersize, highlight_markersize
 plot_STG(A_sub,'',default_settings,xlim_vals,ylim_vals,titles,source_color)
 % plot_STG(A_sub,'',default_settings,[],[],titles,source_color)
@@ -189,7 +203,7 @@ selected_pars=[1 3 4 5 6 11 9 8]; % parameters to highlight, either 'all', or nu
 plot_pars=[20 0.1 7 3 6]; % plot_pars=[fontsize,linewidth_val, arrowsize, default_markersize, highlight_markersize]
 % parameters for highlighted transitions: color and width of corresp edges
 highlight_settings={'yellow',3}; 
-% if using tight_subplots toolbox
+% if using tight_subplots toolbox:
 % [ha,~] = tight_subplot(4,4,[0.06 0.02],[0.05 0.05],[0.05 0.05]);
 % tight_subplot(Nh, Nw, gap, marg_h, marg_w): 
 % gap: gaps between the axes in normalized units
@@ -227,7 +241,7 @@ scan_params_up_down=arrayfun(@(x) par_inds_table(par_inds_table(:,1)==x,2)', sca
 % {[1 2], 1, [1 2]}; % manually selected
 
 % min and max of range of values; resolution of the scan; linear or logarithmic sampling
-parscan_min_max = [1e-2 1e2]; n_steps=30; sampling_types={'log','linear'}; 
+parscan_min_max = [1e-2 1e2]; n_steps=10; sampling_types={'log','linear'}; 
 
 % FUNCTION for generating matrix of ordered values for the parameters to scan in
 % [scan_par_table,scan_par_inds,~]= fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,transition_rates_table);
@@ -250,16 +264,24 @@ parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_dow
 
 %%% SECOND PLOT TYPE: show the stationary value or response coefficient of 1 variable or state on 1 subplot, as a fcn of all relevant parameters
 nonzero_states_inds=find(stat_sol>0);
-sensit_cutoff=0.15; % minimal value for response coefficient (local sensitivity)
+sensit_cutoff=0.5; % minimal value for response coefficient (local sensitivity)
 % nonzero states of the model
-nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))'; 
-param_settings=[12 14]; % [fontsize_axes,fontsize_title]
-plot_types={'lineplot','heatmap'}; var_types={'nodes','states'}; readout_types={'values','sensitivity'};
-[resp_coeff,scan_pars_sensit,scan_params_sensit_up_down]=fcn_onedim_parscan_plot_parsensit(plot_types{1},var_types{1},readout_types{2},...
-                                                          stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
-                                                          nonzero_states_inds,parscan_matrix,nodes,scan_params,scan_params_up_down,sensit_cutoff,param_settings);                
+nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))';
+% select parameters of plot
+height_width_gap=[0.1 0.03]; bott_top_marg =[0.03 0.1]; left_right_marg=[0.05 0.05];
+% [fontsize_axes,fontsize_title,params_tight_subplots(leave empty if not installed),model_name]
+plot_param_settings={12,14,{height_width_gap bott_top_marg left_right_marg},model_name}; % plot_param_settings={12,14,[],model_name}; 
+% select type of plot
+plot_types={{'lineplot','heatmap'} {'nodes','states'} {'values','sensitivity'}};
+plot_type_options=[1 2 1];
+[resp_coeff,scan_pars_sensit,scan_params_sensit_up_down,fig_filename]=fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
+                                                           stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
+                                                           nonzero_states_inds,parscan_matrix,nodes,scan_params,scan_params_up_down,...
+                                                           sensit_cutoff,plot_param_settings);
 
 % <resp_coeffs> dimensions: (parameters, values,nodes), so resp_coeffs(:,:,7) are the resp. coeff values across the param ranges for the 7th node
+save_folder='sample_plots/'; fig_file_type='.png'; % '.eps'
+export_fig(strcat(save_folder,fig_filename,fig_file_type),'-transparent','-nocrop')
 
 %% multidimensional parameter scan: LATIN HYPERCUBE SAMPLING (random multidimensional sampling within given parameter ranges)
 
@@ -275,15 +297,17 @@ scan_params_up_down=scan_params_sensit_up_down; % num2cell(ones(1,numel(scan_par
 sampling_types={'lognorm','linear','logunif'};
 sampling_type=sampling_types{3};
 % <lhs_scan_dim>: number of param sets
-lhs_scan_dim=5e3;
+lhs_scan_dim=1e3;
 % par_min_mean: minimum or in case of lognormal the mean of distribution. Can be a scalar or a vector, if we want different values for different parameters
 % max_stdev: maximum or in case of lognormal the mean of distribution. Can be a scalar or a vector, if we want different values for different parameters
 % for 'lognorm' and 'logunif' provide the log10 value of desired mean/min and stdev/max!!
 par_min_mean=-2; % repmat(1.5,1,numel(cell2mat(scan_params_up_down(:)))); par_min_mean(4)=3; 
 max_stdev=2; % repmat(0.5,1,numel(cell2mat(scan_params_up_down(:))));
+tic;
 [all_par_vals_lhs,stat_sol_lhs_parscan,...
     stat_sol_states_lhs_parscan,stat_sol_states_lhs_parscan_cell]=fcn_multidim_parscan_latinhypcube(par_min_mean,max_stdev,sampling_type,...
                                                     lhs_scan_dim,scan_params,scan_params_up_down,transition_rates_table,stg_table,x0,nodes);
+toc;
 % <all_par_vals_lhs>: table of parameter sets
 % <stat_sol_lhs_parscan>: stationary values of nodes
 % <stat_sol_states_lhs_parscan>: stationary values of states
@@ -293,9 +317,9 @@ max_stdev=2; % repmat(0.5,1,numel(cell2mat(scan_params_up_down(:))));
 
 %% SCATTERPLOTS of STATE or NODE values as a function of the selected parameters, with the trendline shown (average value per parameter bin)
 
-var_ind=3; % which STATE or NODE to plot
+var_ind=10; % which STATE or NODE to plot
 % <all_par_vals_lhs>: parameter sets
-param_settings = [50 4 stat_sol_states_lhs_parscan_cell]; % [number_bins_for_mean,trendline_width,<index of nonzero states (if same for all param sets)>]
+param_settings = [50 4 16 stat_sol_states_lhs_parscan_cell]; % [number_bins_for_mean,trendline_width,axes_fontsize,index nonzero states]
 % STATES or NODES? - <scan_values>: values to be plotted
 scan_values=stat_sol_lhs_parscan; % stat_sol_states_lhs_parscan
 % PLOT
