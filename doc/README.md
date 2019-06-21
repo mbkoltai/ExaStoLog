@@ -45,3 +45,9 @@ addpath('anneal')
 ### 4. Visualizing the stationary solution
 
 ### 5. Visualizing the state transition graph
+
+### 6. Parameter sensitivity analysis: one-dimensional scans
+
+### 7. Parameter sensitivity analysis: multi-dimensional scans
+
+### 8. Parameter fitting by simulated annealing
