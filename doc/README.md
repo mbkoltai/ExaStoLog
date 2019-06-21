@@ -6,7 +6,7 @@ Exact calculation of stationary states + parameter analysis & fitting of stochas
 
 1. [Requirements](#1-requirements)
 1. [Model creation](#2-model-creation)
-1. [Calculation of stationary solution](#3-calc-stat-sol)
+1. [Calculation of stationary solution](#3-calculation-of-stationary-solution)
 1. [Visualizing the stationary solution](#4-vis-stat-sol)
 1. [Visualizing the state transition graph](#5-vis-stg)
 1. [Parameter sensitivity analysis: one-dimensional scans](#6-sens-1dim)
