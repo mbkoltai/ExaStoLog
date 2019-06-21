@@ -7,17 +7,17 @@ Exact calculation of stationary states + parameter analysis & fitting of stochas
 1. [Requirements](#1-requirements)
 1. [Model creation](#2-model-creation)
 1. [Calculation of stationary solution](#3-calculation-of-stationary-solution)
-1. [Visualizing the stationary solution](#4-vis-stat-sol)
-1. [Visualizing the state transition graph](#5-vis-stg)
-1. [Parameter sensitivity analysis: one-dimensional scans](#6-sens-1dim)
-1. [Parameter sensitivity analysis: multi-dimensional scans](#7-sens-multidim)
-1. [Parameter fitting by simulated annealing](#8-param-fitting)
+1. [Visualizing the stationary solution](#4-Visualizing-the-stationary-solution)
+1. [Visualizing the state transition graph](#5-Visualizing-the-state-transition-graph)
+1. [One-dimensional parameter sensitivity analysis](#6-One-dimensional-parameter-sensitivity-analysis)
+1. [Multi-dimensional parameter sensitivity analysis](#7-Multi-dimensional-parameter-sensitivity-analysis)
+1. [Parameter fitting by simulated annealing](#8-Parameter-fitting-by-simulated-annealing)
 
 ### 1. Requirements
 
 #### - MATLAB version 2015b or later
 
-#### - clone the repository and add the folder 'functions' to your path: addpath('functions')
+#### - clone the [repository](https://github.com/mbkoltai/exact-stoch-log-mod) and add the folder 'functions' to your path: addpath('functions')
 
 #### - the following freely available MATLAB toolboxes also need to be downloaded and added to the path:
 
@@ -46,8 +46,8 @@ addpath('anneal')
 
 ### 5. Visualizing the state transition graph
 
-### 6. Parameter sensitivity analysis: one-dimensional scans
+### 6. One-dimensional parameter sensitivity analysis
 
-### 7. Parameter sensitivity analysis: multi-dimensional scans
+### 7. Multi-dimensional parameter sensitivity analysis
 
 ### 8. Parameter fitting by simulated annealing

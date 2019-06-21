@@ -8,16 +8,16 @@ addpath('functions/')
 % using these publicly available MATLAB toolboxes:
 % needed for PLOTS:
 addpath('heatmaps') % https://mathworks.com/matlabcentral/fileexchange/24253-customizable-heat-maps
-addpath('redblue'); % https://fr.mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap (for redblue colormaps)
+addpath('redblue'); % https://mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap (for redblue colormaps)
 % optional for PLOTS and saving of PLOTS
 % for subplots with smaller gaps:
 addpath('tight_subplot') % https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w
 % export figures as EPS or PDF as they appear on plots:
 addpath('altmany-export_fig-acfd348') % Optional. https://mathworks.com/matlabcentral/fileexchange/23629-export_fig 
 % optional for PARAMETER FITTING by simulated annealing:
-addpath('anneal') % https://fr.mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm
-
-set(0,'DefaultAxesTitleFontWeight','normal');
+addpath('anneal') % https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm
+% title font weight normal, docked figures
+set(0,'DefaultAxesTitleFontWeight','normal'); set(0,'DefaultFigureWindowStyle','docked');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% model set-up
@@ -39,10 +39,10 @@ set(0,'DefaultAxesTitleFontWeight','normal');
 % 'cell_death | (dna_dam & g2m_trans)'}; 
 
 % name of the model
-model_name='kras15vars';
+model_name='mammalian_cc'; % kras15vars
 
 % OR B) the model can be read in from an existing BOOLNET file
-[nodes,rules]=fcn_bnet_readin('krasmodel15vars.bnet'); % krasmodel10vars.bnet
+[nodes,rules]=fcn_bnet_readin('model_files/traynard2016_mammalian_cellcycle.bnet'); % krasmodel10vars.bnet
 
 % once we have the list of nodes and their logical rules, we can check if
 % all variables referred to by rules are found in the list of nodes:
@@ -59,7 +59,7 @@ tic; [stg_table,~,~]=fcn_build_stg_table(truth_table_filename,nodes,'',''); toc
 
 % to define transition rates, we can select given rates to have different values than 1, or from randomly chosen
 % name of rates: 'u_nodename' or 'd_nodename'
-chosen_rates={'u_cdc25b','d_dna_dam'}; chosen_rates_vals=[0.25, 0.15]; 
+chosen_rates=[]; % chosen_rates={'u_cdc25b','d_dna_dam'}; chosen_rates_vals=[0.25, 0.15]; 
 
 % then we generate the table of transition rates: first row is the 'up'
 % rates, second row 'down' rates, in the order of 'nodes'
@@ -83,18 +83,13 @@ tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,''); toc
 % defining an initial condition
 n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2);
 % define initial values
-x0=zeros(1,2^n_nodes)'; 
-% defining a dominant initial state (eg. dom_prob=0.8, ie. 80% probability)
-dom_prob=0.8; initial_state=[1 1 1 zeros(1,numel(nodes)-3)];
-x0(ismember(truth_table_inputs,initial_state,'rows'))=dom_prob; 
-% take those states where first 3 variables have a value of 1, and we want them to have a nonzero probability
-sel_states=all(truth_table_inputs(:,1:3)');
-% create a vector of random probabilities for these states, with a sum of (1-dom_prob)
-rand_vect=abs(rand(sum(sel_states)-1,1)); rand_vect=rand_vect/( sum(rand_vect)/(1-dom_prob) );
-x0(~ismember(truth_table_inputs,initial_state,'rows') & sel_states') = rand_vect;
-
+% defining a dominant initial state: what are the nodes that are ON in this state
+initial_on_nodes = {'CycD','Rb_b1','Cdh1','p27_b1','Skp2'}; 
+% what is the probability of this state, (eg. dom_prob=0.8, ie. 80% probability)
+dom_prob=0.8;
+x0=fcn_define_initial_states(initial_on_nodes,dom_prob,nodes);
 % completely random initial condition
-% x0=rand(1,size(truth_table_inputs,1))'; x0=x0/sum(x0);
+% x0=zeros(1,2^n_nodes)'; x0=rand(1,size(truth_table_inputs,1))'; x0=x0/sum(x0);
 
 % CALCULATE STATIONARY STATE
 % ARGUMENTS:
@@ -217,8 +212,6 @@ figure()
 plot_STG_sel_param(A_sparse,counter,nodes,cell_subgraphs,selected_pars,stg_table,plot_pars,highlight_settings,limits,tight_subpl_flag,tight_subplot_pars)
 % show all params that have an effect
 % plot_STG_sel_param(A_sparse,counter,nodes,cell_subgraphs,'all',stg_table,plot_pars,highlight_settings,'',tight_subpl_flag,tight_subplot_pars)
-% SAVE
-% export_fig kras_model_krasMUT_STG_colorededges_thick.eps -transparent -nocrop
 
 % only one graph: in this case this is a subgraph of the entire STG, but could be the entire STG too
 counter=4; B=A_sparse(cell_subgraphs{counter},cell_subgraphs{counter});
@@ -274,20 +267,15 @@ plot_param_settings={12,14,{height_width_gap bott_top_marg left_right_marg},mode
 % select type of plot
 plot_types={{'lineplot','heatmap'} {'nodes','states'} {'values','sensitivity'}};
 % all_opts_perm=[[1 1 1]; unique([perms([1 1 2]); perms([2 2 1])],'rows'); [2 2 2]];
-% for k=1:size(all_opts_perm,1)
-% plot_type_options=all_opts_perm(k,:);
-% figure
 plot_type_options=[2 1 1];
 [resp_coeff,scan_pars_sensit,scan_params_sensit_up_down,fig_filename]=fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
                                                            stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
                                                            nonzero_states_inds,parscan_matrix,nodes,scan_params,scan_params_up_down,...
                                                            sensit_cutoff,plot_param_settings);
 
-% <resp_coeffs> dimensions: (parameters, values,nodes), so resp_coeffs(:,:,7) are the resp. coeff values across the param ranges for the 7th node
+% <resp_coeffs> dimensions: (parameters, values,nodes), so eg. resp_coeffs(:,:,7) are the resp. coeff values across the param ranges for the 7th node
 
-save_folder='sample_plots/'; fig_file_type='.png'; % '.eps'
-export_fig(strcat(save_folder,fig_filename,fig_file_type),'-transparent','-nocrop')
-% end
+save_folder='sample_plots/'; fig_file_type={'.png','.eps'}; export_fig(strcat(save_folder,fig_filename,fig_file_type{1}),'-transparent','-nocrop')
 
 %% multidimensional parameter scan: LATIN HYPERCUBE SAMPLING (random multidimensional sampling within given parameter ranges)
 
@@ -333,8 +321,7 @@ scan_values=stat_sol_lhs_parscan; % stat_sol_states_lhs_parscan
 sampling_type=sampling_types{3}; % sampling_types={'lognorm','linear','logunif'};
 fcn_multidim_parscan_scatterplot(var_ind,all_par_vals_lhs,scan_values,scan_params,scan_params_up_down,nodes,sampling_type,param_settings) 
 
-save_folder='sample_plots/'; fig_file_type='.png'; % '.eps'
-fig_name=strcat(save_folder,'multidim_parscan_scatterplot_',nodes{var_ind},'_',model_name,fig_file_type);
+save_folder='sample_plots/'; fig_file_type={'.png','.eps'}; fig_name=strcat(save_folder,'multidim_parscan_trend_',nodes{var_ind},'_',model_name,fig_file_type{1});
 export_fig(fig_name,'-transparent','-nocrop')
 
 %% calculating & plotting (heatmap) correlations between variables OR between params and variables by linear/logist regression
@@ -350,8 +337,7 @@ plot_type_flag={'var_var','heatmap'}; % this is plotting the heatmap of correlat
 [varvar_corr_matr,p_matrix_vars]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_lhs_parscan,...
                                             nodes,sel_nodes,scan_params,scan_params_up_down,[],plot_settings);
 
-save_folder='sample_plots/'; fig_file_type={'.png','.eps'};
-fig_name=strcat(save_folder,model_name,'_',strjoin(plot_type_flag,'_'),fig_file_type{2});
+save_folder='sample_plots/'; fig_file_type={'.png','.eps'}; fig_name=strcat(save_folder,model_name,'_',strjoin(plot_type_flag,'_'),fig_file_type{2});
 export_fig(fig_name,'-transparent','-nocrop')
                    
 %% scatterplots of selected variables [i,j]: var_i VS var_j
@@ -361,8 +347,7 @@ plot_type_flag={'var_var','scatter'}; % this is plotting the scatterplots of var
 fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_lhs_parscan,...
                                     nodes,sel_nodes,scan_params,scan_params_up_down,[],plot_settings);
 
-save_folder='sample_plots/'; fig_file_type={'.png','.eps'};
-fig_name=strcat(save_folder,model_name,'_',strjoin(plot_type_flag,'_'),fig_file_type{2});
+save_folder='sample_plots/'; fig_file_type={'.png','.eps'}; fig_name=strcat(save_folder,model_name,'_',strjoin(plot_type_flag,'_'),fig_file_type{2});
 export_fig(fig_name,'-transparent','-nocrop')
                                 
 %% linear or lin-log regression of VARIABLES as fcn of PARAMETERS: VARIABLE=f(PARAMETER), the function plots R squared
@@ -376,8 +361,7 @@ regr_type={'log','linear'}; % linlog recommended if parameter values log-uniform
 [r_squared,slope_intercept]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_lhs_parscan,...
                                         nodes,sel_nodes,scan_params,scan_params_up_down,regr_type{1},plot_settings);
 
-save_folder='sample_plots/'; fig_file_type={'.png','.eps'};
-fig_name=strcat(save_folder,model_name,'_',strjoin(plot_type_flag,'_'),fig_file_type{2});
+save_folder='sample_plots/'; fig_file_type={'.png','.eps'}; fig_name=strcat(save_folder,model_name,'_',strjoin(plot_type_flag,'_'),fig_file_type{2});
 export_fig(fig_name,'-transparent','-nocrop')
                                     
 %% Quantify importance of parameters from LHS by a regression tree
@@ -396,8 +380,7 @@ plot_type_flags={'line','bar'};
 [predictor_names,predictorImportance_vals]=fcn_multidim_parscan_predictorimport(scan_params,scan_params_up_down,...
                                                 all_par_vals_lhs,scan_values,nodes,sel_nodes,plot_type_flags{2});
 
-save_folder='sample_plots/'; fig_file_type={'.png','.eps'};
-fig_name=strcat(save_folder,model_name,'_','regression_tree_pred_import',fig_file_type{2});
+save_folder='sample_plots/'; fig_file_type={'.png','.eps'}; fig_name=strcat(save_folder,model_name,'_','regression_tree_pred_import',fig_file_type{2});
 export_fig(fig_name,'-transparent','-nocrop')
                                             
 %% Sobol total sensitivity metric                                            
@@ -422,21 +405,19 @@ tic; sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{1},
 fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{1},[],[],[],[],...
                                 scan_params,scan_params_up_down,[],[],nodes,sel_nodes,plot_settings);
 
-save_folder='sample_plots/'; fig_file_type={'.png','.eps'};
-fig_name=strcat(save_folder,model_name,'_','sobol_sensitivity_index',fig_file_type{2});
+save_folder='sample_plots/'; fig_file_type={'.png','.eps'}; fig_name=strcat(save_folder,model_name,'_','sobol_sensitivity_index',fig_file_type{2});
 export_fig(fig_name,'-transparent','-nocrop')
                             
 %% PARAMETER FITTING
 
-% recall relevant functions:
+% Relevant functions:
 % transition_rates_table=fcn_trans_rates_table(nodes,'uniform',[],[],chosen_rates,chosen_rates_vals); % transition_rates_table=ones(size(transition_rates_table));
 % tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,''); toc; 
 % tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,transition_rates_table,x0); toc
 % [stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol);
 
-% scan_pars_sensit,scan_params_sensit_up_down
-
 % define parameters to vary (predictor_names)
+% sensitive parameters identified by 1-dimensional param scan: scan_pars_sensit,scan_params_sensit_up_down
 [~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_pars_sensit,scan_params_sensit_up_down,nodes); % scan_params,scan_params_up_down
 % define data vector (generate some data OR load from elsewhere)
 sel_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
@@ -446,7 +427,6 @@ y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(st
 % create functions that calculate sum of squared deviations & values of
 % variables (composed of different fcns) - RERUN THIS if you want to fit to new data or new non-fitted transition rates!!
 [fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_simul_anneal(y_data,x0,stg_table,nodes,predictor_names);
-% evaluate/test: abs(fcn_statsol_sum_sq_dev(chosen_rates_vals) - fcn_statsol_sum_sq_dev(zeros(size(chosen_rates_vals))) )
 
 % FITTING by simulated annealing (look at arguments in anneal/anneal.m)
 % initial guess for parameters
@@ -461,5 +441,5 @@ xlabel('number of iterations','FontSize',16); set(gca,'FontSize',16); title('Par
 % SAVE FIGURE
 export_fig(strcat(save_folder,model_name,'_',num2str(numel(predictor_names)),'fittingpars_simulated_annealing',fig_file_type{2}),'-transparent','-nocrop')
 
-% mean absolute error: mean( abs(y_data - fcn_statsol_values(optim_par_vals)))
-% distance of found params from true values (fractional difference): abs(optim_par_vals - sel_param_vals)./sel_param_vals
+% mean absolute error: mean(abs(y_data - fcn_statsol_values(optim_par_vals)))
+% distance of fitted params from true values: abs(optim_par_vals - sel_param_vals)./sel_param_vals

@@ -7,6 +7,7 @@ redblue/
 sample_plots/
 tight_subplot/
 anneal/
+model_files/
 # zip of existing files
 exact_stochlog_toolbox.zip
 
@@ -17,3 +18,4 @@ exact_stochlog_toolbox.zip
 *dat
 wrapper_suppl.m
 examples.m
+fcn_truthtable.m
