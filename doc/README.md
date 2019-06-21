@@ -1,17 +1,19 @@
 # Exact-stoch-log-mod
-Exact calculation of stationary states and parameter analysis of stochastic logical models
 
-### Table of contents
-0. [Requirements](#markdown-header-0-toc)
+Exact calculation of stationary states + parameter analysis & fitting of stochastic logical models
+
+## Table of contents
+
+1. [Requirements](#markdown-header-0-toc)
 1. [Model creation](#toc-model_creation)
-2. [Calculation of stationary solution](#toc-calc-stat-sol)
-3. [Visualizing the stationary solution](#toc-vis-stat-sol)
-4. [Visualizing the state transition graph](#toc-vis-stg)
-5. [Parameter sensitivity analysis: one-dimensional scans](#param-sens-1dim)
-6. [Parameter sensitivity analysis: multi-dimensional scans](#param-sens-multidim)
-7. [Parameter fitting by simulated annealing](#param-fitting)
+1. [Calculation of stationary solution](#toc-calc-stat-sol)
+1. [Visualizing the stationary solution](#toc-vis-stat-sol)
+1. [Visualizing the state transition graph](#toc-vis-stg)
+1. [Parameter sensitivity analysis: one-dimensional scans](#param-sens-1dim)
+1. [Parameter sensitivity analysis: multi-dimensional scans](#param-sens-multidim)
+1. [Parameter fitting by simulated annealing](#param-fitting)
 
-### [Requirements](#markdown-header-0-toc)
+### 0. Requirements
 
 #### - MATLAB version 2015b or later
 
@@ -36,10 +38,10 @@ addpath('altmany-export_fig-acfd348')
 addpath('anneal') 
 
 
-### [Model creation](#toc-model_creation)
+### 1. Model creation
 
-### [Calculation of stationary solution](#toc-calc-stat-sol)
+### 2. Calculation of stationary solution
 
-### [Visualizing the stationary solution](#toc-vis-stat-sol)
+### 3. Visualizing the stationary solution
 
-### [Visualizing the state transition graph](#toc-vis-stg)
+### 4. Visualizing the state transition graph

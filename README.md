@@ -1,6 +1,6 @@
 # Exact-stoch-log-mod
 
-Exact calculation of stationary states + parameter sensitivity analysis & fitting of stochastic logical models.
+Exact calculation of stationary states + parameter sensitivity analysis & fitting of stochastic logical models.  
 Author: Mihály Koltai, [Computational Systems Biology of Cancer at Institut Curie](https://github.com/sysbio-curie)
 
 Read the tutorial here (link provided soon).
