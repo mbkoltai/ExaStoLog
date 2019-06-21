@@ -268,15 +268,16 @@ sensit_cutoff=0.5; % minimal value for response coefficient (local sensitivity)
 % nonzero states of the model
 nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))';
 % select parameters of plot
-height_width_gap=[0.1 0.03]; bott_top_marg =[0.05 0.1]; left_right_marg=[0.05 0.05];
+height_width_gap=[0.04 0.03]; bott_top_marg =[0.13 0.1]; left_right_marg=[0.05 0.05];
 % [fontsize_axes,fontsize_title,params_tight_subplots(leave empty if not installed),model_name]
 plot_param_settings={12,14,{height_width_gap bott_top_marg left_right_marg},model_name}; % plot_param_settings={12,14,[],model_name}; 
 % select type of plot
 plot_types={{'lineplot','heatmap'} {'nodes','states'} {'values','sensitivity'}};
-all_opts_perm=[[1 1 1]; unique([perms([1 1 2]); perms([2 2 1])],'rows'); [2 2 2]];
-for k=1:size(all_opts_perm,1)
-plot_type_options=all_opts_perm(k,:);
-figure
+% all_opts_perm=[[1 1 1]; unique([perms([1 1 2]); perms([2 2 1])],'rows'); [2 2 2]];
+% for k=1:size(all_opts_perm,1)
+% plot_type_options=all_opts_perm(k,:);
+% figure
+plot_type_options=[2 1 1];
 [resp_coeff,scan_pars_sensit,scan_params_sensit_up_down,fig_filename]=fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
                                                            stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
                                                            nonzero_states_inds,parscan_matrix,nodes,scan_params,scan_params_up_down,...
@@ -286,7 +287,7 @@ figure
 
 save_folder='sample_plots/'; fig_file_type='.png'; % '.eps'
 export_fig(strcat(save_folder,fig_filename,fig_file_type),'-transparent','-nocrop')
-end
+% end
 
 %% multidimensional parameter scan: LATIN HYPERCUBE SAMPLING (random multidimensional sampling within given parameter ranges)
 
@@ -433,8 +434,10 @@ export_fig(fig_name,'-transparent','-nocrop')
 % tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,transition_rates_table,x0); toc
 % [stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol);
 
+% scan_pars_sensit,scan_params_sensit_up_down
+
 % define parameters to vary (predictor_names)
-[~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,nodes);
+[~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_pars_sensit,scan_params_sensit_up_down,nodes); % scan_params,scan_params_up_down
 % define data vector (generate some data OR load from elsewhere)
 sel_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
 transition_rates_table=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,sel_param_vals);
@@ -448,14 +451,15 @@ y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(st
 % FITTING by simulated annealing (look at arguments in anneal/anneal.m)
 % initial guess for parameters
 init_vals=rand(size(predictor_names)); init_error=fcn_statsol_sum_sq_dev(init_vals);
-% simulated annealing with existing algorithm anneal/anneal.m, with modifications in script: defined counter=0 before while loop, 
-% and inserted <T_loss(counter,:)=[T oldenergy];> at line 175, defined <T_loss> as 3rd output
+% simulated annealing with existing algorithm anneal/anneal.m, with modifications in script: 
+% defined counter=0 before while loop, and inserted <T_loss(counter,:)=[T oldenergy];> at line 175, defined <T_loss> as 3rd output
 tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_vals,struct('Verbosity',2)); toc % 'StopTemp',1e-8
+% 40 mins for 15 var model
 % PLOT results
 thres=1e-4; semilogy(1:find(T_loss(:,2)<thres,1), T_loss(1:find(T_loss(:,2)<thres,1),:),'LineWidth',4); legend({'temperature', 'SSE'},'FontSize',22);
 xlabel('number of iterations','FontSize',16); set(gca,'FontSize',16); title('Parameter fitting by simulated annealing','FontSize',22)
+% SAVE FIGURE
+export_fig(strcat(save_folder,model_name,'_',num2str(numel(predictor_names)),'fittingpars_simulated_annealing',fig_file_type{2}),'-transparent','-nocrop')
 
-% normalized by values: mean absolute fractional error
-mean( abs(y_data - fcn_statsol_values(optim_par_vals))./y_data )
-% distance of found params from true values (fractional difference)
-abs(optim_par_vals - sel_param_vals)./sel_param_vals
+% mean absolute error: mean( abs(y_data - fcn_statsol_values(optim_par_vals)))
+% distance of found params from true values (fractional difference): abs(optim_par_vals - sel_param_vals)./sel_param_vals

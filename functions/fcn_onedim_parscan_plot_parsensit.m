@@ -25,7 +25,8 @@ fontsize_axes=param_settings{1}; fontsize_title=param_settings{2};
 
 n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2);
 
-trans_rates_names={strcat('u_',nodes);strcat('d_',nodes)}'; trans_rates_names=vertcat(trans_rates_names{:}); trans_rates_names=horzcat(trans_rates_names(:))';
+trans_rates_names={strcat('u_',nodes);strcat('d_',nodes)}'; 
+trans_rates_names=vertcat(trans_rates_names{:}); trans_rates_names=horzcat(trans_rates_names(:))';
 nonzero_states=truth_table_inputs(nonzero_states_inds,:); 
 
 % ONE STATE on one subplot a.a.f of all params

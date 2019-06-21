@@ -10,13 +10,13 @@ anneal/
 # zip of existing files
 exact_stochlog_toolbox.zip
 
-# model in other extension
-krasmodel6.dat
 
-# M~ files
+# files to ignore M~ files
 *m~
 *md~
 *dat
+README.md
+README.pdf
 
 wrapper_suppl.m
 examples.m
