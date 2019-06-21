@@ -1,6 +1,7 @@
 # Exact-stoch-log-mod
 Exact calculation of stationary states and parameter analysis of stochastic logical models
 
+### Table of contents
 0. [Requirements](#markdown-header-0-toc)
 1. [Model creation](#toc-model_creation)
 2. [Calculation of stationary solution](#toc-calc-stat-sol)
