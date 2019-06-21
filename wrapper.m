@@ -376,7 +376,7 @@ regr_type={'log','linear'}; % linlog recommended if parameter values log-uniform
                                         nodes,sel_nodes,scan_params,scan_params_up_down,regr_type{1},plot_settings);
 
 save_folder='sample_plots/'; fig_file_type={'.png','.eps'};
-fig_name=strcat(save_folder,model_name,'_',strjoin(plot_type_flag,'_'),fig_file_type{1});
+fig_name=strcat(save_folder,model_name,'_',strjoin(plot_type_flag,'_'),fig_file_type{2});
 export_fig(fig_name,'-transparent','-nocrop')
                                     
 %% Quantify importance of parameters from LHS by a regression tree
@@ -422,7 +422,7 @@ fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{1},[],[],[]
                                 scan_params,scan_params_up_down,[],[],nodes,sel_nodes,plot_settings);
 
 save_folder='sample_plots/'; fig_file_type={'.png','.eps'};
-fig_name=strcat(save_folder,model_name,'_','sobol_sensitivity_index',fig_file_type{1});
+fig_name=strcat(save_folder,model_name,'_','sobol_sensitivity_index',fig_file_type{2});
 export_fig(fig_name,'-transparent','-nocrop')
                             
 %% PARAMETER FITTING
