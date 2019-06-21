@@ -268,20 +268,25 @@ sensit_cutoff=0.5; % minimal value for response coefficient (local sensitivity)
 % nonzero states of the model
 nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))';
 % select parameters of plot
-height_width_gap=[0.1 0.03]; bott_top_marg =[0.03 0.1]; left_right_marg=[0.05 0.05];
+height_width_gap=[0.1 0.03]; bott_top_marg =[0.05 0.1]; left_right_marg=[0.05 0.05];
 % [fontsize_axes,fontsize_title,params_tight_subplots(leave empty if not installed),model_name]
 plot_param_settings={12,14,{height_width_gap bott_top_marg left_right_marg},model_name}; % plot_param_settings={12,14,[],model_name}; 
 % select type of plot
 plot_types={{'lineplot','heatmap'} {'nodes','states'} {'values','sensitivity'}};
-plot_type_options=[1 2 1];
+all_opts_perm=[[1 1 1]; unique([perms([1 1 2]); perms([2 2 1])],'rows'); [2 2 2]];
+for k=1:size(all_opts_perm,1)
+plot_type_options=all_opts_perm(k,:);
+figure
 [resp_coeff,scan_pars_sensit,scan_params_sensit_up_down,fig_filename]=fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
                                                            stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
                                                            nonzero_states_inds,parscan_matrix,nodes,scan_params,scan_params_up_down,...
                                                            sensit_cutoff,plot_param_settings);
 
 % <resp_coeffs> dimensions: (parameters, values,nodes), so resp_coeffs(:,:,7) are the resp. coeff values across the param ranges for the 7th node
+
 save_folder='sample_plots/'; fig_file_type='.png'; % '.eps'
 export_fig(strcat(save_folder,fig_filename,fig_file_type),'-transparent','-nocrop')
+end
 
 %% multidimensional parameter scan: LATIN HYPERCUBE SAMPLING (random multidimensional sampling within given parameter ranges)
 
@@ -292,6 +297,7 @@ export_fig(strcat(save_folder,fig_filename,fig_file_type),'-transparent','-nocro
 scan_params=scan_pars_sensit; % scan_params=unique(stg_table(:,3))';
 % scan_params_up_down: id by up (1) or down (2) rate
 scan_params_up_down=scan_params_sensit_up_down; % num2cell(ones(1,numel(scan_params))) {[1 2], 1, [1 2]}; 
+% scan_params_sensit_up_down=arrayfun(@(x) scan_params_sensit_up_down{x}', 1:numel(scan_params_sensit_up_down),'un',0)
 
 % PERFORM Latin Hypercube sampling (LHS) SAMPLING
 sampling_types={'lognorm','linear','logunif'};
@@ -317,7 +323,7 @@ toc;
 
 %% SCATTERPLOTS of STATE or NODE values as a function of the selected parameters, with the trendline shown (average value per parameter bin)
 
-var_ind=10; % which STATE or NODE to plot
+var_ind=7; % which STATE or NODE to plot
 % <all_par_vals_lhs>: parameter sets
 param_settings = [50 4 16 stat_sol_states_lhs_parscan_cell]; % [number_bins_for_mean,trendline_width,axes_fontsize,index nonzero states]
 % STATES or NODES? - <scan_values>: values to be plotted
@@ -325,6 +331,10 @@ scan_values=stat_sol_lhs_parscan; % stat_sol_states_lhs_parscan
 % PLOT
 sampling_type=sampling_types{3}; % sampling_types={'lognorm','linear','logunif'};
 fcn_multidim_parscan_scatterplot(var_ind,all_par_vals_lhs,scan_values,scan_params,scan_params_up_down,nodes,sampling_type,param_settings) 
+
+save_folder='sample_plots/'; fig_file_type='.png'; % '.eps'
+fig_name=strcat(save_folder,'multidim_parscan_scatterplot_',nodes{var_ind},'_',model_name,fig_file_type);
+export_fig(fig_name,'-transparent','-nocrop')
 
 %% calculating & plotting (heatmap) correlations between variables OR between params and variables by linear/logist regression
 
@@ -334,35 +344,47 @@ fcn_multidim_parscan_scatterplot(var_ind,all_par_vals_lhs,scan_values,scan_param
 % sel_nodes: name of selected nodes (pls provide in ascending order)
 % fontsize: ~ for labels and titles (displaying correlation)
 % HEATMAPS of correlations between selected variables
-sel_nodes=3:10; plot_settings=[15 16]; % [fontsize on plot, fontsize on axes/labels]
+sel_nodes=3:15; plot_settings=[15 16]; % [fontsize on plot, fontsize on axes/labels]
 plot_type_flag={'var_var','heatmap'}; % this is plotting the heatmap of correlations between variables
 [varvar_corr_matr,p_matrix_vars]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_lhs_parscan,...
                                             nodes,sel_nodes,scan_params,scan_params_up_down,[],plot_settings);
 
+save_folder='sample_plots/'; fig_file_type={'.png','.eps'};
+fig_name=strcat(save_folder,model_name,'_',strjoin(plot_type_flag,'_'),fig_file_type{2});
+export_fig(fig_name,'-transparent','-nocrop')
+                   
 %% scatterplots of selected variables [i,j]: var_i VS var_j
 
-sel_nodes=[3 5 7 8 10]; plot_settings=[10 12]; % [fontsize_axes, fontsize_titles]
+sel_nodes=10:15; plot_settings=[10 12]; % [fontsize_axes, fontsize_titles]
 plot_type_flag={'var_var','scatter'}; % this is plotting the scatterplots of variables with correlation values
 fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_lhs_parscan,...
                                     nodes,sel_nodes,scan_params,scan_params_up_down,[],plot_settings);
 
+save_folder='sample_plots/'; fig_file_type={'.png','.eps'};
+fig_name=strcat(save_folder,model_name,'_',strjoin(plot_type_flag,'_'),fig_file_type{2});
+export_fig(fig_name,'-transparent','-nocrop')
+                                
 %% linear or lin-log regression of VARIABLES as fcn of PARAMETERS: VARIABLE=f(PARAMETER), the function plots R squared
 
 plot_type_flag={'par_var','heatmap','r_sq'}; % {'par_var','heatmap'/'lineplot','r_sq'/'slope'}
-sel_nodes=setdiff(3:10,9); 
+sel_nodes=setdiff(3:numel(nodes),8); 
 % plot_settings=[fontsize,maximum value for heatmap colors], if plot_settings(2)=NaN, then max color automatically selected
 plot_settings=[14 NaN]; 
 % if regression type is 'linlog', then the fit is y = a + b*log10(x)
-regr_type={'linlog','linear'}; % linlog recommended if parameter values log-uniformly distributed in sampling
+regr_type={'log','linear'}; % linlog recommended if parameter values log-uniformly distributed in sampling
 [r_squared,slope_intercept]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_lhs_parscan,...
                                         nodes,sel_nodes,scan_params,scan_params_up_down,regr_type{1},plot_settings);
 
+save_folder='sample_plots/'; fig_file_type={'.png','.eps'};
+fig_name=strcat(save_folder,model_name,'_',strjoin(plot_type_flag,'_'),fig_file_type{1});
+export_fig(fig_name,'-transparent','-nocrop')
+                                    
 %% Quantify importance of parameters from LHS by a regression tree
 
 % predictor importance values: look into arguments of <fitrtree> in MATLAB documentation to modulate regression tree
 % for STATES or NODES?
 scan_values=stat_sol_lhs_parscan; % stat_sol_states_lhs_parscan
-sel_nodes=3:10; % STATES or NODES to be analyzed
+sel_nodes=3:numel(nodes); % STATES or NODES to be analyzed
 % names of selected transition rates and their predictor importance values
 % [~,~,predictor_names] = fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,nodes);
 % predictorImportance_vals=cell2mat(arrayfun(@(x) predictorImportance(...
@@ -373,6 +395,10 @@ plot_type_flags={'line','bar'};
 [predictor_names,predictorImportance_vals]=fcn_multidim_parscan_predictorimport(scan_params,scan_params_up_down,...
                                                 all_par_vals_lhs,scan_values,nodes,sel_nodes,plot_type_flags{2});
 
+save_folder='sample_plots/'; fig_file_type={'.png','.eps'};
+fig_name=strcat(save_folder,model_name,'_','regression_tree_pred_import',fig_file_type{2});
+export_fig(fig_name,'-transparent','-nocrop')
+                                            
 %% Sobol total sensitivity metric                                            
 
 % On Sobol total sensitivity index see: https://en.wikipedia.org/wiki/Variance-based_sensitivity_analysis
@@ -382,19 +408,23 @@ plot_type_flags={'line','bar'};
 % [parameter sets, variable values]: [all_par_vals_lhs,stat_sol_lhs_parscan]
 
 % Sobol total sensitivity: calculated for one variable at a time
-sel_vars=setdiff(1:numel(nodes),find(sum(cell2mat(arrayfun(@(x) strcmp(nodes,x), {'cc','kras','g2m_trans'},'un',0)')))); % selected nodes to display
-sel_vars=[]; % if left empty, all nodes/states are analyzed
+sel_vars=setdiff(1:numel(nodes),find(sum(cell2mat(arrayfun(@(x) strcmp(nodes,x), {'cc','KRAS','CDC25B'},'un',0)')))); % selected nodes to display
+% sel_vars=[]; % if left empty, all nodes/states are analyzed
 sample_size=500; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
 plot_settings=[14 14 22 NaN NaN 10]; % [fontsize_plot,fontsize_axes,fontsize_title, min_color(optional), max_color(opt), progress_calcul_every_x_% (opt)];
 var_types={'nodes','states'}; % analysis for states or nodes
 % to calculate Sobol total sensitivity we need <sample_size*numel(scan_params_up_down)> evaluations of the model
-tic; sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{2},all_par_vals_lhs,stat_sol_lhs_parscan,stat_sol_states_lhs_parscan,sample_size,...
+tic; sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{1},all_par_vals_lhs,stat_sol_lhs_parscan,stat_sol_states_lhs_parscan,sample_size,...
                                 scan_params,scan_params_up_down,stg_table,x0,nodes,sel_vars,plot_settings); toc;
 
 % if we have already calculated <sobol_sensit_index> and only want to plot results, provide it as the FIRST argument <sobol_sensit_index>
-fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{2},[],[],[],[],...
+fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{1},[],[],[],[],...
                                 scan_params,scan_params_up_down,[],[],nodes,sel_nodes,plot_settings);
 
+save_folder='sample_plots/'; fig_file_type={'.png','.eps'};
+fig_name=strcat(save_folder,model_name,'_','sobol_sensitivity_index',fig_file_type{1});
+export_fig(fig_name,'-transparent','-nocrop')
+                            
 %% PARAMETER FITTING
 
 % recall relevant functions:

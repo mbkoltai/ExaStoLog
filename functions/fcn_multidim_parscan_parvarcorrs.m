@@ -46,9 +46,9 @@ r_squared=zeros(numel(sel_nodes),numel(predictor_names)); slope_intercept=cell(n
 for k=1:numel(sel_nodes);
     for par_c=1:numel(predictor_names)
 if strfind(regr_type,'log')
-    x=log(all_par_vals_lhs(:,par_c)); 
+    x=log(all_par_vals_lhs(:,par_c)); str_regr_type=strcat(' (',regr_type,' of)');
 else
-    x=all_par_vals_lhs(:,par_c);
+    x=all_par_vals_lhs(:,par_c); str_regr_type=[];
 end
 y=scan_values(:,sel_nodes(k));
 p=polyfit(x,y,1); SSresid=sum((y - (p(1)*x + p(2))).^2); SStotal=( length(y)-1 )*var(y); 
@@ -60,15 +60,15 @@ slope_intercept{k,par_c}=p;
 end
 
 corr_matr=r_squared; p_matrix_vars=slope_intercept;
-
  
 if strcmp(plot_type_flag(3),'r_sq') || strcmp(plot_type_flag(3),'r_squared')
     val_to_plot=r_squared; min_col_val=0;
     if ~isnan(param_settings(2)); maxval_color=param_settings(2); else maxval_color=1.05*max(abs(val_to_plot(:))); end
-    title_text='R^2 (linear regression of variables as a fcn of parameters)';
+    
+    title_text=strcat('R^2 (linear regression of variables as a fcn of',str_regr_type,' parameters)');
 elseif strcmp(plot_type_flag(3),'slope')
     val_to_plot=cellfun(@(v)v(1),slope_intercept); min_col_val=-1.1*max(abs(val_to_plot(:))); maxval_color=abs(min_col_val);
-    title_text=' Regression coefficient (slope) of variables as a fcn of parameters';
+    title_text='Regression coefficient (slope) of variables as a fcn of parameters';
 end
 
 if strcmp(plot_type_flag(2),'heatmap')

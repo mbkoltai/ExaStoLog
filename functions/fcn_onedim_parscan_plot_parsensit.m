@@ -97,13 +97,15 @@ for k=1:size(scan_variable,3)
         title(strcat('p([',num2str(nonzero_states(k,:)),'])'), 'FontWeight','normal','FontSize',fontsize_title); 
     end
     if rem(k,ncol)==1
-        ylabel('stationary value','Fontsize',fontsize_axes)
+        ylabel('stationary val.','Fontsize',fontsize_axes)
     end
     
 if k==size(scan_variable,3)
     legend(strrep(trans_rates_names(scan_par_inds(sensit_pars)),'_','\_'), 'Location', 'eastoutside');
 end
 end
+
+h_supt=suptitle('stationary value of variables'); set(h_supt,'Fontsize',1.5*fontsize_axes)
 
 %%%%%%%%%%%%%%%% 
 %%% HEATMAP, VARIABLE VALUE
@@ -175,12 +177,10 @@ end
 if strcmp(plot_type_flag,'lineplot') || strcmp(plot_type_flag,'line')
 % LINEPLOT w resp coeffs
 
-
 if ~isempty(param_settings{3})
     t_pars=param_settings{3};
     [ha,~]=tight_subplot(nrow,ncol,t_pars{1},t_pars{2},t_pars{3});
 end
-
 
 % sensit_cutoff=0.04;
 for k=1:size(resp_coeff_sensit_parts,3)

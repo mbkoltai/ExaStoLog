@@ -28,6 +28,7 @@ end
 elseif strfind(plot_type_flag,'bar')
 % barplot
 n_row_plot=round(sqrt(numel(sel_nodes))); n_col_plot=n_row_plot; if n_row_plot*n_col_plot<numel(sel_nodes); n_col_plot=n_row_plot+1; end
+
 for k=1:numel(sel_nodes)
 subplot(n_row_plot,n_col_plot,k); 
 bar(predictorImportance_vals(k,:)); xlim([0 size(predictorImportance_vals,2)]+0.5)
@@ -43,9 +44,11 @@ end
 ylim([0 1.1*max_y_val]); h=gca; 
 if k>=numel(sel_nodes)-n_col_plot+1; h.XTickLabel=predictor_names; h.XTickLabelRotation = 45; h.TickLabelInterpreter = 'none';end 
 % xlabel('Predictors'); 
-if rem(k,n_col_plot)==1; ylabel('predictor importance'); end
+if rem(k,n_col_plot)==1; ylabel('pred. imp.'); end
 
 end
+
+h_supt=suptitle('predictor importance by regression tree'); set(h_supt,'FontSize',20,'FontWeight','normal','Interpreter','none')
 
 else
     errorbar('Enter ''lineplot'' or ''barplot'' for <plot_type_flag> argument')    
