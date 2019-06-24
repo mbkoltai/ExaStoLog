@@ -87,8 +87,12 @@ n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:
 initial_on_nodes = {'CycD','Rb_b1','Cdh1','p27_b1','Skp2'}; 
 % what is the probability of this state, (eg. dom_prob=0.8, ie. 80% probability)
 dom_prob=0.8;
-x0=fcn_define_initial_states(initial_on_nodes,dom_prob,nodes);
-% completely random initial condition
+% this function will assign a probabilit of <dom_prob> to the selected state 
+% and IF: randomly distributes <1-dom_prob> probability among states where the selected nodes are all ON, but the other nodes can take on any value
+% IF: randomly distributes <1-dom_prob> probability among ALL other states
+distrib_types={'restrict','broad'}; plot_flag=[]; % if plot_flag non-empty, we get a bar plot of initial values
+x0=fcn_define_initial_states(initial_on_nodes,dom_prob,nodes,distrib_types{1},plot_flag);
+% completely random initial condition: 
 % x0=zeros(1,2^n_nodes)'; x0=rand(1,size(truth_table_inputs,1))'; x0=x0/sum(x0);
 
 % CALCULATE STATIONARY STATE
@@ -135,16 +139,20 @@ fcn_plot_A_K_stat_sol(A_sparse, nodes, sel_nodes, stat_sol, x0, min_max_col,font
 
 % PLOT stationary solutions (without A/K matrix)
 % nonzero_flag: if non-empty, only the nonzero states are shown
-sel_nodes=3:numel(nodes); nonzero_flag='nonzero_only';
+sel_nodes=[]; % 3:numel(nodes); 
+% minimal value for probability of a state to display
+nonzero_flag=0.01;
 barwidth_states_val=0.8; % for 3 nonzero states ~0.8 is a good value
 % if init_node_vals='', then only shows stationary solution
 % nonzero_flag: if this is non-empty, then we only plot the nonzero states, this is useful for visibility if there are many states
 fcn_plot_A_K_stat_sol([], nodes, sel_nodes, stat_sol, x0, min_max_col,fontsize,barwidth_states_val,nonzero_flag)
 
 % SAVE
-% export_fig kras_stationary_sols.eps -transparent
+if exist(strcat(save_folder,model_name),'dir')==0; mkdir(strcat(save_folder,model_name)); end
+fig_file_type={'.png','.eps'};
+export_fig(strcat(save_folder,model_name,'/','single_solution_states_nodes_stat_sol',fig_file_type{2}),'-transparent','-nocrop')
 
-% PLOT binary heatmap of nonzero stationary states by NODES
+%% PLOT binary heatmap of nonzero stationary states by NODES
 % ARGUMENT
 % term_verts_cell: which subgraph to plot if there are disconnected ~
 % num_size_plot: font size of 0/1s on the heatmap

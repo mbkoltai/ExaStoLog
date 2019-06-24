@@ -44,15 +44,17 @@ set(bar_subpl3(2),'FaceColor',[1 0 0],'EdgeColor',[1 0 0]);
 else % without the matrix
     
 if ~isempty(nonzero_flag)
-    nnz_vals=find(stat_sol>0); state_vals=stat_sol(nnz_vals);
+    nnz_vals=find(stat_sol>nonzero_flag)'; state_vals=stat_sol(nnz_vals);
 else
     state_vals=stat_sol;
 end
 
 fig_subpl1=subplot(1,2,1); barh(state_vals,'BarWidth',barwidth_states_val,'FaceColor',[0 0.5 0],'EdgeColor',[0 0.5 0]); 
-disp_lim=0.02; xlim([0 1]);  % set(fig_subpl1,'Position',[0.06 0.11 0.4 0.8]); 
-if ~isempty(nonzero_flag); set(gca,'yticklabel',num2cell(nnz_vals)); else
-set(fig_subpl1,'ytick','') % ylim([find(state_vals>disp_lim,1,'first')-0.05*numel(state_vals) find(state_vals>disp_lim,1,'last')+0.05*numel(state_vals)]); 
+% disp_lim=0.02; xlim([0 1]);  % set(fig_subpl1,'Position',[0.06 0.11 0.4 0.8]); 
+if ~isempty(nonzero_flag)
+    set(fig_subpl1,'ytick',1:numel(nnz_vals));  set(fig_subpl1,'yticklabel',num2cell(nnz_vals),'FontSize',8); 
+else
+    set(fig_subpl1,'ytick','') % ylim([find(state_vals>disp_lim,1,'first')-0.05*numel(state_vals) find(state_vals>disp_lim,1,'last')+0.05*numel(state_vals)]); 
 end
 
 fontsize=fontsize(1);
