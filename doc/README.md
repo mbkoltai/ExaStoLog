@@ -29,18 +29,36 @@ addpath('redblue');
 
 Optional (for figures with multiple subplots, to save figures and for parameter fitting):  
 - [tight subplots](https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w) (for subplots with smaller gaps)  
-addpath('tight_subplot') 
+addpath('tight_subplot')
 
 - [export_fig](https://mathworks.com/matlabcentral/fileexchange/23629-export_fig) (export figures as EPS or PDF as they appear)  
-addpath('altmany-export_fig-acfd348') 
+addpath('altmany-export_fig-acfd348')
 
 - [Simulated annealing](https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm) (parameter fitting by simulated annealing)  
-addpath('anneal') 
-To plot the convergence of the fitting process modify the script by 1) defining <T_loss> as 3rd output of the function, 2) inserting <counter=0> before the while loop 
+addpath('anneal')
+To plot the convergence of the fitting process modify the script by 1) defining <T_loss> as 3rd output of the function, 2) inserting <counter=0> before the while loop
 and 3) inserting <T_loss(counter,:)=[T oldenergy];> at line 175 within the while loop.
 
 
 ### 2. Model creation
+
+Models can be defined by entering the list of nodes and their corresponding rules as a cell of strings, using MATLAB logical notation ('&', '|', '~', '(', ')'), for instance the following is a 10-node model of mitotic entry:  
+nodes = {'cc','kras', 'dna_dam', 'chek1', 'mk2', 'atm_atr', 'hr','cdc25b', 'g2m_trans', 'cell_death'};
+
+rules={'cc',...  
+'kras',...  
+'(dna_dam | kras) & ~hr',...  
+'atm_atr',...  
+'atm_atr & kras',...  
+'dna_dam',...  
+'(atm_atr  | hr) & ~cell_death',...  
+'(cc|kras) & (~chek1 & ~mk2) & ~cell_death',...  
+'g2m_trans | cdc25b',...  
+'cell_death | (dna_dam & g2m_trans)'};  
+
+Alternatively, models can be read in in boolnet (.bnet) format.
+
+
 
 ### 3. Calculation of stationary solution
 
