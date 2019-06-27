@@ -15,7 +15,9 @@ default_settings_cell=num2cell(default_settings);
 [fontsize,linewidth_val,arrowsize,default_markersize, source_sink_markersize]=deal(default_settings_cell{:});
 
 full_stg_plot=plot(A_digraph,'Layout','force', 'ArrowSize', arrowsize, 'MarkerSize', default_markersize, 'LineWidth', linewidth_val); 
-n_precision=3; terminal_nodes=find(round(diag(A_sparse),n_precision)==1);
+n_precision=3; 
+% terminal nodes
+terminal_nodes=find(round(diag(A_sparse),n_precision)==1);
 highlight(full_stg_plot,terminal_nodes,'MarkerSize',source_sink_markersize, 'NodeColor','red')
 source_vertices=find(round(sum(A_sparse - diag(diag(A_sparse))),n_precision)==0);
 highlight(full_stg_plot,source_vertices,'MarkerSize',source_sink_markersize, 'NodeColor',source_color); 

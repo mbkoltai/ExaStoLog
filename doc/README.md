@@ -36,6 +36,8 @@ addpath('altmany-export_fig-acfd348')
 
 - [Simulated annealing](https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm) (parameter fitting by simulated annealing)  
 addpath('anneal') 
+To plot the convergence of the fitting process modify the script by 1) defining <T_loss> as 3rd output of the function, 2) inserting <counter=0> before the while loop 
+and 3) inserting <T_loss(counter,:)=[T oldenergy];> at line 175 within the while loop.
 
 
 ### 2. Model creation

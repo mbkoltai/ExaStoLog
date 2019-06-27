@@ -55,16 +55,15 @@ truth_table_filename='fcn_truthtable.m'; fcn_write_logicrules(nodes,rules,truth_
 tic; [stg_table,~,~]=fcn_build_stg_table(truth_table_filename,nodes,'',''); toc
 % [state_transitions_inds,K_sparse,A_sparse_fast]=fcn_build_stg_table(truth_table_filename,nodes,transition_rates_table,'num_matrix');
 
-%% generate from already existing STG table (filling in values)
+%% generate transition matrix from existing STG table
 
 % to define transition rates, we can select given rates to have different values than 1, or from randomly chosen
 % name of rates: 'u_nodename' or 'd_nodename'
 chosen_rates=[]; % chosen_rates={'u_cdc25b','d_dna_dam'}; chosen_rates_vals=[0.25, 0.15]; 
 
-% then we generate the table of transition rates: first row is the 'up'
-% rates, second row 'down' rates, in the order of 'nodes'
+% then we generate the table of transition rates: first row is the 'up'rates, second row 'down' rates, in the order of 'nodes'
 % ARGUMENTS
-distr_type={'uniform','random'}; % uniform assigns a value of 1 to all params. other option: 'random'
+distr_type={'uniform','random'}; % <uniform> assigns a value of 1 to all params. other option: <random>
 meanval=[]; sd_val=[]; % if 'random' is chosen, the mean and standard dev of a normal distrib has to be defined 
 % transition_rates_table=fcn_trans_rates_table(nodes,uniform_or_rand,meanval,sd_val,chosen_rates,chosen_rates_vals);
 transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,[],[]);
@@ -84,12 +83,13 @@ tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,''); toc
 n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2);
 % define initial values
 % defining a dominant initial state: what are the nodes that are ON in this state
-initial_on_nodes = {'CycD','Rb_b1','Cdh1','p27_b1','Skp2'}; 
+initial_on_nodes = {'CycD','Rb_b1','Rb_b2','Cdh1','p27_b1','p27_b2','Skp2'}; 
 % what is the probability of this state, (eg. dom_prob=0.8, ie. 80% probability)
-dom_prob=0.8;
+dom_prob=1;
 % this function will assign a probabilit of <dom_prob> to the selected state 
-% and IF: randomly distributes <1-dom_prob> probability among states where the selected nodes are all ON, but the other nodes can take on any value
-% IF: randomly distributes <1-dom_prob> probability among ALL other states
+% and
+% IF <restrict>: randomly distributes <1-dom_prob> probability among states where the selected nodes are all ON, but the other nodes can take on any value
+% IF <broad>: randomly distributes <1-dom_prob> probability among ALL other states
 distrib_types={'restrict','broad'}; plot_flag=[]; % if plot_flag non-empty, we get a bar plot of initial values
 x0=fcn_define_initial_states(initial_on_nodes,dom_prob,nodes,distrib_types{1},plot_flag);
 % completely random initial condition: 
@@ -107,20 +107,27 @@ tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,trans
 % cell_subgraphs: indices of states belonging to disconnected subgraphs (if any)
 
 % nonzero states can be quickly queried by:
-stat_sol(stat_sol>0) % probability values of nonzero states
+stat_sol(stat_sol>0)' % probability values of nonzero states
 truth_table_inputs(stat_sol>0,:) % logical states that are nonzero
 
 % sum the probabilities of nonzero states by nodes, both for the initial condition and the stationary solution
 % ARGUMENTS
 % initial conditions: x0
-% stat_sol: stationary solution for all the states
+% % stat_sol: stationary solution for all the states
 % nodes: list of nodes
 [stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol);
 
-% can check results by doing direct matrix exponentiation, for systems up to ~10 nodes, but only if there are no cycles.
+% can check results by doing direct matrix exponentiation, for systems up to ~10 nodes, but note this will not be stationary if there are cycles.
 % x_sol=((x0')*A_sparse^1e5)';
 % stationary_node_vals=x_sol'*truth_table_inputs;
+% 
 % checked with MaBoSS simuls, results are identical (up to 1% dev.) as they have to be
+% comparing with simulation of mammalian cell cycle model with 12
+% nodes: look in folder <sample_plots/mammalian_cc/maboss_files_plots>
+
+% states with identical values
+% n_prec=3; unique_prob_vals=unique(round(stat_sol,n_prec))'; 
+% unique_prob_vals_inds=arrayfun(@(x) find(ismember(round(stat_sol,n_prec),unique_prob_vals(x))'), 1:numel(unique_prob_vals),'un',0);
 
 %% PLOTTING RESULTS
 
@@ -133,47 +140,54 @@ truth_table_inputs(stat_sol>0,:) % logical states that are nonzero
 % fontsize: [font size on the heatmap, title font size for stationary solutions]
 % barwidth_states_val: width of the bars for bar plot of stationary solutions of states
 % sel_nodes: nodes to show. If left empty, all nodes are shown
-sel_nodes=[]; min_max_col=[-1 1];barwidth_states_val=2;fontsize=[10 20]; % fontsize_hm,fontsize_stat_sol
-% CAREFUL! if more than 12 nodes, generating the figure for A_sparse can be time-consuming
-fcn_plot_A_K_stat_sol(A_sparse, nodes, sel_nodes, stat_sol, x0, min_max_col,fontsize,barwidth_states_val,[])
+sel_nodes=[]; min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[10 20]; % fontsize_hm,fontsize_stat_sol
+plot_settings = [fontsize barwidth_states_val min_max_col]; nonzero_flag=0.01;
+% WARNING!!! if more than 12 nodes, generating the figure for A/K can be time-consuming
+matrix_input=A_sparse;
+fcn_plot_A_K_stat_sol(matrix_input, nodes, sel_nodes, stat_sol, x0, plot_settings ,nonzero_flag)
 
 % PLOT stationary solutions (without A/K matrix)
 % nonzero_flag: if non-empty, only the nonzero states are shown
 sel_nodes=[]; % 3:numel(nodes); 
-% minimal value for probability of a state to display
+% minimal value for probability of a state to display - if this is non-empty, we only plot the nonzero states, useful for visibility if there are many states
 nonzero_flag=0.01;
 barwidth_states_val=0.8; % for 3 nonzero states ~0.8 is a good value
-% if init_node_vals='', then only shows stationary solution
-% nonzero_flag: if this is non-empty, then we only plot the nonzero states, this is useful for visibility if there are many states
-fcn_plot_A_K_stat_sol([], nodes, sel_nodes, stat_sol, x0, min_max_col,fontsize,barwidth_states_val,nonzero_flag)
+fontsize=[9 20]; % [fontsize_y_axis_states,fontsize_x_axes_and_titles]
+plot_settings=[fontsize barwidth_states_val]; matrix_input=[];
+fcn_plot_A_K_stat_sol(matrix_input, nodes, sel_nodes, stat_sol, x0, plot_settings,nonzero_flag)
 
 % SAVE
 if exist(strcat(save_folder,model_name),'dir')==0; mkdir(strcat(save_folder,model_name)); end
-fig_file_type={'.png','.eps'};
-export_fig(strcat(save_folder,model_name,'/','single_solution_states_nodes_stat_sol',fig_file_type{2}),'-transparent','-nocrop')
+fig_file_type={'.png','.eps'}; if ~isempty(matrix_input); matrix_input_str='_with_matrix'; else matrix_input_str=''; end
+export_fig(strcat(save_folder,model_name,'/','single_solution_states_nodes_stat_sol',matrix_input_str,fig_file_type{2}),'-transparent','-nocrop')
 
 %% PLOT binary heatmap of nonzero stationary states by NODES
 % ARGUMENT
 % term_verts_cell: which subgraph to plot if there are disconnected ~
 % num_size_plot: font size of 0/1s on the heatmap
 % hor_gap: horizontal gap between terminal SCCs, bottom_marg: bottom margin, left_marg: left margin
-numsize_plot=16; fontsize=12; hor_gap=0.02; bottom_marg=0.14; left_marg=0.06; 
+numsize_plot=12; fontsize=12; hor_gap=0.02; bottom_marg=0.1; left_marg=0.04; 
 param_settings=[numsize_plot fontsize hor_gap bottom_marg left_marg];
 % idnex of nonempty subgraph, check by <term_verts_cell>
-nonempty_subraph=4;
-% want to use tight subplot?
-tight_subplot_flag='yes';
-% nodes to show
-sel_nodes=3:numel(nodes);
+nonempty_subgraph=2;
+% want to use tight subplot? | order states by probability?
+tight_subplot_flag='yes'; ranking_flag='yes';
+% nodes to show - if none selected, than all nodes shown
+sel_nodes=2:numel(nodes)-1; 
+% setdiff(2:numel(nodes)-1,[find(strcmp(nodes,{'Rb_b2'})) find(strcmp(nodes,{'p27_b2'}))]);
 % probability threshold for states to show (if left empty, all states shown)
-prob_thresh=0.05;  % []; % 0.05;
+prob_thresh=0.01;  % []; % 0.05;
 % PLOT
-statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,term_verts_cell{nonempty_subraph},nodes,sel_nodes,param_settings,tight_subplot_flag);
-% export_fig sink_states_kras_model_heatmap.eps -transparent
+statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,term_verts_cell{nonempty_subgraph},...
+                            nodes,sel_nodes,param_settings,tight_subplot_flag,ranking_flag);
+
+% SAVE
+export_fig(strcat(save_folder,model_name,'/','binary_heatmap_stat_states',fig_file_type{1}),'-transparent','-nocrop')
+
 
 %% plot of STG (state transition graph)
 
-% for models larger than 12 nodes generating these plots can be very time consuming
+% NOTE: for models larger than ~10-12 nodes generating these plots can be very time consuming!
 
 % PLOT the STG of the model. 
 % show the full STG and a selected (counter) subgraph
@@ -190,7 +204,7 @@ plot_STG(A_sparse,subgraph_index,default_settings,xlim_vals,ylim_vals,titles,sou
 
 % PLOT a single STG (that can be a selected subgraph of entire STG)
 % cropping (optional)
-xlim_vals=[-4 5]; ylim_vals = [-5 5]; 
+xlim_vals=[-4 5]; ylim_vals = [-5 5];
 titles ={strcat('subgraph #',num2str(subgraph_index))};
 A_sub=A_sparse(cell_subgraphs{subgraph_index},cell_subgraphs{subgraph_index});
 default_settings=[20 1 7 5 8]; % fontsize,linewidth_val, arrowsize, default_markersize, highlight_markersize
@@ -199,19 +213,13 @@ plot_STG(A_sub,'',default_settings,xlim_vals,ylim_vals,titles,source_color)
 
 %% STGs on subplots, with given parameter highlighted on each
 
-% if STG table doesn't exist generate with
-% [stg_table,~,~]=fcn_build_stg_table(truth_table_filename,nodes,'','');
+% if STG table doesn't exist,  generate with <[stg_table,~,~]=fcn_build_stg_table(truth_table_filename,nodes,'','');>
 
 selected_pars=[1 3 4 5 6 11 9 8]; % parameters to highlight, either 'all', or numeric array [1 2 3]
 plot_pars=[20 0.1 7 3 6]; % plot_pars=[fontsize,linewidth_val, arrowsize, default_markersize, highlight_markersize]
 % parameters for highlighted transitions: color and width of corresp edges
 highlight_settings={'yellow',3}; 
 % if using tight_subplots toolbox:
-% [ha,~] = tight_subplot(4,4,[0.06 0.02],[0.05 0.05],[0.05 0.05]);
-% tight_subplot(Nh, Nw, gap, marg_h, marg_w): 
-% gap: gaps between the axes in normalized units
-% marg_h: margins in height in normalized units
-% marg_w: margins in width in normalized units
 tight_subpl_flag='yes'; tight_subplot_pars=[0.06 0.02; 0.05 0.05; 0.05 0.05]; 
 % cropping plot (optional, for better visibility)
 limits=[-4 5;-5 5]; 
@@ -443,6 +451,7 @@ init_vals=rand(size(predictor_names)); init_error=fcn_statsol_sum_sq_dev(init_va
 % defined counter=0 before while loop, and inserted <T_loss(counter,:)=[T oldenergy];> at line 175, defined <T_loss> as 3rd output
 tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_vals,struct('Verbosity',2)); toc % 'StopTemp',1e-8
 % 40 mins for 15 var model
+
 % PLOT results
 thres=1e-4; semilogy(1:find(T_loss(:,2)<thres,1), T_loss(1:find(T_loss(:,2)<thres,1),:),'LineWidth',4); legend({'temperature', 'SSE'},'FontSize',22);
 xlabel('number of iterations','FontSize',16); set(gca,'FontSize',16); title('Parameter fitting by simulated annealing','FontSize',22)

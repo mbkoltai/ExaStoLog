@@ -8,6 +8,7 @@ sample_plots/
 tight_subplot/
 anneal/
 model_files/
+doc/manual/
 # zip of existing files
 exact_stochlog_toolbox.zip
 

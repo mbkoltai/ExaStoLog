@@ -24,7 +24,9 @@ else
    error('<distrib_type> should be ''restrict'' or ''broad''.') 
 end
 
-if round(sum(x0),4)==1
+% rounding precision
+n_prec=3;
+if round(sum(x0),n_prec)==1
     disp('sum(x0)=1, OK.')
 else
      disp('sum(x0)~=1, something wrong!')
