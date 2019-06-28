@@ -66,8 +66,7 @@ chosen_rates=[]; % chosen_rates={'u_cdc25b','d_dna_dam'}; chosen_rates_vals=[0.2
 % ARGUMENTS
 distr_type={'uniform','random'}; % <uniform> assigns a value of 1 to all params. other option: <random>
 meanval=[]; sd_val=[]; % if 'random' is chosen, the mean and standard dev of a normal distrib has to be defined 
-% transition_rates_table=fcn_trans_rates_table(nodes,uniform_or_rand,meanval,sd_val,chosen_rates,chosen_rates_vals);
-transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,[],[]);
+transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,chosen_rates,[]);
 % meanval=1; sd_val=1; transition_rates_table=fcn_trans_rates_table(nodes,'random',meanval,sd_val,chosen_rates,chosen_rates_vals)
 
 % build transition matrix A with parameter values
