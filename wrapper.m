@@ -85,7 +85,7 @@ n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:
 % defining a dominant initial state: what are the nodes that are ON in this state
 initial_on_nodes = {'CycD','Rb_b1','Rb_b2','Cdh1','p27_b1','p27_b2','Skp2'}; 
 % what is the probability of this state, (eg. dom_prob=0.8, ie. 80% probability)
-dom_prob=1;
+dom_prob=0.4;
 % this function will assign a probabilit of <dom_prob> to the selected state 
 % and
 % IF <restrict>: randomly distributes <1-dom_prob> probability among states where the selected nodes are all ON, but the other nodes can take on any value
@@ -135,11 +135,12 @@ truth_table_inputs(stat_sol>0,:) % logical states that are nonzero
 
 % PLOT A/K and stat solutions
 % ARGUMENTS
-% K_sparse or A_sparse: kinetic or transition matrix
+% matrix_input: [], K_sparse or A_sparse (kinetic or transition matrix)
 % min_max_col: minimum and max color for heatmap
 % fontsize: [font size on the heatmap, title font size for stationary solutions]
 % barwidth_states_val: width of the bars for bar plot of stationary solutions of states
 % sel_nodes: nodes to show. If left empty, all nodes are shown
+% nonzero_flag: minimal value for probability to display - if this is non-empty, only plot nonzero states, useful for visibility if there are many states
 sel_nodes=[]; min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[10 20]; % fontsize_hm,fontsize_stat_sol
 plot_settings = [fontsize barwidth_states_val min_max_col]; nonzero_flag=0.01;
 % WARNING!!! if more than 12 nodes, generating the figure for A/K can be time-consuming
@@ -148,10 +149,7 @@ fcn_plot_A_K_stat_sol(matrix_input, nodes, sel_nodes, stat_sol, x0, plot_setting
 
 % PLOT stationary solutions (without A/K matrix)
 % nonzero_flag: if non-empty, only the nonzero states are shown
-sel_nodes=[]; % 3:numel(nodes); 
-% minimal value for probability of a state to display - if this is non-empty, we only plot the nonzero states, useful for visibility if there are many states
-nonzero_flag=0.01;
-barwidth_states_val=0.8; % for 3 nonzero states ~0.8 is a good value
+sel_nodes=[]; nonzero_flag=0.01; barwidth_states_val=0.8; % for 3 nonzero states ~0.8 is a good value
 fontsize=[9 20]; % [fontsize_y_axis_states,fontsize_x_axes_and_titles]
 plot_settings=[fontsize barwidth_states_val]; matrix_input=[];
 fcn_plot_A_K_stat_sol(matrix_input, nodes, sel_nodes, stat_sol, x0, plot_settings,nonzero_flag)
@@ -168,11 +166,11 @@ export_fig(strcat(save_folder,model_name,'/','single_solution_states_nodes_stat_
 % hor_gap: horizontal gap between terminal SCCs, bottom_marg: bottom margin, left_marg: left margin
 numsize_plot=12; fontsize=12; hor_gap=0.02; bottom_marg=0.1; left_marg=0.04; 
 param_settings=[numsize_plot fontsize hor_gap bottom_marg left_marg];
-% idnex of nonempty subgraph, check by <term_verts_cell>
+% index of nonempty subgraph, check by <term_verts_cell>
 nonempty_subgraph=2;
 % want to use tight subplot? | order states by probability?
 tight_subplot_flag='yes'; ranking_flag='yes';
-% nodes to show - if none selected, than all nodes shown
+% nodes to show. if none selected, then all nodes shown
 sel_nodes=2:numel(nodes)-1; 
 % setdiff(2:numel(nodes)-1,[find(strcmp(nodes,{'Rb_b2'})) find(strcmp(nodes,{'p27_b2'}))]);
 % probability threshold for states to show (if left empty, all states shown)

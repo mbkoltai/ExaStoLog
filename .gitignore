@@ -9,6 +9,7 @@ tight_subplot/
 anneal/
 model_files/
 doc/manual/
+doc/sample_plots/
 # zip of existing files
 exact_stochlog_toolbox.zip
 
@@ -21,3 +22,4 @@ wrapper_suppl.m
 examples.m
 fcn_truthtable.m
 doc/README.html
+
