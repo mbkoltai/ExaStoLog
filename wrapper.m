@@ -40,10 +40,13 @@ set(0,'DefaultAxesTitleFontWeight','normal'); set(0,'DefaultFigureWindowStyle','
 % 'cell_death | (dna_dam & g2m_trans)'}; 
 
 % name of the model
-model_name='mammalian_cc'; % kras15vars
+model_name='kras15vars'; % kras15vars
+
+% where to save figures
+save_folder='doc/sample_plots/';
 
 % OR B) the model can be read in from an existing BOOLNET file
-[nodes,rules]=fcn_bnet_readin('model_files/traynard2016_mammalian_cellcycle.bnet'); % krasmodel10vars.bnet
+[nodes,rules]=fcn_bnet_readin('model_files/krasmodel15vars.bnet'); % krasmodel10vars.bnet
 
 % once we have the list of nodes and their logical rules, we can check if
 % all variables referred to by rules are found in the list of nodes:
@@ -60,13 +63,14 @@ tic; [stg_table,~,~]=fcn_build_stg_table(truth_table_filename,nodes,'',''); toc
 
 % to define transition rates, we can select given rates to have different values than 1, or from randomly chosen
 % name of rates: 'u_nodename' or 'd_nodename'
-chosen_rates=[]; % chosen_rates={'u_cdc25b','d_dna_dam'}; chosen_rates_vals=[0.25, 0.15]; 
+chosen_rates={'d_KRAS','d_cc'}; chosen_rates_vals=[0 0]; 
+% OR leave them empty: chosen_rates=[]; chosen_rates_vals=[];
 
 % then we generate the table of transition rates: first row is the 'up'rates, second row 'down' rates, in the order of 'nodes'
 % ARGUMENTS
 distr_type={'uniform','random'}; % <uniform> assigns a value of 1 to all params. other option: <random>
 meanval=[]; sd_val=[]; % if 'random' is chosen, the mean and standard dev of a normal distrib has to be defined 
-transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,chosen_rates,[]);
+transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,chosen_rates,chosen_rates_vals);
 % meanval=1; sd_val=1; transition_rates_table=fcn_trans_rates_table(nodes,'random',meanval,sd_val,chosen_rates,chosen_rates_vals)
 
 % build transition matrix A with parameter values
@@ -83,17 +87,19 @@ tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,''); toc
 n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2);
 % define initial values
 % defining a dominant initial state: what are the nodes that are ON in this state
-initial_on_nodes = {'CycD','Rb_b1','Rb_b2','Cdh1','p27_b1','p27_b2','Skp2'}; 
+initial_on_nodes = {'cc','KRAS'}; % {'CycD','Rb_b1','Rb_b2','Cdh1','p27_b1','p27_b2','Skp2'}; 
 % what is the probability of this state, (eg. dom_prob=0.8, ie. 80% probability)
-dom_prob=0.4;
-% this function will assign a probabilit of <dom_prob> to the selected state 
+dom_prob=0.1;
+% this function will assign a probability of <dom_prob> to the selected state 
 % and
-% IF <restrict>: randomly distributes <1-dom_prob> probability among states where the selected nodes are all ON, but the other nodes can take on any value
-% IF <broad>: randomly distributes <1-dom_prob> probability among ALL other states
-distrib_types={'restrict','broad'}; plot_flag=[]; % if plot_flag non-empty, we get a bar plot of initial values
-x0=fcn_define_initial_states(initial_on_nodes,dom_prob,nodes,distrib_types{1},plot_flag);
+% IF <restrict>: distributes <1-dom_prob> probability among states where the selected nodes are all ON, but the other nodes can take on any value
+% IF <broad>: distributes <1-dom_prob> probability among ALL other states
+distrib_types={'random','uniform'}; alloc_types={'restrict','broad'}; plot_flag=[]; % if plot_flag non-empty, we get a bar plot of initial values
+x0=fcn_define_initial_states(initial_on_nodes,dom_prob,nodes,alloc_types{1},distrib_types{2},plot_flag);
 % completely random initial condition: 
 % x0=zeros(1,2^n_nodes)'; x0=rand(1,size(truth_table_inputs,1))'; x0=x0/sum(x0);
+% completely uniform initial condition
+% x0=ones(1,2^n_nodes)/2^n_nodes;
 
 % CALCULATE STATIONARY STATE
 % ARGUMENTS:
@@ -125,10 +131,6 @@ truth_table_inputs(stat_sol>0,:) % logical states that are nonzero
 % comparing with simulation of mammalian cell cycle model with 12
 % nodes: look in folder <sample_plots/mammalian_cc/maboss_files_plots>
 
-% states with identical values
-% n_prec=3; unique_prob_vals=unique(round(stat_sol,n_prec))'; 
-% unique_prob_vals_inds=arrayfun(@(x) find(ismember(round(stat_sol,n_prec),unique_prob_vals(x))'), 1:numel(unique_prob_vals),'un',0);
-
 %% PLOTTING RESULTS
 
 % set(0,'DefaultFigureWindowStyle','docked')
@@ -141,14 +143,14 @@ truth_table_inputs(stat_sol>0,:) % logical states that are nonzero
 % barwidth_states_val: width of the bars for bar plot of stationary solutions of states
 % sel_nodes: nodes to show. If left empty, all nodes are shown
 % nonzero_flag: minimal value for probability to display - if this is non-empty, only plot nonzero states, useful for visibility if there are many states
-sel_nodes=[]; min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[10 20]; % fontsize_hm,fontsize_stat_sol
+sel_nodes=2:numel(nodes); min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[10 20]; % fontsize_hm,fontsize_stat_sol
 plot_settings = [fontsize barwidth_states_val min_max_col]; nonzero_flag=0.01;
 % WARNING!!! if more than 12 nodes, generating the figure for A/K can be time-consuming
 matrix_input=A_sparse;
-fcn_plot_A_K_stat_sol(matrix_input, nodes, sel_nodes, stat_sol, x0, plot_settings ,nonzero_flag)
+fcn_plot_A_K_stat_sol(matrix_input, nodes, sel_nodes, stat_sol, x0, plot_settings,nonzero_flag)
 
-% PLOT stationary solutions (without A/K matrix)
-% nonzero_flag: if non-empty, only the nonzero states are shown
+%% PLOT stationary solutions (without A/K matrix)
+% nonzero_flag: if non-empty, only the nonzero states with a probability above this value are shown
 sel_nodes=[]; nonzero_flag=0.01; barwidth_states_val=0.8; % for 3 nonzero states ~0.8 is a good value
 fontsize=[9 20]; % [fontsize_y_axis_states,fontsize_x_axes_and_titles]
 plot_settings=[fontsize barwidth_states_val]; matrix_input=[];
@@ -157,31 +159,36 @@ fcn_plot_A_K_stat_sol(matrix_input, nodes, sel_nodes, stat_sol, x0, plot_setting
 % SAVE
 if exist(strcat(save_folder,model_name),'dir')==0; mkdir(strcat(save_folder,model_name)); end
 fig_file_type={'.png','.eps'}; if ~isempty(matrix_input); matrix_input_str='_with_matrix'; else matrix_input_str=''; end
-export_fig(strcat(save_folder,model_name,'/','single_solution_states_nodes_stat_sol',matrix_input_str,fig_file_type{2}),'-transparent','-nocrop')
+full_path_filename=strcat(save_folder,model_name,'/','single_solution_states_nodes_stat_sol',matrix_input_str,fig_file_type{1});
+if exist(full_path_filename,'file')==0
+    export_fig(full_path_filename,'-transparent','-nocrop')
+end
 
 %% PLOT binary heatmap of nonzero stationary states by NODES
 % ARGUMENT
 % term_verts_cell: which subgraph to plot if there are disconnected ~
 % num_size_plot: font size of 0/1s on the heatmap
 % hor_gap: horizontal gap between terminal SCCs, bottom_marg: bottom margin, left_marg: left margin
-numsize_plot=12; fontsize=12; hor_gap=0.02; bottom_marg=0.1; left_marg=0.04; 
-param_settings=[numsize_plot fontsize hor_gap bottom_marg left_marg];
+numsize_plot=12; fontsize=12; hor_gap=0.02; bottom_marg=0.13; left_marg=0.04; 
+plot_param_settings=[numsize_plot fontsize hor_gap bottom_marg left_marg];
 % index of nonempty subgraph, check by <term_verts_cell>
-nonempty_subgraph=2;
+nonempty_subgraph=find(arrayfun(@(x) ~isempty(term_verts_cell{x}), 1:numel(term_verts_cell)));
 % want to use tight subplot? | order states by probability?
 tight_subplot_flag='yes'; ranking_flag='yes';
 % nodes to show. if none selected, then all nodes shown
-sel_nodes=2:numel(nodes)-1; 
+sel_nodes=3:numel(nodes); 
 % setdiff(2:numel(nodes)-1,[find(strcmp(nodes,{'Rb_b2'})) find(strcmp(nodes,{'p27_b2'}))]);
 % probability threshold for states to show (if left empty, all states shown)
 prob_thresh=0.01;  % []; % 0.05;
 % PLOT
 statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,term_verts_cell{nonempty_subgraph},...
-                            nodes,sel_nodes,param_settings,tight_subplot_flag,ranking_flag);
+                            nodes,sel_nodes,plot_param_settings,tight_subplot_flag,ranking_flag);
 
 % SAVE
-export_fig(strcat(save_folder,model_name,'/','binary_heatmap_stat_states',fig_file_type{1}),'-transparent','-nocrop')
-
+full_path_filename=strcat(save_folder,model_name,'/','binary_heatmap_states',fig_file_type{1});
+if exist(full_path_filename,'file')==0
+    export_fig(full_path_filename,'-transparent','-nocrop')
+end
 
 %% plot of STG (state transition graph)
 

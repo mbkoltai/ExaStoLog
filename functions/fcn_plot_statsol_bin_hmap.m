@@ -20,6 +20,10 @@ end
 
 if isempty(sel_nodes); sel_nodes=1:numel(nodes); end
 
+if sum(ismember(arrayfun(@(x) length(term_verts_inds_cell_thresh{x}), 1:numel(term_verts_inds_cell_thresh)),1))==numel(term_verts_inds_cell_thresh)
+    [~,ranking]=sort(stat_sol(cell2mat(term_verts_inds_cell_thresh))); term_verts_inds_cell_thresh=term_verts_inds_cell_thresh(flipud(ranking));
+end
+
 for k=1:numel(term_verts_inds_cell_thresh)
     
 if k==numel(term_verts_inds_cell_thresh); x_ax_leg=nodes(sel_nodes); else x_ax_leg=[]; end
@@ -35,6 +39,7 @@ inds=term_verts_inds_cell_thresh{k}; y_ax_leg=round(stat_sol(inds),3);
     % rank by probability
     if ~isempty(ranking_flag)
     [~,ranking]=sort(stat_sol(inds)); ranking=flipud(ranking);
+    disp('RANK')
     else
         ranking=1:numel(inds);
     end
@@ -42,3 +47,5 @@ inds=term_verts_inds_cell_thresh{k}; y_ax_leg=round(stat_sol(inds),3);
     binary_heatmap=heatmap(truth_table_inputs(inds(ranking),sel_nodes),x_ax_leg,y_ax_leg(ranking),'%0.0f','TickAngle',90,...
         'Colormap','redblue','MinColorValue',-1,'MaxColorValue',1,'GridLines','-','FontSize',num_size_plot,'ShowAllTicks',true); set(gca,'FontSize',fontsize)
 end
+
+hold off

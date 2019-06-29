@@ -1,5 +1,7 @@
 function transition_rates_table=fcn_trans_rates_table(nodes,uniform_or_rand,meanval,sd_val,chosen_rates,chosen_rates_vals)
 
+n=numel(nodes); 
+
 if strcmp(uniform_or_rand,'uniform')
     rate_vals_num=ones(1,2*length(nodes)); % abs(ones(1,2*length(nodes)) + normrnd(0,0.5,1,2*length(nodes)));
 elseif strcmp(uniform_or_rand,'random')
@@ -34,9 +36,10 @@ for k=1:numel(chosen_rates)
     end
     
     if strcmp(split_rate{1},'d')
-        n=numel(nodes); rate_vals_num(find(strcmp(nodes,node_mod_ind))+n)=chosen_rates_vals(k);
+        rate_vals_num(find(strcmp(nodes,node_mod_ind))+n)=chosen_rates_vals(k);
     elseif strcmp(split_rate{1},'u')
-       rate_vals_num(strcmp(nodes,node_mod_ind))=chosen_rates_vals(k); 
+        % disp(k)
+        rate_vals_num(strcmp(nodes,node_mod_ind))=chosen_rates_vals(k); 
     else
         disp('wrong name for transition rate, has to be "u_nodename" or "d_nodename"')
     end

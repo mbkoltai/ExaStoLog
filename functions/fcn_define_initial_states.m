@@ -1,4 +1,4 @@
-function x0=fcn_define_initial_states(initial_on_nodes,dom_prob,nodes,distrib_type,plot_flag)
+function x0=fcn_define_initial_states(initial_on_nodes,dom_prob,nodes,alloc_type,distrib_type,plot_flag)
 
 n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2);
 % define initial values
@@ -10,18 +10,29 @@ initial_state=zeros(1,numel(nodes)); initial_state(initial_on_nodes_inds)=1;
 x0(ismember(truth_table_inputs,initial_state,'rows'))=dom_prob; 
 
 % take those states where selected variables have a value of 1, and we want them to have a nonzero probability
-if strcmp(distrib_type,'restrict')
+if strcmp(alloc_type,'restrict')
 sel_states=all(truth_table_inputs(:,initial_on_nodes_inds)');
 % create a vector of random probabilities for these states, with a sum of (1-dom_prob)
-rand_vect=abs(rand(sum(sel_states)-1,1)); rand_vect=rand_vect/( sum(rand_vect)/(1-dom_prob) );
-x0(~ismember(truth_table_inputs,initial_state,'rows') & sel_states') = rand_vect;
-elseif strcmp(distrib_type,'broad')
+    if strcmp(distrib_type,'random')
+    rand_vect=abs(rand(sum(sel_states)-1,1)); rand_vect=rand_vect/( sum(rand_vect)/(1-dom_prob) );
+    x0(~ismember(truth_table_inputs,initial_state,'rows') & sel_states') = rand_vect; % 
+% other selected states have uniform probability:
+    elseif strfind(distrib_type,'unif')
+    x0(~ismember(truth_table_inputs,initial_state,'rows') & sel_states') = (1-dom_prob)/(sum(sel_states)-1); % 
+    end
+
+elseif strcmp(alloc_type,'broad')
     sel_states = ~ismember(truth_table_inputs,initial_state,'rows')';
     % create a vector of random probabilities for these states, with a sum of (1-dom_prob)
-    rand_vect=abs(rand(sum(sel_states),1)); rand_vect=rand_vect/( sum(rand_vect)/(1-dom_prob) );
-    x0(sel_states) = rand_vect;
+	if strcmp(distrib_type,'random')
+        rand_vect=abs(rand(sum(sel_states),1)); rand_vect=rand_vect/( sum(rand_vect)/(1-dom_prob) );
+        x0(sel_states)=rand_vect;
+    elseif strfind(distrib_type,'unif')
+        x0(sel_states) = (1-dom_prob)/(sum(sel_states)-1);
+	end
+    
 else
-   error('<distrib_type> should be ''restrict'' or ''broad''.') 
+   error('<alloc_types> should be ''restrict'' or ''broad''.') 
 end
 
 % rounding precision
