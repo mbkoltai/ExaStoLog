@@ -5,8 +5,10 @@ full_filename_with_path=strcat(save_folder,file_name_prefix,fig_file_extension);
 if isempty(overwrite_flag)
     if exist(full_filename_with_path,'file')==0
         export_fig(full_filename_with_path,'-transparent','-nocrop')
+    else
+        disp('Figure already exists, give different name or set overwrite flag to non-empty.')
     end
 
 else
-        export_fig(fig_name,'-transparent','-nocrop')
+        export_fig(full_filename_with_path,'-transparent','-nocrop')
 end
