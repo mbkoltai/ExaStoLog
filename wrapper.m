@@ -477,14 +477,22 @@ y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(st
 init_vals=rand(size(predictor_names)); init_error=fcn_statsol_sum_sq_dev(init_vals);
 % simulated annealing with existing algorithm anneal/anneal.m, with modifications in script: 
 % defined counter=0 before while loop, and inserted <T_loss(counter,:)=[T oldenergy];> at line 175, defined <T_loss> as 3rd output
-tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_vals,struct('Verbosity',2)); toc % 'StopTemp',1e-8
-% 40 mins for 15 var model
+% arguments for algorithm: 
+% 'StopVal', init_error/4
+% 'StopTemp',1e-8
+% need to be provided as structure: struct('Verbosity',2, 'StopVal', 0.01, 'StopTemp',1e-8)
+fitting_arguments=struct('Verbosity',2, 'StopVal', 0.001);
+tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_vals,fitting_arguments); toc 
+% 20-40 mins for 15var KRAS model
 
 % PLOT results
-thres=1e-4; semilogy(1:find(T_loss(:,2)<thres,1), T_loss(1:find(T_loss(:,2)<thres,1),:),'LineWidth',4); legend({'temperature', 'SSE'},'FontSize',22);
+thres_ind=size(T_loss,1); % thres_ind=find(T_loss(:,2)<1e-2,1); 
+vars_show=2; % 1=temperature, 2=error
+plot(1:thres_ind, T_loss(1:thres_ind,vars_show),'LineWidth',4); xlim([0 thres_ind]); if init_error/best_error>100; set(gca,'yscale','log'); end
+legend_strs = {'temperature', 'sum of squared error'}; legend(legend_strs{vars_show},'FontSize',22); 
 xlabel('number of iterations','FontSize',16); set(gca,'FontSize',16); title('Parameter fitting by simulated annealing','FontSize',22)
 % SAVE FIGURE
-export_fig(strcat(save_folder,model_name,'_',num2str(numel(predictor_names)),'fittingpars_simulated_annealing',fig_file_type{2}),'-transparent','-nocrop')
+fcn_save_fig(strcat('simulated_annealing_',num2str(numel(predictor_names)),'fittingpars'),save_folder,fig_file_type{1},'')
 
 % mean absolute error: mean(abs(y_data - fcn_statsol_values(optim_par_vals)))
 % distance of fitted params from true values: abs(optim_par_vals - sel_param_vals)./sel_param_vals
