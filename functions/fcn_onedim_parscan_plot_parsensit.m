@@ -20,14 +20,14 @@ else
 end
 
 [~,scan_par_inds,~]=fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,nodes);
-
 fontsize_axes=param_settings{1}; fontsize_title=param_settings{2};
-
 n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2);
 
 trans_rates_names={strcat('u_',nodes);strcat('d_',nodes)}'; 
 trans_rates_names=vertcat(trans_rates_names{:}); trans_rates_names=horzcat(trans_rates_names(:))';
 nonzero_states=truth_table_inputs(nonzero_states_inds,:); 
+
+% disp(trans_rates_names)
 
 % ONE STATE on one subplot a.a.f of all params
 if strcmp(var_type_flag,'state') || strcmp(var_type_flag,'states')
@@ -221,7 +221,8 @@ h_supt=suptitle('response coefficients'); set(h_supt,'Fontsize',1.5*fontsize_axe
 else
 % heatmap
 % parameters that have abs(resp_coeff)>cutoff
-sensit_params_table=arrayfun(@(x) max(abs(resp_coeff(:,:,x)'))>sensit_cutoff, 1:size(resp_coeff,3),'un',0); sensit_params_table=vertcat(sensit_params_table{:});
+sensit_params_table=arrayfun(@(x) max(abs(resp_coeff(:,:,x)'))>sensit_cutoff, 1:size(resp_coeff,3),'un',0); 
+sensit_params_table=vertcat(sensit_params_table{:});
 resp_coeff_sensit_parts=resp_coeff(sum(sensit_params_table)>0,:,sum(sensit_params_table,2)>0);
 
 sensit_vars=find(sum(sensit_params_table,2)>0)';
@@ -294,5 +295,8 @@ scan_pars_sensit=unique(scan_par_table(sum(sensit_params_table)>0,1))';
 % end
 
 scan_params_sensit_up_down=arrayfun(@(x) scan_par_table(sensit_pars(scan_par_table(sensit_pars,1)==x), 2), scan_pars_sensit, 'un', 0);
+if any(cell2mat(arrayfun(@(x) size(scan_params_sensit_up_down{x},1),1:numel(scan_params_sensit_up_down),'un',0))>1)
+    scan_params_sensit_up_down=arrayfun(@(x) scan_params_sensit_up_down{x}',1:numel(scan_params_sensit_up_down),'un',0);
+end
 
 hold off

@@ -1,9 +1,12 @@
 % This file contains the commands to run the functions calculating the
 % stationary solution of stoch logical models, plot results and perform parametric analysis
 
-path_to_toolbox='/bioinfo/users/mkoltai/research/models/KRAS_DNA_repair_model/matlab_ode/maboss_analytical/';
-cd(path_to_toolbox)
-% ADD FUNCTIONS to PATH
+% go to the folder of the file
+editor_service = com.mathworks.mlservices.MLEditorServices; editor_app = editor_service.getEditorApplication;
+active_editor = editor_app.getActiveEditor; storage_location = active_editor.getStorageLocation;
+file = char(storage_location.getFile); path_to_toolbox = fileparts(file); cd(path_to_toolbox);
+
+%% ADD FUNCTIONS to PATH
 addpath('functions/') 
 % using these publicly available MATLAB toolboxes:
 % needed for PLOTS:
@@ -12,8 +15,11 @@ addpath('redblue'); % https://mathworks.com/matlabcentral/fileexchange/25536-red
 % optional for PLOTS and saving of PLOTS
 % for subplots with smaller gaps:
 addpath('tight_subplot') % https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w
+
 % export figures as EPS or PDF as they appear on plots:
-addpath('altmany-export_fig-acfd348') % Optional. https://mathworks.com/matlabcentral/fileexchange/23629-export_fig 
+export_fig_name=dir('altman*'); export_fig_name=export_fig_name.name; 
+addpath(genpath(export_fig_name)) % Optional. https://mathworks.com/matlabcentral/fileexchange/23629-export_fig
+
 % optional for PARAMETER FITTING by simulated annealing:
 addpath('anneal') % https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm
 % title font weight normal, docked figures
@@ -43,7 +49,7 @@ set(0,'DefaultAxesTitleFontWeight','normal'); set(0,'DefaultFigureWindowStyle','
 model_name='kras15vars'; % kras15vars
 
 % where to save figures
-save_folder='doc/sample_plots/';
+save_folder=strcat('doc/sample_plots/',model_name,'/');
 
 % OR B) the model can be read in from an existing BOOLNET file
 [nodes,rules]=fcn_bnet_readin('model_files/krasmodel15vars.bnet'); % krasmodel10vars.bnet
@@ -157,19 +163,18 @@ plot_settings=[fontsize barwidth_states_val]; matrix_input=[];
 fcn_plot_A_K_stat_sol(matrix_input, nodes, sel_nodes, stat_sol, x0, plot_settings,nonzero_flag)
 
 % SAVE
-if exist(strcat(save_folder,model_name),'dir')==0; mkdir(strcat(save_folder,model_name)); end
-fig_file_type={'.png','.eps'}; if ~isempty(matrix_input); matrix_input_str='_with_matrix'; else matrix_input_str=''; end
-full_path_filename=strcat(save_folder,model_name,'/','single_solution_states_nodes_stat_sol',matrix_input_str,fig_file_type{1});
-if exist(full_path_filename,'file')==0
-    export_fig(full_path_filename,'-transparent','-nocrop')
-end
+if exist(save_folder,'dir')==0; mkdir(strcat(save_folder)); end
+fig_file_type={'.png','.eps'}; if ~isempty(matrix_input); matrix_input_str='_with_matrix'; else; matrix_input_str=''; end
+% enter any string for the last argument to overwrite existing plot!!
+overwrite_flag='';
+fcn_save_fig(strcat('single_solution_states_nodes_stat_sol',matrix_input_str),save_folder,fig_file_type{1},overwrite_flag);
 
 %% PLOT binary heatmap of nonzero stationary states by NODES
 % ARGUMENT
 % term_verts_cell: which subgraph to plot if there are disconnected ~
 % num_size_plot: font size of 0/1s on the heatmap
 % hor_gap: horizontal gap between terminal SCCs, bottom_marg: bottom margin, left_marg: left margin
-numsize_plot=12; fontsize=12; hor_gap=0.02; bottom_marg=0.13; left_marg=0.04; 
+numsize_plot=12; fontsize=12; hor_gap=0.01; bottom_marg=0.15; left_marg=0.04; 
 plot_param_settings=[numsize_plot fontsize hor_gap bottom_marg left_marg];
 % index of nonempty subgraph, check by <term_verts_cell>
 nonempty_subgraph=find(arrayfun(@(x) ~isempty(term_verts_cell{x}), 1:numel(term_verts_cell)));
@@ -185,17 +190,13 @@ statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,term_verts
                             nodes,sel_nodes,plot_param_settings,tight_subplot_flag,ranking_flag);
 
 % SAVE
-full_path_filename=strcat(save_folder,model_name,'/','binary_heatmap_states',fig_file_type{1});
-if exist(full_path_filename,'file')==0
-    export_fig(full_path_filename,'-transparent','-nocrop')
-end
+fcn_save_fig('binary_heatmap_states',save_folder,fig_file_type{1},'');
 
 %% plot of STG (state transition graph)
 
 % NOTE: for models larger than ~10-12 nodes generating these plots can be very time consuming!
 
-% PLOT the STG of the model. 
-% show the full STG and a selected (counter) subgraph
+% PLOT the STG of the model. Show the full STG and a selected (counter) subgraph
 subgraph_index=find(cellfun(@(x) numel(x), term_verts_cell)>0); % select non-empty subgraph
 titles = {'Full state transition graph',strcat('subgraph #',num2str(subgraph_index))}; 
 % cropping the subplots (optional)
@@ -207,7 +208,7 @@ source_color='blue';
 % figure(); 
 plot_STG(A_sparse,subgraph_index,default_settings,xlim_vals,ylim_vals,titles,source_color)
 
-% PLOT a single STG (that can be a selected subgraph of entire STG)
+%% PLOT a single STG (that can be a selected subgraph of entire STG)
 % cropping (optional)
 xlim_vals=[-4 5]; ylim_vals = [-5 5];
 titles ={strcat('subgraph #',num2str(subgraph_index))};
@@ -229,8 +230,9 @@ tight_subpl_flag='yes'; tight_subplot_pars=[0.06 0.02; 0.05 0.05; 0.05 0.05];
 % cropping plot (optional, for better visibility)
 limits=[-4 5;-5 5]; 
 
-figure()
-plot_STG_sel_param(A_sparse,counter,nodes,cell_subgraphs,selected_pars,stg_table,plot_pars,highlight_settings,limits,tight_subpl_flag,tight_subplot_pars)
+figure('name','STG select params');
+plot_STG_sel_param(A_sparse,counter,nodes,cell_subgraphs,selected_pars,stg_table,...
+    plot_pars,highlight_settings,limits,tight_subpl_flag,tight_subplot_pars)
 % show all params that have an effect
 % plot_STG_sel_param(A_sparse,counter,nodes,cell_subgraphs,'all',stg_table,plot_pars,highlight_settings,'',tight_subpl_flag,tight_subplot_pars)
 
@@ -238,7 +240,7 @@ plot_STG_sel_param(A_sparse,counter,nodes,cell_subgraphs,selected_pars,stg_table
 counter=4; B=A_sparse(cell_subgraphs{counter},cell_subgraphs{counter});
 B_state_transitions_inds=fcn_stg_table_subgraph(stg_table,cell_subgraphs,counter);
 % 2nd, 4th arguments left empty
-% figure(); 
+figure('name','STG select params subgraph');
 plot_STG_sel_param(B,'',nodes,'','all',B_state_transitions_inds,default_settings,highlight_settings,limits,'yes',tight_subplot_pars)
 
 %% Parameter sensitivity analysis: one-dimensional parameter scans
@@ -271,16 +273,16 @@ parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_dow
 % initial conditions: x0
 % stg_table: generated by [stg_table,~,~]=fcn_build_stg_table(truth_table_filename,nodes,transition_rates_table,'');
 % [~,scan_par_inds,~]=fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,nodes);
-[stationary_state_vals_onedimscan,stationary_node_vals_onedimscan,stationary_state_inds_scan]=fcn_onedim_parscan_calc(stg_table,transition_rates_table,...
-                                                            x0,nodes,parscan_matrix,scan_params,scan_params_up_down);
+[stationary_state_vals_onedimscan,stationary_node_vals_onedimscan,stationary_state_inds_scan]=...
+    fcn_onedim_parscan_calc(stg_table,transition_rates_table,x0,nodes,parscan_matrix,scan_params,scan_params_up_down);
 
 %% PLOT RESULTS of 1-by-1 parameter scan on heatmap/lineplot
 
 %%% SECOND PLOT TYPE: show the stationary value or response coefficient of 1 variable or state on 1 subplot, as a fcn of all relevant parameters
 nonzero_states_inds=find(stat_sol>0);
-sensit_cutoff=0.5; % minimal value for response coefficient (local sensitivity)
+sensit_cutoff=0.2; % minimal value for response coefficient (local sensitivity)
 % nonzero states of the model
-nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))';
+% nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))';
 % select parameters of plot
 height_width_gap=[0.04 0.03]; bott_top_marg =[0.13 0.1]; left_right_marg=[0.05 0.05];
 % [fontsize_axes,fontsize_title,params_tight_subplots(leave empty if not installed),model_name]
@@ -288,25 +290,25 @@ plot_param_settings={12,14,{height_width_gap bott_top_marg left_right_marg},mode
 % select type of plot
 plot_types={{'lineplot','heatmap'} {'nodes','states'} {'values','sensitivity'}};
 % all_opts_perm=[[1 1 1]; unique([perms([1 1 2]); perms([2 2 1])],'rows'); [2 2 2]];
-plot_type_options=[2 1 1];
+plot_type_options=[2 1 2];
+figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel(plot_type_options), 'un',0),'_'));
 [resp_coeff,scan_pars_sensit,scan_params_sensit_up_down,fig_filename]=fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
                                                            stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
-                                                           nonzero_states_inds,parscan_matrix,nodes,scan_params,scan_params_up_down,...
+                                                           nonzero_states_inds,parscan_matrix,nodes,...
+                                                           scan_params,scan_params_up_down,... % transition rates to scan in
                                                            sensit_cutoff,plot_param_settings);
 
 % <resp_coeffs> dimensions: (parameters, values,nodes), so eg. resp_coeffs(:,:,7) are the resp. coeff values across the param ranges for the 7th node
 
-save_folder='sample_plots/'; fig_file_type={'.png','.eps'}; export_fig(strcat(save_folder,fig_filename,fig_file_type{1}),'-transparent','-nocrop')
+% SAVE figure
+fcn_save_fig(fig_filename,save_folder,fig_file_type{1},'');
+
 
 %% multidimensional parameter scan: LATIN HYPERCUBE SAMPLING (random multidimensional sampling within given parameter ranges)
 
-% WHICH PARAMETERS to scan it simultaneously?
-% all relevant parameters
+% WHICH PARAMETERS to scan simultaneously?
+% all relevant parameters: 
 % scan_params=unique(stg_table(:,3))'; scan_params_up_down=num2cell(repelem([1 2],numel(scan_params),1),2)'; 
-% scan_params: scanned parameters, id by node. 
-scan_params=scan_pars_sensit; % scan_params=unique(stg_table(:,3))';
-% scan_params_up_down: id by up (1) or down (2) rate
-scan_params_up_down=scan_params_sensit_up_down; % num2cell(ones(1,numel(scan_params))) {[1 2], 1, [1 2]}; 
 % scan_params_sensit_up_down=arrayfun(@(x) scan_params_sensit_up_down{x}', 1:numel(scan_params_sensit_up_down),'un',0)
 
 % PERFORM Latin Hypercube sampling (LHS) SAMPLING
@@ -314,16 +316,21 @@ sampling_types={'lognorm','linear','logunif'};
 sampling_type=sampling_types{3};
 % <lhs_scan_dim>: number of param sets
 lhs_scan_dim=1e3;
-% par_min_mean: minimum or in case of lognormal the mean of distribution. Can be a scalar or a vector, if we want different values for different parameters
-% max_stdev: maximum or in case of lognormal the mean of distribution. Can be a scalar or a vector, if we want different values for different parameters
+% par_min_mean: minimum or in case of lognormal the mean of distribution. Can be a scalar or a vector, 
+% if we want different values for different parameters
+% max_stdev: maximum or in case of lognormal the mean of distribution. 
+% Can be a scalar or a vector, if we want different values for different parameters
+%
 % for 'lognorm' and 'logunif' provide the log10 value of desired mean/min and stdev/max!!
 par_min_mean=-2; % repmat(1.5,1,numel(cell2mat(scan_params_up_down(:)))); par_min_mean(4)=3; 
 max_stdev=2; % repmat(0.5,1,numel(cell2mat(scan_params_up_down(:))));
 tic;
-[all_par_vals_lhs,stat_sol_lhs_parscan,...
-    stat_sol_states_lhs_parscan,stat_sol_states_lhs_parscan_cell]=fcn_multidim_parscan_latinhypcube(par_min_mean,max_stdev,sampling_type,...
-                                                    lhs_scan_dim,scan_params,scan_params_up_down,transition_rates_table,stg_table,x0,nodes);
+[all_par_vals_lhs,stat_sol_lhs_parscan,stat_sol_states_lhs_parscan,stat_sol_states_lhs_parscan_cell]=... % outputs
+    fcn_multidim_parscan_latinhypcube(par_min_mean,max_stdev,sampling_type,lhs_scan_dim, ...
+                                            scan_pars_sensit,scan_params_sensit_up_down, ... % transition rates
+                                            transition_rates_table,stg_table,x0,nodes);
 toc;
+
 % <all_par_vals_lhs>: table of parameter sets
 % <stat_sol_lhs_parscan>: stationary values of nodes
 % <stat_sol_states_lhs_parscan>: stationary values of states
@@ -336,14 +343,17 @@ toc;
 var_ind=7; % which STATE or NODE to plot
 % <all_par_vals_lhs>: parameter sets
 param_settings = [50 4 16 stat_sol_states_lhs_parscan_cell]; % [number_bins_for_mean,trendline_width,axes_fontsize,index nonzero states]
-% STATES or NODES? - <scan_values>: values to be plotted
+% STATES or NODES? <scan_values>: values to be plotted
 scan_values=stat_sol_lhs_parscan; % stat_sol_states_lhs_parscan
 % PLOT
 sampling_type=sampling_types{3}; % sampling_types={'lognorm','linear','logunif'};
-fcn_multidim_parscan_scatterplot(var_ind,all_par_vals_lhs,scan_values,scan_params,scan_params_up_down,nodes,sampling_type,param_settings) 
+fcn_multidim_parscan_scatterplot(var_ind,all_par_vals_lhs,scan_values,...
+    scan_pars_sensit,scan_params_sensit_up_down,...
+    nodes,sampling_type,param_settings) 
 
-save_folder='sample_plots/'; fig_file_type={'.png','.eps'}; fig_name=strcat(save_folder,'multidim_parscan_trend_',nodes{var_ind},'_',model_name,fig_file_type{1});
-export_fig(fig_name,'-transparent','-nocrop')
+file_name_prefix=strcat('multidim_parscan_trend_',nodes{var_ind});
+full_filename_with_path=fcn_save_fig(file_name_prefix,save_folder,fig_file_type{1},'');
+
 
 %% calculating & plotting (heatmap) correlations between variables OR between params and variables by linear/logist regression
 
