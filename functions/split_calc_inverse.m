@@ -27,7 +27,9 @@ K_sp_sub_reord = (A_sparse_sub_reordered_terminal' - speye(dim_matr,dim_matr))*s
 stat_sol_submatr_blocks=fcn_block_inversion(K_sp_sub_reord,sorted_vertices_terminal_bottom,x0,submatrix_inds);
 % global solution: stat_sol_split(rel_states)=stat_sol_submatr;
 stat_sol_blocks(submatrix_inds(sorted_vertices_terminal_bottom))=stat_sol_submatr_blocks;
-term_verts_cell{counter} = num2cell(find(stat_sol_blocks>0));
+term_verts_cell{counter} = num2cell(intersect(submatrix_inds,find(stat_sol_blocks>0))); % find(stat_sol_blocks>0)
+% disp(counter); disp(find(stat_sol_submatr_blocks>0)'); 
+% disp(intersect(submatrix_inds,find(stat_sol_blocks>0))') % reshape(sort(submatrix_inds(sorted_vertices_terminal_bottom)),128,64)
 
 else % if there are cycles we need reordering of metagraph of SCC
     disp('cycles in STG');

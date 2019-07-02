@@ -428,7 +428,7 @@ y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(st
 <p>Then by providing an initial guess for the to-be-fitted parameters we can run the annealing algorithm:</p>
 <pre><code class="language-MATLAB">init_vals=rand(size(predictor_names)); init_error=fcn_statsol_sum_sq_dev(init_vals);
 [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_vals,struct(&apos;Verbosity&apos;,2));</code></pre>
-<p>Note that the convergence process can take long (for the 15-node KRAS-model above it took 40 minutes to reach an error below 0.001) or can fail, you can define the error threshold where the fitting should stop.</p>
+<p>Note that the convergence process can take long (for the 15-node KRAS-model above it took 40 minutes to reach an error below 0.0001) or can fail, you can define the error threshold where the fitting should stop.</p>
 <p>Below is the plot of the convergence process for 15-node KRAS-model:</p>
 <pre><code class="language-MATLAB">thres=1e-4; semilogy(1:find(T_loss(:,2)&lt;thres,1), T_loss(1:find(T_loss(:,2)&lt;thres,1),:),&apos;LineWidth&apos;,4); legend({&apos;temperature&apos;, &apos;sum of squared error&apos;},&apos;FontSize&apos;,22);
 xlabel(&apos;number of iterations&apos;,&apos;FontSize&apos;,16); set(gca,&apos;FontSize&apos;,16); title(&apos;Parameter fitting by simulated annealing&apos;,&apos;FontSize&apos;,22)

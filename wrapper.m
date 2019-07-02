@@ -49,7 +49,7 @@ set(0,'DefaultAxesTitleFontWeight','normal'); set(0,'DefaultFigureWindowStyle','
 model_name='kras15vars'; % kras15vars
 
 % where to save figures
-save_folder=strcat('doc/sample_plots/',model_name,'/');
+save_folder=strcat('doc/sample_plots/',model_name,'/kras_off/');
 
 % OR B) the model can be read in from an existing BOOLNET file
 [nodes,rules]=fcn_bnet_readin('model_files/krasmodel15vars.bnet'); % krasmodel10vars.bnet
@@ -69,7 +69,8 @@ tic; [stg_table,~,~]=fcn_build_stg_table(truth_table_filename,nodes,'',''); toc
 
 % to define transition rates, we can select given rates to have different values than 1, or from randomly chosen
 % name of rates: 'u_nodename' or 'd_nodename'
-chosen_rates={'d_KRAS','d_cc'}; chosen_rates_vals=[0 0]; 
+% chosen_rates={'d_KRAS','d_cc'}; chosen_rates_vals=[0 0]; 
+chosen_rates=[]; chosen_rates_vals=[];
 % OR leave them empty: chosen_rates=[]; chosen_rates_vals=[];
 
 % then we generate the table of transition rates: first row is the 'up'rates, second row 'down' rates, in the order of 'nodes'
@@ -91,23 +92,26 @@ tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,''); toc
 
 % defining an initial condition
 n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2);
-% define initial values
-% defining a dominant initial state: what are the nodes that are ON in this state
-initial_on_nodes = {'cc','KRAS'}; % {'CycD','Rb_b1','Rb_b2','Cdh1','p27_b1','p27_b2','Skp2'}; 
+% define some nodes with a fixed value and a probability <dom_prob>: states
+% that satisfy this condition will have a total initial probability of
+% <dom_prob>, the other states 1-dom_prob
+initial_fixed_nodes = {'cc','KRAS'}; initial_fixed_nodes_vals=[1 0];
+% for mammalian cell cycle model: {'CycD','Rb_b1','Rb_b2','Cdh1','p27_b1','p27_b2','Skp2'}; 
 % what is the probability of this state, (eg. dom_prob=0.8, ie. 80% probability)
-dom_prob=0.1;
-% this function will assign a probability of <dom_prob> to the selected state 
-% and
-% IF <restrict>: distributes <1-dom_prob> probability among states where the selected nodes are all ON, but the other nodes can take on any value
-% IF <broad>: distributes <1-dom_prob> probability among ALL other states
-distrib_types={'random','uniform'}; alloc_types={'restrict','broad'}; plot_flag=[]; % if plot_flag non-empty, we get a bar plot of initial values
-x0=fcn_define_initial_states(initial_on_nodes,dom_prob,nodes,alloc_types{1},distrib_types{2},plot_flag);
+dom_prob=0.8;
+% if <random> the probability is randomly distributed among states, if <uniform> uniformly
+distrib_types={'random','uniform'}; 
+% if plot_flag non-empty, we get a bar plot of initial values
+plot_flag='';
+% function assigns a probability of <dom_prob> to the states with the fixed nodes having the defined values
+x0=fcn_define_initial_states(initial_fixed_nodes,initial_fixed_nodes_vals,dom_prob,nodes,distrib_types{1},plot_flag);
+
 % completely random initial condition: 
-% x0=zeros(1,2^n_nodes)'; x0=rand(1,size(truth_table_inputs,1))'; x0=x0/sum(x0);
+% x0=zeros(2^n_nodes,1); x0=rand(1,size(truth_table_inputs,1))'; x0=x0/sum(x0);
 % completely uniform initial condition
 % x0=ones(1,2^n_nodes)/2^n_nodes;
 
-% CALCULATE STATIONARY STATE
+%% CALCULATE STATIONARY STATE
 % ARGUMENTS:
 % transition matrix: A
 % table of transition rates: transition_rates_table
@@ -115,8 +119,11 @@ x0=fcn_define_initial_states(initial_on_nodes,dom_prob,nodes,alloc_types{1},dist
 tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,transition_rates_table,x0); toc
 % OUTPUTS
 % stat_sol: stationary solution for all the states
-% term_verts_cell: index of nonzero states. If the STG is disconnected, then the nonzero states corresp to these disconn subgraphs are in separate cells
+% term_verts_cell: index of nonzero states. If the STG is disconnected the nonzero states corresp to these disconn subgraphs are in separate cells
 % cell_subgraphs: indices of states belonging to disconnected subgraphs (if any)
+% 
+% probabilities by subgraph:
+% arrayfun(@(x) sum(stat_sol(cell2mat(term_verts_cell{x}))), 1:numel(term_verts_cell))
 
 % nonzero states can be quickly queried by:
 stat_sol(stat_sol>0)' % probability values of nonzero states
@@ -149,29 +156,31 @@ truth_table_inputs(stat_sol>0,:) % logical states that are nonzero
 % barwidth_states_val: width of the bars for bar plot of stationary solutions of states
 % sel_nodes: nodes to show. If left empty, all nodes are shown
 % nonzero_flag: minimal value for probability to display - if this is non-empty, only plot nonzero states, useful for visibility if there are many states
-sel_nodes=2:numel(nodes); min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[10 20]; % fontsize_hm,fontsize_stat_sol
-plot_settings = [fontsize barwidth_states_val min_max_col]; nonzero_flag=0.01;
+sel_nodes=3:numel(nodes); min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[10 20]; % fontsize_hm,fontsize_stat_sol
+plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.01;
 % WARNING!!! if more than 12 nodes, generating the figure for A/K can be time-consuming
 matrix_input=A_sparse;
-fcn_plot_A_K_stat_sol(matrix_input, nodes, sel_nodes, stat_sol, x0, plot_settings,nonzero_flag)
+figure('name','A_K_stat_sol')
+fcn_plot_A_K_stat_sol(matrix_input, nodes, sel_nodes, stat_sol, x0, plot_settings,prob_thresh)
 
 % SAVE
 % enter any string for the last argument to overwrite existing plot!!
-if exist(save_folder,'dir')==0; mkdir(strcat(save_folder)); end
+if exist(save_folder,'dir')==0; mkdir(save_folder); end
 fig_file_type={'.png','.eps'}; if ~isempty(matrix_input); matrix_input_str='_with_matrix'; else; matrix_input_str=''; end
-overwrite_flag='';
+overwrite_flag='y';
 fcn_save_fig(strcat('single_solution_states_nodes_stat_sol',matrix_input_str),save_folder,fig_file_type{1},overwrite_flag);
 
 %% PLOT stationary solutions (without A/K matrix)
 % nonzero_flag: if non-empty, only the nonzero states with a probability above this value are shown
-sel_nodes=[]; nonzero_flag=0.01; barwidth_states_val=0.8; % for 3 nonzero states ~0.8 is a good value
+sel_nodes=[]; prob_thresh=0.01; barwidth_states_val=0.8; % for 3 nonzero states ~0.8 is a good value
 fontsize=[9 20]; % [fontsize_y_axis_states,fontsize_x_axes_and_titles]
 plot_settings=[fontsize barwidth_states_val]; matrix_input=[];
-fcn_plot_A_K_stat_sol(matrix_input, nodes, sel_nodes, stat_sol, x0, plot_settings,nonzero_flag)
+figure('name','stat_sol')
+fcn_plot_A_K_stat_sol(matrix_input, nodes, sel_nodes, stat_sol, x0, plot_settings,prob_thresh)
 
 % SAVE
 % enter any string for the last argument to overwrite existing plot!!
-fcn_save_fig(strcat('single_solution_states_nodes_stat_sol',matrix_input_str),save_folder,fig_file_type{1},'');
+fcn_save_fig(strcat('single_solution_states_nodes_stat_sol'),save_folder,fig_file_type{1},'y');
 
 %% PLOT binary heatmap of nonzero stationary states by NODES
 % ARGUMENT
@@ -190,7 +199,9 @@ sel_nodes=3:numel(nodes);
 % probability threshold for states to show (if left empty, all states shown)
 prob_thresh=0.01;  % []; % 0.05;
 % PLOT
-statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,term_verts_cell{nonempty_subgraph},...
+figure('name','statsol_binary_heatmap')
+statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,...
+                            vertcat(term_verts_cell{nonempty_subgraph}),... % if providing a single cell: term_verts_cell{nonempty_subgraph}
                             nodes,sel_nodes,plot_param_settings,tight_subplot_flag,ranking_flag);
 
 % SAVE
@@ -202,25 +213,37 @@ fcn_save_fig('binary_heatmap_states',save_folder,fig_file_type{1},'');
 % NOTE: for models larger than ~10-12 nodes generating these plots can be very time consuming!
 
 % PLOT the STG of the model. Show the full STG and a selected (counter) subgraph
-subgraph_index=find(cellfun(@(x) numel(x), term_verts_cell)>0); % select non-empty subgraph
+probs_by_subgraph=arrayfun(@(x) sum(stat_sol(cell2mat(term_verts_cell{x}))), 1:numel(term_verts_cell));
+[~,subgraph_index]=max(probs_by_subgraph); 
+% find(cellfun(@(x) numel(x), term_verts_cell)>0); % select non-empty subgraph (or if there are multiple, just the subgraph you want)
 titles = {'Full state transition graph',strcat('subgraph #',num2str(subgraph_index))}; 
 % cropping the subplots (optional)
-xlim_vals=[0 21;-5 5]; ylim_vals=[0 23;-5 5]; 
+xlim_vals=[]; ylim_vals=[]; % xlim_vals=[0 21;-5 5]; ylim_vals=[0 23;-5 5]; 
 % parameters for plot
 default_settings=[20 1 7 5 8]; % fontsize, linewidth_val, arrowsize, default_markersize, highlight_markersize
 % color of source states of STG
-source_color='blue'; 
+source_color='green'; 
 % figure(); 
 plot_STG(A_sparse,subgraph_index,default_settings,xlim_vals,ylim_vals,titles,source_color)
 
-%% PLOT a single STG (that can be a selected subgraph of entire STG)
+%% PLOT a single STG (that can be a selected subgraph of entire STG or terminal states of a cyclic attractor)
 % cropping (optional)
 xlim_vals=[-4 5]; ylim_vals = [-5 5];
+% if STG graph/subgraph larger than ~2000 states, visualization can be very
+% slow, therefore you can just take a sample
+sample_states=randi(numel(cell_subgraphs{subgraph_index}),1,2e3);
 titles ={strcat('subgraph #',num2str(subgraph_index))};
-A_sub=A_sparse(cell_subgraphs{subgraph_index},cell_subgraphs{subgraph_index});
-default_settings=[20 1 7 5 8]; % fontsize,linewidth_val, arrowsize, default_markersize, highlight_markersize
-plot_STG(A_sub,'',default_settings,xlim_vals,ylim_vals,titles,source_color)
+sample_size=3e3; sample_nodes=unique([cell2mat(term_verts_cell{subgraph_index})', datasample(cell_subgraphs{subgraph_index},sample_size)]); 
+A_sub=A_sparse(sample_nodes,sample_nodes); 
+% all states of a subgraph: cell_subgraphs{subgraph_index},cell_subgraphs{subgraph_index}
+% terminal states: cell2mat(vertcat(term_verts_cell{:})),cell2mat(vertcat(term_verts_cell{:}))
+default_settings=[20 1 7 5 9]; % fontsize,linewidth_val, arrowsize, default_markersize, highlight_markersize
+plot_STG(A_sub,'',default_settings,[],[],titles,source_color)
 % plot_STG(A_sub,'',default_settings,[],[],titles,source_color)
+
+% SAVE
+fcn_save_fig('STG_subgraph',save_folder,fig_file_type{1},'');
+
 
 %% STGs on subplots, with given parameter highlighted on each
 
@@ -241,12 +264,17 @@ plot_STG_sel_param(A_sparse,counter,nodes,cell_subgraphs,selected_pars,stg_table
 % show all params that have an effect
 % plot_STG_sel_param(A_sparse,counter,nodes,cell_subgraphs,'all',stg_table,plot_pars,highlight_settings,'',tight_subpl_flag,tight_subplot_pars)
 
-% only one graph: in this case this is a subgraph of the entire STG, but could be the entire STG too
-counter=4; B=A_sparse(cell_subgraphs{counter},cell_subgraphs{counter});
-B_state_transitions_inds=fcn_stg_table_subgraph(stg_table,cell_subgraphs,counter);
+%% only one graph: in this case this is a subgraph of the entire STG, but could be the entire STG too
+
+subgraph_index=2;
+sample_size=3e3; sample_nodes=unique([cell2mat(term_verts_cell{subgraph_index})', datasample(cell_subgraphs{subgraph_index},sample_size)]); 
+A_sub=A_sparse(sample_nodes,sample_nodes); 
+
+% B=A_sparse(cell_subgraphs{counter},cell_subgraphs{counter});
+A_state_transitions_inds=fcn_stg_table_subgraph(stg_table,cell_subgraphs,subgraph_index);
 % 2nd, 4th arguments left empty
 figure('name','STG select params subgraph');
-plot_STG_sel_param(B,'',nodes,'','all',B_state_transitions_inds,default_settings,highlight_settings,limits,'yes',tight_subplot_pars)
+plot_STG_sel_param(A_sub,'',nodes,'','all',A_state_transitions_inds,default_settings,highlight_settings,limits,'yes',tight_subplot_pars)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Parameter sensitivity analysis: one-dimensional parameter scans
@@ -477,10 +505,8 @@ y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(st
 init_vals=rand(size(predictor_names)); init_error=fcn_statsol_sum_sq_dev(init_vals);
 % simulated annealing with existing algorithm anneal/anneal.m, with modifications in script: 
 % defined counter=0 before while loop, and inserted <T_loss(counter,:)=[T oldenergy];> at line 175, defined <T_loss> as 3rd output
-% arguments for algorithm: 
-% 'StopVal', init_error/4
-% 'StopTemp',1e-8
-% need to be provided as structure: struct('Verbosity',2, 'StopVal', 0.01, 'StopTemp',1e-8)
+% arguments for algorithm need to be provided as structure: 
+% struct('Verbosity',2, 'StopVal', 0.01, 'StopTemp',1e-8) % stopping error value, stopping temperature parameter
 fitting_arguments=struct('Verbosity',2, 'StopVal', 0.001);
 tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_vals,fitting_arguments); toc 
 % 20-40 mins for 15var KRAS model
@@ -488,8 +514,9 @@ tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_vals,
 % PLOT results
 thres_ind=size(T_loss,1); % thres_ind=find(T_loss(:,2)<1e-2,1); 
 vars_show=2; % 1=temperature, 2=error
-plot(1:thres_ind, T_loss(1:thres_ind,vars_show),'LineWidth',4); xlim([0 thres_ind]); if init_error/best_error>100; set(gca,'yscale','log'); end
-legend_strs = {'temperature', 'sum of squared error'}; legend(legend_strs{vars_show},'FontSize',22); 
+figure('name','simul anneal')
+plot(1:thres_ind, T_loss(1:thres_ind,vars_show),'LineWidth',4); xlim([0 thres_ind]); if init_error/best_error>30; set(gca,'yscale','log'); end
+legend_strs = {'temperature', 'sum of squared error'}; legend(legend_strs{vars_show},'FontSize',22); grid on;
 xlabel('number of iterations','FontSize',16); set(gca,'FontSize',16); title('Parameter fitting by simulated annealing','FontSize',22)
 % SAVE FIGURE
 fcn_save_fig(strcat('simulated_annealing_',num2str(numel(predictor_names)),'fittingpars'),save_folder,fig_file_type{1},'')

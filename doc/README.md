@@ -585,7 +585,7 @@ init_vals=rand(size(predictor_names)); init_error=fcn_statsol_sum_sq_dev(init_va
 [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_vals,struct('Verbosity',2));
 ```
 
-Note that the convergence process can take long (for the 15-node KRAS-model above it took 40 minutes to reach an error below 0.001) or can fail, you can define the error threshold where the fitting should stop.
+Note that the convergence process can take long (for the 15-node KRAS-model above it took 40 minutes to reach an error below 0.0001) or can fail, you can define the error threshold where the fitting should stop.
 
 Below is the plot of the convergence process for 15-node KRAS-model:
 
