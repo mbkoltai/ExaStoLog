@@ -5,7 +5,8 @@ function [corr_matr,p_matrix_vars]=fcn_multidim_parscan_parvarcorrs(plot_type_fl
 if strcmp(plot_type_flag(1),'var') || strcmp(plot_type_flag(1),'var_var') 
 
 [corr_matr,p_matrix_vars]=corrcoef(scan_values); corr_matr(p_matrix_vars>0.05)=NaN; corr_matr=triu(corr_matr); corr_matr(corr_matr==0)=NaN;
-    
+% corr_matr(isnan(corr_matr))=0;
+
 % HEATMAP
 if strcmp(plot_type_flag(2),'heatmap')
 
@@ -13,7 +14,7 @@ if ~isempty(sel_nodes); var_selection=sel_nodes; else; var_selection=1:numel(nod
 num_size_plot=plot_settings(1); fontsize=plot_settings(2);
 heatmap(corr_matr(var_selection(1:end-1),var_selection(2:end)),nodes(var_selection(2:end)),nodes(var_selection(1:end-1)),...
   '%0.2f','TickAngle',90,'Colormap','redblue','MinColorValue',-1,'MaxColorValue',1,...
-  'GridLines','-','FontSize',num_size_plot,'ShowAllTicks',true,'NaNColor',[1 1 1]); set(gca,'FontSize',fontsize)
+  'GridLines','-','FontSize',num_size_plot,'ShowAllTicks',true,'NaNColor',[.4 .4 .4]); set(gca,'FontSize',fontsize)
 title('correlation coefficients between variables', 'FontWeight','normal','FontSize', plot_settings(2) ) 
 
 % VAR-VAR SCATTERPLOT
@@ -47,7 +48,7 @@ elseif strcmp(plot_type_flag(1),'par') || strcmp(plot_type_flag(1),'par_var')
     % disp(strcat(predictor_names,', ',sampling_type))
 
 r_squared=zeros(numel(sel_nodes),numel(predictor_names)); slope_intercept=cell(numel(sel_nodes),numel(predictor_names));
-for k=1:numel(sel_nodes);
+for k=1:numel(sel_nodes)
     for par_c=1:numel(predictor_names)
 if strfind(regr_type,'log')
     x=log(all_par_vals_lhs(:,par_c)); str_regr_type=strcat(' (',regr_type,' of)');
@@ -77,7 +78,8 @@ if strcmp(plot_type_flag(2),'heatmap')
 
 % HEATMAP
 heatmap(val_to_plot',nodes(sel_nodes),predictor_names,'%0.2f','TickAngle',90,'Colormap','redblue',...
-    'MinColorValue',min_col_val,'MaxColorValue',maxval_color,'GridLines','-','FontSize',num_size_plot,'ShowAllTicks',true,'colorbar',true)
+    'MinColorValue',min_col_val,'MaxColorValue',maxval_color,'GridLines','-',...
+    'FontSize',num_size_plot,'ShowAllTicks',true,'colorbar',true,'NaNColor',[0 0 0])
 set(gca,'FontSize',plot_settings(1)); 
 title(title_text, 'Fontweight','normal', 'FontSize',plot_settings(1)*1.4) 
 

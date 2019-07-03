@@ -69,5 +69,6 @@ else
     min_col_val=0; maxval_color=1; % 1.05*max(tau_i(:))
 end
 heatmap(tau_i,x_ax_string,predictor_names,'%0.2f','TickAngle',90,'Colormap','redblue',...
-    'MinColorValue',min_col_val,'MaxColorValue',maxval_color,'GridLines','-','FontSize',num_size_plot,'ShowAllTicks',true,'colorbar',true)
+    'MinColorValue',min_col_val,'MaxColorValue',maxval_color,'GridLines','-',...
+    'FontSize',num_size_plot,'ShowAllTicks',true,'colorbar',true,'NaNColor',[0 0 0])
 set(gca,'FontSize',plot_settings(2)); title('Sobol total sensitivity index', 'Fontweight','normal', 'FontSize',plot_settings(3));
