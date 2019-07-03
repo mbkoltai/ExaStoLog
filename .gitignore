@@ -20,6 +20,6 @@ exact_stochlog_toolbox.zip
 wrapper_suppl.m
 examples.m
 fcn_truthtable.m
-wrapper.mlx
+# wrapper.mlx
 doc/README.html
 

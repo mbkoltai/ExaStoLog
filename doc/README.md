@@ -25,6 +25,8 @@ Exact calculation of stationary states + parameter analysis & fitting of stochas
       1. [Sobol total sensitivity index](#sobol-total-sensitivity-index)
 1. [Parameter fitting by simulated annealing](#8-parameter-fitting-by-simulated-annealing)
 
+The steps below are also available and directly executable in [this MATLAB live script](./wrapper.mlx).
+
 ### 1. Prerequisites
 
 ##### - MATLAB version 2015b or later
