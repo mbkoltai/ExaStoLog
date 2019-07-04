@@ -1,4 +1,4 @@
-function [state_transitions_inds,K_sparse,A_sparse_fast]=fcn_build_stg_table(truth_table_filename,nodes,transition_rates_table,num_matrix_flag)
+function state_transitions_inds=fcn_build_stg_table(truth_table_filename,nodes)
 
 n_nodes=numel(nodes); all_binary_states=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2); dim_matr=2^n_nodes;
 
@@ -38,18 +38,18 @@ up_down_inds_arr = sign(up_down_inds_mat).^2 + (up_down_inds_mat<0);
 % [source_state target_state node_ind up_down_ind]
 state_transitions_inds=[trans_source_states_mat trans_target_states_mat cell2mat(node_inds) up_down_inds_arr];
     
-if ~isempty(num_matrix_flag)
-rate_inds=sub2ind(size(transition_rates_table),up_down_inds_arr,cell2mat(node_inds));
-
-A_sparse_fast=sparse(trans_source_states_mat,trans_target_states_mat, ...
-    transition_rates_table(rate_inds)/sum(transition_rates_table(:)),dim_matr,dim_matr);
-diag_vals=1-sum(A_sparse_fast,2); dim_matr_arr=(1:dim_matr)';
-rows = [trans_source_states_mat;dim_matr_arr]; cols=[trans_target_states_mat;dim_matr_arr]; 
-vals=[transition_rates_table(rate_inds)/sum(transition_rates_table(:));diag_vals];
-A_sparse_fast = sparse(rows,cols,vals,dim_matr,dim_matr);
-K_sparse=(transpose(A_sparse_fast) - speye(size(A_sparse_fast)) )*sum(transition_rates_table(:));
-
-else
-    A_sparse_fast=[]; K_sparse=[];
-end
-
+% if ~isempty(num_matrix_flag)
+% rate_inds=sub2ind(size(transition_rates_table),up_down_inds_arr,cell2mat(node_inds));
+% 
+% A_sparse_fast=sparse(trans_source_states_mat,trans_target_states_mat, ...
+%     transition_rates_table(rate_inds)/sum(transition_rates_table(:)),dim_matr,dim_matr);
+% diag_vals=1-sum(A_sparse_fast,2); dim_matr_arr=(1:dim_matr)';
+% rows = [trans_source_states_mat;dim_matr_arr]; cols=[trans_target_states_mat;dim_matr_arr]; 
+% vals=[transition_rates_table(rate_inds)/sum(transition_rates_table(:));diag_vals];
+% A_sparse_fast = sparse(rows,cols,vals,dim_matr,dim_matr);
+% K_sparse=(transpose(A_sparse_fast) - speye(size(A_sparse_fast)) )*sum(transition_rates_table(:));
+% 
+% else
+%     A_sparse_fast=[]; K_sparse=[];
+% end
+% 

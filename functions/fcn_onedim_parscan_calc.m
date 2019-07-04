@@ -1,16 +1,11 @@
-function [stationary_state_vals_scan,stationary_node_vals_scan,stationary_state_inds_scan]=fcn_onedim_parscan_calc(stg_table,transition_rates_table,x0,nodes,...
-                                                                                                parscan_matrix,scan_params,scan_params_up_down)
+function [stationary_state_vals_scan,stationary_node_vals_scan,stationary_state_inds_scan]=...
+    fcn_onedim_parscan_calc(stg_table,transition_rates_table,x0,nodes,parscan_matrix,scan_params,scan_params_up_down)
                                                                                             
 [~,scan_par_inds,~]=fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,nodes);
 
 if size(parscan_matrix,2)~=numel(scan_par_inds)
 	error('parscan_matrix and scan_par_inds don''t have the same dimension, check them again!')
 end
-
-% stg_table_flag='stg_table_exists';
-% if isempty(stg_table_flag)
-%     [stg_table,~,~]=fcn_build_stg_table(truth_table_filename,nodes,transition_rates_table,'');
-% end
 
 stationary_node_vals_scan=zeros(numel(scan_par_inds),size(parscan_matrix,1),numel(nodes)); % transition_rates_table_mod=transition_rates_table;
 

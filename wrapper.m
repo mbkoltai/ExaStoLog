@@ -7,22 +7,25 @@ active_editor = editor_app.getActiveEditor; storage_location = active_editor.get
 file = char(storage_location.getFile); path_to_toolbox = fileparts(file); cd(path_to_toolbox);
 
 %% ADD FUNCTIONS to PATH
+
 addpath('functions/') 
 % using these publicly available MATLAB toolboxes:
 % needed for PLOTS:
 addpath('heatmaps') % https://mathworks.com/matlabcentral/fileexchange/24253-customizable-heat-maps
 addpath('redblue'); % https://mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap (for redblue colormaps)
-% optional for PLOTS and saving of PLOTS
+
+% optional for generating and saving plots
 % for subplots with smaller gaps:
 addpath('tight_subplot') % https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w
 
 % export figures as EPS or PDF as they appear on plots:
-export_fig_name=dir('altman*'); export_fig_name=export_fig_name.name; 
-addpath(genpath(export_fig_name)) % Optional. https://mathworks.com/matlabcentral/fileexchange/23629-export_fig
+% Optional. https://mathworks.com/matlabcentral/fileexchange/23629-export_fig
+export_fig_name=dir('altman*'); export_fig_name=export_fig_name.name; addpath(genpath(export_fig_name)) 
 
 % optional for PARAMETER FITTING by simulated annealing:
 addpath('anneal') % https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm
-% title font weight normal, docked figures
+
+% optional defaults settings: title font weight normal, docked figures
 set(0,'DefaultAxesTitleFontWeight','normal'); set(0,'DefaultFigureWindowStyle','docked');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -46,13 +49,13 @@ set(0,'DefaultAxesTitleFontWeight','normal'); set(0,'DefaultFigureWindowStyle','
 % 'cell_death | (dna_dam & g2m_trans)'}; 
 
 % name of the model
-model_name='kras15vars'; % kras15vars
+model_name='mammalian_cc'; % kras15vars
 
 % where to save figures
-save_folder=strcat('doc/sample_plots/',model_name,'/kras_off/');
+save_folder=strcat('doc/sample_plots/',model_name,'/');
 
 % OR B) the model can be read in from an existing BOOLNET file
-[nodes,rules]=fcn_bnet_readin('model_files/krasmodel15vars.bnet'); % krasmodel10vars.bnet
+[nodes,rules]=fcn_bnet_readin('model_files/traynard2016_mammalian_cellcycle.bnet'); % krasmodel10vars.bnet
 
 % once we have the list of nodes and their logical rules, we can check if
 % all variables referred to by rules are found in the list of nodes:
@@ -62,14 +65,13 @@ fcn_nodes_rules_cmp(nodes,rules)
 truth_table_filename='fcn_truthtable.m'; fcn_write_logicrules(nodes,rules,truth_table_filename)
 
 % from the model we generate the STG table, that is independent of values of transition rates
-tic; [stg_table,~,~]=fcn_build_stg_table(truth_table_filename,nodes,'',''); toc
-% [state_transitions_inds,K_sparse,A_sparse_fast]=fcn_build_stg_table(truth_table_filename,nodes,transition_rates_table,'num_matrix');
+tic; stg_table=fcn_build_stg_table(truth_table_filename,nodes); toc
 
 %% generate transition matrix from existing STG table
 
 % to define transition rates, we can select given rates to have different values than 1, or from randomly chosen
 % name of rates: 'u_nodename' or 'd_nodename'
-% chosen_rates={'d_KRAS','d_cc'}; chosen_rates_vals=[0 0]; 
+% for KRAS model, state of KRAS defines whether its mutant or not: chosen_rates={'d_KRAS','d_cc'}; chosen_rates_vals=[0 0]; 
 chosen_rates=[]; chosen_rates_vals=[];
 % OR leave them empty: chosen_rates=[]; chosen_rates_vals=[];
 
@@ -95,8 +97,11 @@ n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:
 % define some nodes with a fixed value and a probability <dom_prob>: states
 % that satisfy this condition will have a total initial probability of
 % <dom_prob>, the other states 1-dom_prob
-initial_fixed_nodes = {'cc','KRAS'}; initial_fixed_nodes_vals=[1 0];
-% for mammalian cell cycle model: {'CycD','Rb_b1','Rb_b2','Cdh1','p27_b1','p27_b2','Skp2'}; 
+
+initial_fixed_nodes={'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}; initial_fixed_nodes_vals=[0 0 0 1 1 1 1 1];
+% KRAS model, WT: {'cc','KRAS'}, [1 0]. Mutant: {'cc','KRAS'}, [1 0]
+% for cell cycle model initial state: CycE=0 & CycA=0 & CycB=0 & Cdh1=1 & % Rb=1 & p27=1, meaning 
+% {CycE CycA CycB Cdh1 Rb_b1 Rb_b2 p27_b1 p27_b2} [0 0 0 1 1 1 1 1]
 % what is the probability of this state, (eg. dom_prob=0.8, ie. 80% probability)
 dom_prob=1;
 % if <random> the probability is randomly distributed among states, if <uniform> uniformly
@@ -154,7 +159,7 @@ truth_table_inputs(stat_sol>0,:) % logical states that are nonzero
 % barwidth_states_val: width of the bars for bar plot of stationary solutions of states
 % sel_nodes: nodes to show. If left empty, all nodes are shown
 % nonzero_flag: minimal value for probability to display - if this is non-empty, only plot nonzero states, useful for visibility if there are many states
-sel_nodes=3:numel(nodes); min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[10 20]; % fontsize_hm,fontsize_stat_sol
+sel_nodes=[]; min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[10 20]; % fontsize_hm,fontsize_stat_sol
 plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.01;
 % WARNING!!! if more than 12 nodes, generating the figure for A/K can be time-consuming
 matrix_input=A_sparse;
@@ -164,9 +169,12 @@ fcn_plot_A_K_stat_sol(matrix_input, nodes, sel_nodes, stat_sol, x0, plot_setting
 % SAVE
 % enter any string for the last argument to overwrite existing plot!!
 if exist(save_folder,'dir')==0; mkdir(save_folder); end
-fig_file_type={'.png','.eps'}; if ~isempty(matrix_input); matrix_input_str='_with_matrix'; else; matrix_input_str=''; end
-overwrite_flag='';
-fcn_save_fig(strcat('single_solution_states_nodes_stat_sol',matrix_input_str),save_folder,fig_file_type{1},overwrite_flag);
+fig_file_type={'.png','.eps','.pdf','.jpg','.tif'}; if ~isempty(matrix_input); matrix_input_str='_with_matrix'; else; matrix_input_str=''; end
+% if <overwrite_flag> non-empty then existing file with same name is overwritten. 
+overwrite_flag='yes'; 
+% for <resolution> you can enter dpi value manually, if left empty then it is manually set
+magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
+fcn_save_fig(strcat('single_solution_states_nodes_stat_sol',matrix_input_str),save_folder,fig_file_type{2},overwrite_flag,resolution_dpi);
 
 %% PLOT stationary solutions (without A/K matrix)
 
@@ -179,7 +187,11 @@ fcn_plot_A_K_stat_sol(matrix_input, nodes, sel_nodes, stat_sol, x0, plot_setting
 
 % SAVE
 % enter any string for the last argument to overwrite existing plot!!
-fcn_save_fig(strcat('single_solution_states_nodes_stat_sol'),save_folder,fig_file_type{1},'y');
+% if <overwrite_flag> non-empty then existing file with same name is overwritten. 
+overwrite_flag='yes'; 
+% for <resolution> you can enter dpi value manually, if left empty then it is manually set
+magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
+fcn_save_fig(strcat('single_solution_states_nodes_stat_sol'),save_folder,fig_file_type{2},overwrite_flag,resolution_dpi);
 
 %% PLOT binary heatmap of nonzero stationary states by NODES
 % ARGUMENT
@@ -193,18 +205,27 @@ nonempty_subgraph=find(arrayfun(@(x) ~isempty(term_verts_cell{x}), 1:numel(term_
 % want to use tight subplot? | order states by probability?
 tight_subplot_flag='yes'; ranking_flag='yes';
 % nodes to show. if none selected, then all nodes shown
-sel_nodes=3:numel(nodes); 
+sel_nodes=[]; 
 % setdiff(2:numel(nodes)-1,[find(strcmp(nodes,{'Rb_b2'})) find(strcmp(nodes,{'p27_b2'}))]);
 % probability threshold for states to show (if left empty, all states shown)
 prob_thresh=0.01;  % []; % 0.05;
 % PLOT
 figure('name','statsol_binary_heatmap')
+% inputting terminal vertices if there are multiple subgraphs and in some
+% of them there are fixed points, in others a cyclic attractor: 
+% for mammalian cell cycle model: [term_verts_cell{1} term_verts_cell{2}]
+% first subgraph contains 
+
 statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,...
-                            vertcat(term_verts_cell{nonempty_subgraph}),... % if providing a single cell: term_verts_cell{nonempty_subgraph}
+                            [term_verts_cell{1} term_verts_cell{2}],... % if providing a single cell: term_verts_cell{nonempty_subgraph}
                             nodes,sel_nodes,plot_param_settings,tight_subplot_flag,ranking_flag);
 
 % SAVE
-fcn_save_fig('binary_heatmap_states',save_folder,fig_file_type{1},'');
+% if <overwrite_flag> non-empty then existing file with same name is overwritten. 
+overwrite_flag='yes'; 
+% for <resolution> you can enter dpi value manually, if left empty then it is manually set
+magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
+fcn_save_fig('binary_heatmap_states',save_folder,fig_file_type{2},overwrite_flag,'');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% plot of STG (state transition graph)
@@ -222,30 +243,34 @@ xlim_vals=[]; ylim_vals=[]; % xlim_vals=[0 21;-5 5]; ylim_vals=[0 23;-5 5];
 default_settings=[20 1 7 5 8]; % fontsize, linewidth_val, arrowsize, default_markersize, highlight_markersize
 % color of source states of STG
 source_color='green'; 
-% figure(); 
+figure('name','complete STG'); 
 plot_STG(A_sparse,subgraph_index,default_settings,xlim_vals,ylim_vals,titles,source_color)
 
 %% PLOT a single STG (that can be a selected subgraph of entire STG or terminal states of a cyclic attractor)
 % cropping (optional)
 xlim_vals=[-4 5]; ylim_vals = [-5 5];
-% if STG graph/subgraph larger than ~2000 states, visualization can be very
-% slow, therefore you can just take a sample
-sample_states=randi(numel(cell_subgraphs{subgraph_index}),1,2e3);
+
+%%%%%%%
+% if STG graph/subgraph larger than ~2000 states, visualization can be very slow, therefore you can just take a sample
+subgraph_index=1; sample_states=randi(numel(cell_subgraphs{subgraph_index}),1,2e3);
 titles ={strcat('subgraph #',num2str(subgraph_index))};
-sample_size=3e3; sample_nodes=unique([cell2mat(term_verts_cell{subgraph_index})', datasample(cell_subgraphs{subgraph_index},sample_size)]); 
+sample_size=3e3; sample_nodes=unique([cell2mat(term_verts_cell{subgraph_index}), datasample(cell_subgraphs{subgraph_index},sample_size)]); 
 A_sub=A_sparse(sample_nodes,sample_nodes); 
-% all states of a subgraph: cell_subgraphs{subgraph_index},cell_subgraphs{subgraph_index}
-% terminal states: cell2mat(vertcat(term_verts_cell{:})),cell2mat(vertcat(term_verts_cell{:}))
-default_settings=[20 1 7 5 5]; % fontsize,linewidth_val, arrowsize, default_markersize, highlight_markersize
-plot_STG(A_sub,'',default_settings,[],[],titles,source_color)
-% plot_STG(A_sub,'',default_settings,[],[],titles,source_color)
+%%%%%%
+
+% all states of a subgraph: A_sub=A_sparse(cell_subgraphs{subgraph_index},cell_subgraphs{subgraph_index});
+% only terminal states: cell2mat(vertcat(term_verts_cell{:})),cell2mat(vertcat(term_verts_cell{:}))
+default_settings=[20 1 7 3 9]; % fontsize,linewidth_val, arrowsize, default_markersize, highlight_markersize
+figure('name','subgraph')
+subplot(1,2,1); plot_STG(A_sub,'',default_settings,[],[],titles,source_color)
+subplot(1,2,2); plot_STG(A_sparse(cell_subgraphs{2},cell_subgraphs{2}),'',default_settings,[],[],titles,source_color)
 
 % SAVE
 fcn_save_fig('STG_subgraph',save_folder,fig_file_type{1},'');
 
 %% STGs on subplots, with given parameter highlighted on each
 
-% if STG table doesn't exist,  generate with <[stg_table,~,~]=fcn_build_stg_table(truth_table_filename,nodes,'','');>
+% if STG table doesn't exist,  generate with <[stg_table,~,~]=fcn_build_stg_table(truth_table_filename,nodes);>
 
 selected_pars=[1 3 4 5 6 11 9 8]; % parameters to highlight, either 'all', or numeric array [1 2 3]
 plot_pars=[20 0.1 7 3 6]; % plot_pars=[fontsize,linewidth_val, arrowsize, default_markersize, highlight_markersize]
@@ -312,7 +337,7 @@ parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_dow
 % stg table: generated above, state transition graph
 % transition_rates_table:default values of transition rates
 % initial conditions: x0
-% stg_table: generated by [stg_table,~,~]=fcn_build_stg_table(truth_table_filename,nodes,transition_rates_table,'');
+% stg_table: generated by stg_table=fcn_build_stg_table(truth_table_filename,nodes);
 % [~,scan_par_inds,~]=fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,nodes);
 [stationary_state_vals_onedimscan,stationary_node_vals_onedimscan,stationary_state_inds_scan]=...
     fcn_onedim_parscan_calc(stg_table,transition_rates_table,x0,nodes,parscan_matrix,scan_params,scan_params_up_down);

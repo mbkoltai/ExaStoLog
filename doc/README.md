@@ -29,7 +29,7 @@ The steps below are also available and directly executable in [this MATLAB live 
 
 ### 1. Prerequisites
 
-##### - MATLAB version 2015b or later
+##### - MATLAB version 2015b or later. (Tested in MATLAB 2015b, 2018b, 2019a.)
 
 ##### - clone the [repository](https://github.com/mbkoltai/exact-stoch-log-mod) and add the folder 'functions' to your path: addpath('functions')
 
