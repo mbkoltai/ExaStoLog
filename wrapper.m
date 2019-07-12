@@ -194,32 +194,32 @@ magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'Scre
 fcn_save_fig(strcat('single_solution_states_nodes_stat_sol'),save_folder,fig_file_type{2},overwrite_flag,resolution_dpi);
 
 %% PLOT binary heatmap of nonzero stationary states by NODES
-% ARGUMENT
+
+% ARGUMENTS pof function:
+% fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,term_verts_inds_cell,nodes,sel_nodes,plot_param_settings,tight_subplot_flag,ranking_flag)
+% stat_sol: vector of stationary solutions
+% probability threshold for states to show (if left empty, all states shown)
+prob_thresh=0.01;  % []; % 0.05;
 % term_verts_cell: which subgraph to plot if there are disconnected ~
+% nodes: name of nodes
+% nodes to show. if none selected, then all nodes shown
+sel_nodes=[]; % setdiff(2:numel(nodes)-1,[find(strcmp(nodes,{'Rb_b2'})) find(strcmp(nodes,{'p27_b2'}))]);
+%
+% plot_param_settings
 % num_size_plot: font size of 0/1s on the heatmap
 % hor_gap: horizontal gap between terminal SCCs, bottom_marg: bottom margin, left_marg: left margin
 numsize_plot=12; fontsize=12; hor_gap=0.01; bottom_marg=0.15; left_marg=0.04; 
 plot_param_settings=[numsize_plot fontsize hor_gap bottom_marg left_marg];
-% index of nonempty subgraph, check by <term_verts_cell>
-nonempty_subgraph=find(arrayfun(@(x) ~isempty(term_verts_cell{x}), 1:numel(term_verts_cell)));
 % want to use tight subplot? | order states by probability?
 tight_subplot_flag='yes'; ranking_flag='yes';
-% nodes to show. if none selected, then all nodes shown
-sel_nodes=[]; 
-% setdiff(2:numel(nodes)-1,[find(strcmp(nodes,{'Rb_b2'})) find(strcmp(nodes,{'p27_b2'}))]);
-% probability threshold for states to show (if left empty, all states shown)
-prob_thresh=0.01;  % []; % 0.05;
 % PLOT
 figure('name','statsol_binary_heatmap')
 % inputting terminal vertices if there are multiple subgraphs and in some
 % of them there are fixed points, in others a cyclic attractor: 
 % for mammalian cell cycle model: [term_verts_cell{1} term_verts_cell{2}]
-% first subgraph contains 
-
 statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,...
                             [term_verts_cell{1} term_verts_cell{2}],... % if providing a single cell: term_verts_cell{nonempty_subgraph}
                             nodes,sel_nodes,plot_param_settings,tight_subplot_flag,ranking_flag);
-
 % SAVE
 % if <overwrite_flag> non-empty then existing file with same name is overwritten. 
 overwrite_flag='yes'; 
@@ -228,42 +228,37 @@ magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'Scre
 fcn_save_fig('binary_heatmap_states',save_folder,fig_file_type{2},overwrite_flag,'');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% plot of STG (state transition graph)
+%% plot of STG (state transition graph) with source and sink (terminal) vertices highlighted
 
 % NOTE: for models larger than ~10-12 nodes generating these plots can be very time consuming!
 
-% PLOT the STG of the model. Show the full STG and a selected (counter) subgraph
+% calculate the sum of probabilities per disconnected subgraphs
 probs_by_subgraph=arrayfun(@(x) sum(stat_sol(cell2mat(term_verts_cell{x}))), 1:numel(term_verts_cell));
 [~,subgraph_index]=max(probs_by_subgraph); 
-% find(cellfun(@(x) numel(x), term_verts_cell)>0); % select non-empty subgraph (or if there are multiple, just the subgraph you want)
-titles = {'Full state transition graph',strcat('subgraph #',num2str(subgraph_index))}; 
-% cropping the subplots (optional)
-xlim_vals=[]; ylim_vals=[]; % xlim_vals=[0 21;-5 5]; ylim_vals=[0 23;-5 5]; 
-% parameters for plot
-default_settings=[20 1 7 5 8]; % fontsize, linewidth_val, arrowsize, default_markersize, highlight_markersize
-% color of source states of STG
-source_color='green'; 
-figure('name','complete STG'); 
-plot_STG(A_sparse,subgraph_index,default_settings,xlim_vals,ylim_vals,titles,source_color)
-
-%% PLOT a single STG (that can be a selected subgraph of entire STG or terminal states of a cyclic attractor)
-% cropping (optional)
-xlim_vals=[-4 5]; ylim_vals = [-5 5];
 
 %%%%%%%
 % if STG graph/subgraph larger than ~2000 states, visualization can be very slow, therefore you can just take a sample
-subgraph_index=1; sample_states=randi(numel(cell_subgraphs{subgraph_index}),1,2e3);
-titles ={strcat('subgraph #',num2str(subgraph_index))};
-sample_size=3e3; sample_nodes=unique([cell2mat(term_verts_cell{subgraph_index}), datasample(cell_subgraphs{subgraph_index},sample_size)]); 
-A_sub=A_sparse(sample_nodes,sample_nodes); 
+% subgraph_index=1; sample_states=randi(numel(cell_subgraphs{subgraph_index}),1,2e3);
+% titles ={strcat('subgraph #',num2str(subgraph_index))};
+% sample_size=3e3; sample_nodes=unique([cell2mat(term_verts_cell{subgraph_index}), datasample(cell_subgraphs{subgraph_index},sample_size)]); 
+% A_sub=A_sparse(sample_nodes,sample_nodes); 
 %%%%%%
 
+% ARGUMENTS of function: 
+% plot_STG(A_sparse,default_settings,xlim_vals,ylim_vals,titles,source_color) 
+% A_sparse: transition matrix for entire STG or selected subgraph
 % all states of a subgraph: A_sub=A_sparse(cell_subgraphs{subgraph_index},cell_subgraphs{subgraph_index});
 % only terminal states: cell2mat(vertcat(term_verts_cell{:})),cell2mat(vertcat(term_verts_cell{:}))
+% 
+% default settings
 default_settings=[20 1 7 3 9]; % fontsize,linewidth_val, arrowsize, default_markersize, highlight_markersize
+
+xlim_vals=[-4 5]; ylim_vals = [-5 5];
+source_color='green';
+
 figure('name','subgraph')
-subplot(1,2,1); plot_STG(A_sub,'',default_settings,[],[],titles,source_color)
-subplot(1,2,2); plot_STG(A_sparse(cell_subgraphs{2},cell_subgraphs{2}),'',default_settings,[],[],titles,source_color)
+titles='subgraph 1';subplot(1,2,1); plot_STG(A_sparse(cell_subgraphs{1},cell_subgraphs{1}),'',default_settings,[],[],titles,source_color)
+titles='subgraph 2';subplot(1,2,2); plot_STG(A_sparse(cell_subgraphs{2},cell_subgraphs{2}),'',default_settings,[],[],titles,source_color)
 
 % SAVE
 fcn_save_fig('STG_subgraph',save_folder,fig_file_type{1},'');
