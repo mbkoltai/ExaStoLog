@@ -1,5 +1,7 @@
 %% STG plot of a model
-function full_stg_plot=plot_STG(A_sparse,subgraph_index,term_verts_cell,cell_subgraphs,stat_sol,plot_settings,title_string,source_color)
+function full_stg_plot=plot_STG(A_sparse,subgraph_index,term_verts_cell,cell_subgraphs,stat_sol,plot_settings,title_string)
+
+source_color='green';
 
 if isempty(subgraph_index)
     A_digraph = digraph(A_sparse,'omitselfloops'); 
