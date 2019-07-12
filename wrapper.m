@@ -225,7 +225,7 @@ statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,...
 overwrite_flag='yes'; 
 % for <resolution> you can enter dpi value manually, if left empty then it is manually set
 magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig('binary_heatmap_states',save_folder,fig_file_type{2},overwrite_flag,'');
+fcn_save_fig('binary_heatmap_states',save_folder,fig_file_type{2},overwrite_flag,resolution_dpi);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% plot of STG (state transition graph) with source and sink (terminal) vertices highlighted
@@ -233,35 +233,30 @@ fcn_save_fig('binary_heatmap_states',save_folder,fig_file_type{2},overwrite_flag
 % NOTE: for models larger than ~10-12 nodes generating these plots can be very time consuming!
 
 % calculate the sum of probabilities per disconnected subgraphs
-probs_by_subgraph=arrayfun(@(x) sum(stat_sol(cell2mat(term_verts_cell{x}))), 1:numel(term_verts_cell));
-[~,subgraph_index]=max(probs_by_subgraph); 
-
-%%%%%%%
-% if STG graph/subgraph larger than ~2000 states, visualization can be very slow, therefore you can just take a sample
-% subgraph_index=1; sample_states=randi(numel(cell_subgraphs{subgraph_index}),1,2e3);
-% titles ={strcat('subgraph #',num2str(subgraph_index))};
-% sample_size=3e3; sample_nodes=unique([cell2mat(term_verts_cell{subgraph_index}), datasample(cell_subgraphs{subgraph_index},sample_size)]); 
-% A_sub=A_sparse(sample_nodes,sample_nodes); 
-%%%%%%
+probs_by_subgraph=arrayfun(@(x) sum(stat_sol(cell2mat(term_verts_cell{x}))), 1:numel(term_verts_cell)); % [~,subgraph_index]=max(probs_by_subgraph); 
 
 % ARGUMENTS of function: 
-% plot_STG(A_sparse,default_settings,xlim_vals,ylim_vals,titles,source_color) 
+% plot_STG(A_sparse,subgraph_index,term_verts_cell,cell_subgraphs,stat_sol,plot_settings,title_str,source_color)
+%
 % A_sparse: transition matrix for entire STG or selected subgraph
-% all states of a subgraph: A_sub=A_sparse(cell_subgraphs{subgraph_index},cell_subgraphs{subgraph_index});
-% only terminal states: cell2mat(vertcat(term_verts_cell{:})),cell2mat(vertcat(term_verts_cell{:}))
-% 
-% default settings
-default_settings=[20 1 7 3 9]; % fontsize,linewidth_val, arrowsize, default_markersize, highlight_markersize
-
-xlim_vals=[-4 5]; ylim_vals = [-5 5];
+% subgraph_index: index of the subgraph to plot. If empty, entire STG is plotted
+% term_verts_cell: cell of terminal vertices 
+% cell_subgraphs: cell of vertices belonging to different subgraphs
+% stat_sol: stationary values of probabilities of different states (vertices of STG)
+% plot settings
+% the entries are: [fontsize,linewidth_val,arrowsize,default_markersize for all vertices,marker size for terminal and sink vertices]
+% size of source and sink states is proportional to their probability values
+plot_settings=[20 1 7 3 9]; 
+% color of vertices that have only outgoing edges
 source_color='green';
-
 figure('name','subgraph')
-titles='subgraph 1';subplot(1,2,1); plot_STG(A_sparse(cell_subgraphs{1},cell_subgraphs{1}),'',default_settings,[],[],titles,source_color)
-titles='subgraph 2';subplot(1,2,2); plot_STG(A_sparse(cell_subgraphs{2},cell_subgraphs{2}),'',default_settings,[],[],titles,source_color)
-
+subgraph_index=1; title_str=strcat('subgraph #', num2str(subgraph_index));
+subplot(1,2,1); stg_plot=plot_STG(A_sparse,subgraph_index,term_verts_cell,cell_subgraphs,stat_sol,plot_settings,title_str,source_color);
+subgraph_index=2; title_str=strcat('subgraph #', num2str(subgraph_index)); 
+subplot(1,2,2); plot_STG(A_sparse,2,term_verts_cell,cell_subgraphs,stat_sol,plot_settings,title_str,source_color)
 % SAVE
-fcn_save_fig('STG_subgraph',save_folder,fig_file_type{1},'');
+magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
+fcn_save_fig('STG_subgraph',save_folder,fig_file_type{1},overwrite_flag,resolution_dpi);
 
 %% STGs on subplots, with given parameter highlighted on each
 
