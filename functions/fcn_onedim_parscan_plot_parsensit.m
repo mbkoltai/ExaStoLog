@@ -29,7 +29,7 @@ nonzero_states=truth_table_inputs(nonzero_states_inds,:);
 
 % disp(trans_rates_names)
 
-% ONE STATE on one subplot a.a.f of all params
+% ONE STATE on one subplot as fcn of all params
 if strcmp(var_type_flag,'state') || strcmp(var_type_flag,'states')
     % scan_variable = stationary_state_vals_onedimscan;
     if size(scan_variable,3)~=size(nonzero_states,1)
@@ -53,13 +53,26 @@ for k=1:size(scan_variable,3)
 end
 
 % identify parameters that have an effect on stat vars
-sensit_params_table=arrayfun(@(x) max(abs(resp_coeff(:,:,x)'))>sensit_cutoff, 1:size(resp_coeff,3),'un',0); sensit_params_table=vertcat(sensit_params_table{:});
+
+if strcmp(readout_type_flag,'sensitivity') || strcmp(readout_type_flag,'sensit')
+   sensit_params_table=arrayfun(@(x) max(abs(resp_coeff(:,:,x)'))>sensit_cutoff, 1:size(resp_coeff,3),'un',0); 
+   sensit_params_table=vertcat(sensit_params_table{:});
+elseif strcmp(readout_type_flag,'value') || strcmp(readout_type_flag,'values')
+    % if we are plotting values, it is the minimal variation in the value of selected variables
+   sensit_params_table=arrayfun(@(x) (max(scan_variable(:,:,x),[],2)-min(scan_variable(:,:,x),[],2))'>sensit_cutoff,1:size(scan_variable,3),'un',0);
+   sensit_params_table=vertcat(sensit_params_table{:});
+else
+    error('sensitivity or values')
+end    
 sensit_pars=find(sum(sensit_params_table)>0); sensit_vars=find(sum(sensit_params_table,2)>0)'; 
 
-% take subspace of respcoeffs and statevars where there is an effect
+% take subspace of respcoeffs and state_vars where there is an effect
 resp_coeff_sensit_parts=resp_coeff(sensit_pars,:,sensit_vars);
 scan_variable_sensit_parts=scan_variable(sum(sensit_params_table)>0,:,sum(sensit_params_table,2)>0);
 %  find(sum(sensit_params_table)>0)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PLOTS
 
 % PLOTs showing the stationary value of variables
 if strcmp(readout_type_flag,'var_value') || strcmp(readout_type_flag,'value') || strcmp(readout_type_flag,'values')
@@ -183,7 +196,6 @@ if ~isempty(param_settings{3})
     [ha,~]=tight_subplot(nrow,ncol,t_pars{1},t_pars{2},t_pars{3});
 end
 
-% sensit_cutoff=0.04;
 for k=1:size(resp_coeff_sensit_parts,3)
 %     p_div_x = parscan_matrix'./stationary_node_vals_onedimscan(:,:,k);
 %     resp_coeff(:,:,k) = (num_diff_vals(:,:,k)./num_diff_parmatr).*p_div_x(:,2:end);
@@ -194,7 +206,7 @@ for k=1:size(resp_coeff_sensit_parts,3)
         axes(ha(k));
     end
 
-resp_coeff_var=resp_coeff_sensit_parts(:,:,k)'; % sensit_pars=max(abs(resp_coeff_var))>sensit_cutoff;
+resp_coeff_var=resp_coeff_sensit_parts(:,:,k)';
 % lineplot
 semilogx(parscan_matrix(2:end,sensit_pars), resp_coeff_var, 'LineWidth',2); 
 ylim([floor(min(resp_coeff_sensit_parts(:))*10)/10 ceil(max(resp_coeff_sensit_parts(:))*10)/10])
@@ -221,8 +233,8 @@ h_supt=suptitle('response coefficients'); set(h_supt,'Fontsize',1.5*fontsize_axe
 else
 % heatmap
 % parameters that have abs(resp_coeff)>cutoff
-sensit_params_table=arrayfun(@(x) max(abs(resp_coeff(:,:,x)'))>sensit_cutoff, 1:size(resp_coeff,3),'un',0); 
-sensit_params_table=vertcat(sensit_params_table{:});
+% sensit_params_table=arrayfun(@(x) max(abs(resp_coeff(:,:,x)'))>sensit_cutoff, 1:size(resp_coeff,3),'un',0); 
+% sensit_params_table=vertcat(sensit_params_table{:});
 resp_coeff_sensit_parts=resp_coeff(sum(sensit_params_table)>0,:,sum(sensit_params_table,2)>0);
 
 sensit_vars=find(sum(sensit_params_table,2)>0)';
@@ -278,23 +290,20 @@ end
 
 h_supt=suptitle('response coefficients'); set(h_supt,'Fontsize',1.5*fontsize_axes)
 
-end % plot type
+end % end of IF gate for response coefficient plots
 
 else % readout type (value or sensitivity)
     error('readout_type_flag should be ''values/var_value'' or ''respcoeff/sensitivity'' ')
 end
 
-sensit_params_table=arrayfun(@(x) max(abs(resp_coeff(:,:,x)'))>sensit_cutoff, 1:size(resp_coeff,3),'un',0); sensit_params_table=vertcat(sensit_params_table{:});
-sensit_pars=find(sum(sensit_params_table)>0);
+% sensit_params_table=arrayfun(@(x) max(abs(resp_coeff(:,:,x)'))>sensit_cutoff, 1:size(resp_coeff,3),'un',0); sensit_params_table=vertcat(sensit_params_table{:});
+% sensit_pars=find(sum(sensit_params_table)>0);
+
 [scan_par_table,~,~]= fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,nodes);
 % sensitive parameters
 scan_pars_sensit=unique(scan_par_table(sum(sensit_params_table)>0,1))';
-% scan_params_sensit_up_down=cell(1,numel(scan_pars_sensit));
-% for k=1:numel(scan_pars_sensit)
-%     scan_params_sensit_up_down{k} = scan_par_table(sensit_pars(scan_par_table(sensit_pars,1)==scan_pars_sensit(k)), 2)';
-% end
-
 scan_params_sensit_up_down=arrayfun(@(x) scan_par_table(sensit_pars(scan_par_table(sensit_pars,1)==x), 2), scan_pars_sensit, 'un', 0);
+
 if any(cell2mat(arrayfun(@(x) size(scan_params_sensit_up_down{x},1),1:numel(scan_params_sensit_up_down),'un',0))>1)
     scan_params_sensit_up_down=arrayfun(@(x) scan_params_sensit_up_down{x}',1:numel(scan_params_sensit_up_down),'un',0);
 end
