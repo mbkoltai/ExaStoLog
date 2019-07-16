@@ -4,7 +4,13 @@ function [corr_matr,p_matrix_vars]=fcn_multidim_parscan_parvarcorrs(plot_type_fl
 % CORRELATIONS BETWEEN VARIABLES
 if strcmp(plot_type_flag(1),'var') || strcmp(plot_type_flag(1),'var_var') 
 
-[corr_matr,p_matrix_vars]=corrcoef(scan_values); corr_matr(p_matrix_vars>0.05)=NaN; corr_matr=triu(corr_matr); corr_matr(corr_matr==0)=NaN;
+if sum(sum(isnan(scan_values)))>0
+[corr_matr,p_matrix_vars]=corrcoef(scan_values,'rows','pairwise'); 
+disp(strcat(num2str(sum(isnan(scan_values))), 'nan values!'))
+else
+[corr_matr,p_matrix_vars]=corrcoef(scan_values);     
+end
+corr_matr(p_matrix_vars>0.05)=NaN; corr_matr=triu(corr_matr); corr_matr(corr_matr==0)=NaN;
 % corr_matr(isnan(corr_matr))=0;
 
 % HEATMAP
@@ -44,7 +50,7 @@ end
 % PAR-VAR PLOT
 elseif strcmp(plot_type_flag(1),'par') || strcmp(plot_type_flag(1),'par_var') 
     % disp('regression between parameters and variable values')
-    [~,~,predictor_names] = fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,nodes);
+[~,~,predictor_names] = fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,nodes);
     % disp(strcat(predictor_names,', ',sampling_type))
 
 r_squared=zeros(numel(sel_nodes),numel(predictor_names)); slope_intercept=cell(numel(sel_nodes),numel(predictor_names));
@@ -55,7 +61,7 @@ if strfind(regr_type,'log')
 else
     x=all_par_vals_lhs(:,par_c); str_regr_type=[];
 end
-y=scan_values(:,sel_nodes(k));
+y=scan_values(:,sel_nodes(k)); isnan_inds=~(isnan(x) | isnan(y)); x=x(isnan_inds); y=y(isnan_inds);
 p=polyfit(x,y,1); SSresid=sum((y - (p(1)*x + p(2))).^2); SStotal=( length(y)-1 )*var(y); 
 r_squared(k,par_c)=1-SSresid/SStotal; slope_intercept{k,par_c}=p;
 % rsq_adj(k,par_c)=1-SSresid/SStotal*( length(y)-1)/(length(y)-length(p) );
