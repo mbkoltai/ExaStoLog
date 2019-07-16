@@ -1,6 +1,6 @@
 function [resp_coeff,scan_pars_sensit,scan_params_sensit_up_down,fig_filename]=fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
-                                                stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,nonzero_states_inds,parscan_matrix,...
-                                                nodes,scan_params,scan_params_up_down,sensit_cutoff,param_settings)
+                                         stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,nonzero_states_inds,parscan_matrix,...
+                                         nodes,scan_params,scan_params_up_down,sensit_cutoff,param_settings)
 % plot_type_flag: heatmap or lineplot
 % var_type_flag: states or nodes
 % readout_type_flag: variable value or response coefficient
@@ -70,6 +70,7 @@ sensit_pars=find(sum(sensit_params_table)>0); sensit_vars=find(sum(sensit_params
 resp_coeff_sensit_parts=resp_coeff(sensit_pars,:,sensit_vars);
 scan_variable_sensit_parts=scan_variable(sum(sensit_params_table)>0,:,sum(sensit_params_table,2)>0);
 %  find(sum(sensit_params_table)>0)
+disp(size(scan_variable_sensit_parts))
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 % PLOTS
@@ -86,27 +87,27 @@ end
 %%% LINEPLOT, VARIABLE VALUE 
 if strcmp(plot_type_flag,'lineplot') || strcmp(plot_type_flag,'line')
     
-nrow=round(sqrt(size(scan_variable,3))); ncol=nrow;
-if nrow*ncol<size(scan_variable,3)
-    nrow=nrow+1;
-end
+% nrow=round(sqrt(size(scan_variable,3))); ncol=nrow;
+% if nrow*ncol<size(scan_variable,3)
+%     nrow=nrow+1;
+% end
 
 if ~isempty(param_settings{3})
     t_pars=param_settings{3};
     [ha,~]=tight_subplot(nrow,ncol,t_pars{1},t_pars{2},t_pars{3});
 end
 
-for k=1:size(scan_variable,3)
+for k=1:size(scan_variable_sensit_parts,3)
     if isempty(param_settings{3})
         subplot(nrow,ncol,k); 
     else
         axes(ha(k));
     end
     
-    semilogx(parscan_matrix(:,sensit_pars), scan_variable(sensit_pars,:,k)', 'LineWidth',2); ylim([0 1]);
+    semilogx(parscan_matrix(:,sensit_pars), scan_variable_sensit_parts(:,:,k)', 'LineWidth',2); ylim([0 1]);
     
     if strcmp(var_type_flag,'node') || strcmp(var_type_flag,'nodes')
-        title(strrep(nodes(k),'_','\_'), 'FontWeight','normal','FontSize',fontsize_title); ylim([0 1]); 
+        title(strrep(nodes(sensit_vars(k)),'_','\_'), 'FontWeight','normal','FontSize',fontsize_title); ylim([0 1]); 
     else
         title(strcat('p([',num2str(nonzero_states(k,:)),'])'), 'FontWeight','normal','FontSize',fontsize_title); 
     end
@@ -114,7 +115,7 @@ for k=1:size(scan_variable,3)
         ylabel('stationary val.','Fontsize',fontsize_axes)
     end
     
-if k==size(scan_variable,3)
+if k==size(scan_variable_sensit_parts,3)
     legend(strrep(trans_rates_names(scan_par_inds(sensit_pars)),'_','\_'), 'Location', 'eastoutside');
 end
 end
