@@ -18,6 +18,9 @@ sensit_params_table=arrayfun(@(x) (max(scan_variable(:,:,x),[],2)-min(scan_varia
 % sensit_params_table=vertcat(sensit_params_table{:});
 sensit_params = find(sum(vertcat(sensit_params_table{:}))>0); 
 % sensit_states=nonzero_states_inds(sum(vertcat(sensit_params_table{:}),2)>0)';
+% variables sensitive to some parameter
+sensit_vars_all=find(sum(vertcat(sensit_params_table{:}),2)>0)';
+all_colors=distinguishable_colors(numel(sensit_vars_all));
 nrow=round(sqrt(numel(sensit_params))); ncol=nrow; if nrow*ncol<numel(sensit_params); ncol=ncol+1; end
 
 tight_subplot_params=plot_param_settings{5};
@@ -38,7 +41,11 @@ for k=1:size(scan_variable,1)
       else
           subplot(nrow,ncol,counter)
       end
-      semilogx(parscan_matrix(:,k),data_plot(:,sensit_vars_indiv_param),'LineWidth',linewidth_val )
+      
+      color_vals = all_colors(ismember(sensit_vars_all,sensit_vars_indiv_param),:);
+      for j=1:numel(sensit_vars_indiv_param)
+        semilogx(parscan_matrix(:,k),data_plot(:,sensit_vars_indiv_param(j)),'LineWidth',linewidth_val,'Color',color_vals(j,:)); hold on;
+      end
       % legends for states
       if strcmp(state_or_node_flag,'states')
       states_legend_index=cellfun(@num2str,num2cell(nonzero_states_inds(sensit_vars_indiv_param)),'un',0)'; 

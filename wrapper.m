@@ -25,6 +25,9 @@ export_fig_name=dir('altman*'); export_fig_name=export_fig_name.name; addpath(ge
 % optional for PARAMETER FITTING by simulated annealing:
 addpath('anneal') % https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm
 
+% optional for maximal distinguishable colors on plots
+addpath('distinguishable_colors/')
+
 % optional defaults settings: title font weight normal, docked figures
 set(0,'DefaultAxesTitleFontWeight','normal'); set(0,'DefaultFigureWindowStyle','docked');
 
@@ -325,28 +328,30 @@ parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_dow
 [stationary_state_vals_onedimscan,stationary_node_vals_onedimscan,stationary_state_inds_scan]=...
     fcn_onedim_parscan_calc(stg_table,transition_rates_table,x0,nodes,parscan_matrix,scan_params,scan_params_up_down);
 
-%% plotting results by parameters 
+%% PLOT RESULTS of 1-by-1 parameter scan on heatmap/lineplot BY PARAMETERS
 % (each subplot is a lineplot of node or state values as a function of a parameter's value, with a defined minimal variation
 
+nonzero_states_inds=find(stat_sol>0);
 % plot parameters
 % [0.06 0.03],[0.03 0.03],[0.02 0.01]
 height_width_gap=[0.06 0.03]; bott_top_marg =[0.03 0.03]; left_right_marg=[0.02 0.01];
 % [fontsize_axes,fontsize_title,legend_fontsize,linewidth,params_tight_subplots(leave empty if not installed),model_name]
 plot_param_settings={12,14,8,2,{height_width_gap bott_top_marg left_right_marg},model_name}; % plot_param_settings={12,14,[],model_name}; 
-state_or_node_flags={'states','nodes'}; diff_cutoff=0.2;
+state_or_node_flags={'states','nodes'}; diff_cutoff=0.05;
 figure('name','onedim parscan by param')
-[fig_filename,output_cell]=fcn_onedim_parscan_plot_by_params(state_or_node_flags{2},stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
-                                         nonzero_states_inds,parscan_matrix,nodes,scan_params,scan_params_up_down,...
+[fig_filename,output_cell]=fcn_onedim_parscan_plot_by_params(state_or_node_flags{1},...
+                                         stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
+                                         nonzero_states_inds,parscan_matrix,nodes,...
+                                         scan_params,scan_params_up_down,... % selected parameters
                                          diff_cutoff,... % minimal variation for variable to be shown on plot
                                          plot_param_settings);
 % SAVE figure
 magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig(strcat(fig_filename),save_folder,fig_file_type{2},'overwrite',resolution_dpi);
+fcn_save_fig(fig_filename,save_folder,fig_file_type{1},'overwrite',resolution_dpi);
                                      
 %% PLOT RESULTS of 1-by-1 parameter scan on heatmap/lineplot BY VARIABLES
 
 %%% SECOND PLOT TYPE: show the stationary value or response coefficient of 1 variable or state on 1 subplot, as a fcn of all relevant parameters
-nonzero_states_inds=find(stat_sol>0);
 sensit_cutoff=0.1; % minimal value for response coefficient (local sensitivity) or for the variation of node/state values
 % nonzero states of the model
 % nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))';
