@@ -8,7 +8,8 @@ function [resp_coeff,scan_pars_sensit,scan_params_sensit_up_down,fig_filename]=f
 
 z=arrayfun(@(x) plot_types{x}(plot_type_options(x)), 1:numel(plot_type_options),'un',0); z=horzcat(z{:}); 
 str_plot_type=cell2mat(strcat(z,'_'));
-fig_filename=strcat('onedim_parscan_',str_plot_type,param_settings{4});
+fig_filename=strcat('onedim_parscan_',str_plot_type,param_settings{4},'_by_vars');
+fig_filename
 plot_type_flag=z{1}; var_type_flag=z{2};readout_type_flag=z{3};
 
 if strfind(var_type_flag,'node')
@@ -29,7 +30,7 @@ nonzero_states=truth_table_inputs(nonzero_states_inds,:);
 
 % disp(trans_rates_names)
 
-% ONE STATE on one subplot as fcn of all params
+% ONE STATE on one subplot as fcn of all sensitive params
 if strcmp(var_type_flag,'state') || strcmp(var_type_flag,'states')
     % scan_variable = stationary_state_vals_onedimscan;
     if size(scan_variable,3)~=size(nonzero_states,1)
@@ -43,9 +44,9 @@ elseif strcmp(var_type_flag,'node') || strcmp(var_type_flag,'nodes')
 end
 
 % calculate resp coeffs
-num_diff_vals = diff(scan_variable,1,2); num_diff_parmatr = diff(parscan_matrix)';
+num_diff_vals=diff(scan_variable,1,2); num_diff_parmatr = diff(parscan_matrix)';
 % calc resp coeffs
-resp_coeff=zeros(size(scan_variable)); resp_coeff = resp_coeff(:,2:end,:);
+resp_coeff=zeros(size(scan_variable)); resp_coeff=resp_coeff(:,2:end,:);
 % resp_coeff_min_max = [floor(min(resp_coeff(:))*10)/10 ceil(max(resp_coeff(:))*10)/10];
 for k=1:size(scan_variable,3)
     p_div_x = parscan_matrix'./scan_variable(:,:,k);
@@ -65,12 +66,13 @@ else
     error('sensitivity or values')
 end    
 sensit_pars=find(sum(sensit_params_table)>0); sensit_vars=find(sum(sensit_params_table,2)>0)'; 
+% colors for all parameters
+all_colors=distinguishable_colors(numel(sensit_pars));
 
 % take subspace of respcoeffs and state_vars where there is an effect
 resp_coeff_sensit_parts=resp_coeff(sensit_pars,:,sensit_vars);
 scan_variable_sensit_parts=scan_variable(sum(sensit_params_table)>0,:,sum(sensit_params_table,2)>0);
-%  find(sum(sensit_params_table)>0)
-disp(size(scan_variable_sensit_parts))
+% sensit_vars
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 % PLOTS
@@ -93,8 +95,7 @@ if strcmp(plot_type_flag,'lineplot') || strcmp(plot_type_flag,'line')
 % end
 
 if ~isempty(param_settings{3})
-    t_pars=param_settings{3};
-    [ha,~]=tight_subplot(nrow,ncol,t_pars{1},t_pars{2},t_pars{3});
+    t_pars=param_settings{3}; [ha,~]=tight_subplot(nrow,ncol,t_pars{1},t_pars{2},t_pars{3});
 end
 
 for k=1:size(scan_variable_sensit_parts,3)
@@ -104,20 +105,34 @@ for k=1:size(scan_variable_sensit_parts,3)
         axes(ha(k));
     end
     
-    semilogx(parscan_matrix(:,sensit_pars), scan_variable_sensit_parts(:,:,k)', 'LineWidth',2); ylim([0 1]);
+    % subsetting only those params where there is variation
+    sensit_pars_indiv_var=find(max(scan_variable_sensit_parts(:,:,k),[],2) - min(scan_variable_sensit_parts(:,:,k),[],2)>sensit_cutoff)';
+    % color_vals = all_colors(ismember(sensit_vars_all,sensit_vars_indiv_param),:);
+    
+    for j=1:numel(sensit_pars_indiv_var)
+        
+    semilogx(parscan_matrix(:,sensit_pars(sensit_pars_indiv_var(j))), ...
+        scan_variable_sensit_parts(sensit_pars_indiv_var(j),:,k)', 'LineWidth',2, 'Color', all_colors(sensit_pars_indiv_var(j),:) ); 
+    hold on;
+    end
+    
+ ylim([0 1]); legend(trans_rates_names(scan_par_inds(sensit_pars(sensit_pars_indiv_var))),'Interpreter','none');
+ sensit_pars(sensit_pars_indiv_var)
     
     if strcmp(var_type_flag,'node') || strcmp(var_type_flag,'nodes')
         title(strrep(nodes(sensit_vars(k)),'_','\_'), 'FontWeight','normal','FontSize',fontsize_title); ylim([0 1]); 
     else
-        title(strcat('p([',num2str(nonzero_states(k,:)),'])'), 'FontWeight','normal','FontSize',fontsize_title); 
+       title(strcat(num2str(nonzero_states_inds(sensit_vars(k))),', p([',strrep(num2str(nonzero_states(sensit_vars(k),:)),' ',''),'])'), ...
+           'FontWeight','normal','FontSize',fontsize_title); 
     end
     if rem(k,ncol)==1
         ylabel('stationary val.','Fontsize',fontsize_axes)
     end
     
-if k==size(scan_variable_sensit_parts,3)
-    legend(strrep(trans_rates_names(scan_par_inds(sensit_pars)),'_','\_'), 'Location', 'eastoutside');
-end
+% if k==size(scan_variable_sensit_parts,3)
+%     legend(strrep(trans_rates_names(scan_par_inds(sensit_pars)),'_','\_'), 'Location', 'eastoutside');
+% end
+
 end
 
 h_supt=suptitle('stationary value of variables'); set(h_supt,'Fontsize',1.5*fontsize_axes)
@@ -157,18 +172,26 @@ for k=1:size(scan_variable_sensit_parts,3)
 
 var_to_plot = scan_variable_sensit_parts(:,:,k)'; % resp_coeff_sensit_parts
 heatmap(var_to_plot,xlabs,yticks_str,[],'TickAngle',90,'Colormap','redblue',...
-    'MinColorValue',0,'MaxColorValue',1,'GridLines','none','FontSize',11,'ShowAllTicks',true);    
+    'MinColorValue',0,'MaxColorValue',max(var_to_plot(:)),'GridLines','none','FontSize',11,'ShowAllTicks',true);    
+
+graph_props=get(gca); graph_props.XAxis.FontSize=fontsize_axes;
     % max(abs(resp_coeff_min_max))
     
     if strcmp(var_type_flag,'node') || strcmp(var_type_flag,'nodes')
         title( nodes(sensit_vars(k)),'Interpreter','none', 'FontWeight','normal','FontSize',fontsize_title)
     else
-        title(strcat('p([',num2str(nonzero_states(k,:)),'])'), 'FontWeight','normal','FontSize',fontsize_title);
+        title(strcat(num2str(nonzero_states_inds(sensit_vars(k))),', p([',strrep(num2str(nonzero_states(sensit_vars(k),:)),' ',''),'])'), ...
+            'FontWeight','normal','FontSize',fontsize_title);
+        % title(strcat(num2str(nonzero_states_inds(sensit_vars(k))),', p([',strrep(num2str(nonzero_states(sensit_vars(k),:)),' ',''),'])'), 'FontWeight','normal','FontSize',fontsize_title); 
     end
-    
+
+if isempty(param_settings{numel(param_settings)})
     if k==size(scan_variable_sensit_parts,3)
         colorbar('EastOutside');
     end
+else
+    colorbar('East');
+end
 
 end % end of for loop
 
@@ -222,7 +245,8 @@ end
 if strcmp(var_type_flag,'node') || strcmp(var_type_flag,'nodes')
         title(nodes(sensit_vars(k)),'Interpreter','none', 'FontWeight','normal','FontSize',fontsize_title)
 else
-        title(strcat('p([',num2str(nonzero_states(k,:)),'])'), 'FontWeight','normal','FontSize',fontsize_title); 
+        title(strcat(num2str(nonzero_states_inds(sensit_vars(k))),', p([',strrep(num2str(nonzero_states(sensit_vars(k),:)),' ',''),'])'),...
+            'FontWeight','normal','FontSize',fontsize_title); 
 end
 
 end
@@ -273,14 +297,15 @@ var_to_plot = resp_coeff_sensit_parts(:,:,k)'; % resp_coeff_sensit_parts
         yticks_str=[];
     end
     
-heatmap( var_to_plot,xlabs,yticks_str,[],'TickAngle',90,'Colormap','redblue',...
+heatmap(var_to_plot,xlabs,yticks_str,[],'TickAngle',90,'Colormap','redblue',...
     'MinColorValue',color_min_max(1),'MaxColorValue',color_min_max(2),'GridLines','none','FontSize',11,'ShowAllTicks',true);    
     % max(abs(resp_coeff_min_max))
     
     if strcmp(var_type_flag,'node') || strcmp(var_type_flag,'nodes')
         title( nodes(sensit_vars(k)),'Interpreter','none', 'FontWeight','normal','FontSize',fontsize_title)
     else
-        title(strcat('p([',num2str(nonzero_states(k,:)),'])'), 'FontWeight','normal','FontSize',fontsize_title); 
+        title(strcat(num2str(nonzero_states_inds(sensit_vars(k))),', p([',strrep(num2str(nonzero_states(sensit_vars(k),:)),' ',''),'])'), ...
+            'FontWeight','normal','FontSize',fontsize_title); 
     end
 
     if k==size(resp_coeff_sensit_parts,3)

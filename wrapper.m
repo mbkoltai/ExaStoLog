@@ -329,7 +329,8 @@ parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_dow
     fcn_onedim_parscan_calc(stg_table,transition_rates_table,x0,nodes,parscan_matrix,scan_params,scan_params_up_down);
 
 %% PLOT RESULTS of 1-by-1 parameter scan on heatmap/lineplot BY PARAMETERS
-% (each subplot is a lineplot of node or state values as a function of a parameter's value, with a defined minimal variation
+
+%%% FIRST PLOT TYPE: each subplot is a lineplot of node or state values as a function of a parameter's value, with a defined minimal variation
 
 nonzero_states_inds=find(stat_sol>0);
 % plot parameters
@@ -337,32 +338,33 @@ nonzero_states_inds=find(stat_sol>0);
 height_width_gap=[0.06 0.03]; bott_top_marg =[0.03 0.03]; left_right_marg=[0.02 0.01];
 % [fontsize_axes,fontsize_title,legend_fontsize,linewidth,params_tight_subplots(leave empty if not installed),model_name]
 plot_param_settings={12,14,8,2,{height_width_gap bott_top_marg left_right_marg},model_name}; % plot_param_settings={12,14,[],model_name}; 
-state_or_node_flags={'states','nodes'}; diff_cutoff=0.05;
+state_or_node_flags={'nodes','states'}; diff_cutoff=0.25;
 figure('name','onedim parscan by param')
 [fig_filename,output_cell]=fcn_onedim_parscan_plot_by_params(state_or_node_flags{1},...
-                                         stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
-                                         nonzero_states_inds,parscan_matrix,nodes,...
-                                         scan_params,scan_params_up_down,... % selected parameters
-                                         diff_cutoff,... % minimal variation for variable to be shown on plot
-                                         plot_param_settings);
+                                      stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
+                                      nonzero_states_inds,parscan_matrix,nodes,...
+                                      scan_params,scan_params_up_down,... % selected parameters
+                                      diff_cutoff,... % minimal variation for variable to be shown on plot
+                                      plot_param_settings);
 % SAVE figure
 magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
 fcn_save_fig(fig_filename,save_folder,fig_file_type{1},'overwrite',resolution_dpi);
                                      
 %% PLOT RESULTS of 1-by-1 parameter scan on heatmap/lineplot BY VARIABLES
 
-%%% SECOND PLOT TYPE: show the stationary value or response coefficient of 1 variable or state on 1 subplot, as a fcn of all relevant parameters
+%%% SECOND PLOT TYPE: show stationary value/response coefficient of 1 variable (state or node) on 1 subplot, as a fcn of all relevant parameters
 sensit_cutoff=0.1; % minimal value for response coefficient (local sensitivity) or for the variation of node/state values
 % nonzero states of the model
 % nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))';
 % select parameters of plot
-height_width_gap=[0.06 0.02]; bott_top_marg =[0.01 0.03]; left_right_marg=[0.05 0.05];
+height_width_gap=[0.03 0.05]; bott_top_marg=[0.13 0]; left_right_marg=[0.04 0.04];
 % [fontsize_axes,fontsize_title,params_tight_subplots(leave empty if not installed),model_name]
-plot_param_settings={12,14,{height_width_gap bott_top_marg left_right_marg},model_name}; % plot_param_settings={12,14,[],model_name}; 
+plot_param_settings={12,14,{height_width_gap bott_top_marg left_right_marg},model_name,'colorbar'}; 
+% plot_param_settings={12,14,[],model_name}; 
 % select type of plot
 plot_types={{'lineplot','heatmap'} {'nodes','states'} {'values','sensitivity'}};
 % if want to loop through all ploty types: all_opts_perm=[[1 1 1]; unique([perms([1 1 2]); perms([2 2 1])],'rows'); [2 2 2]];
-plot_type_options=[1 2 1];
+plot_type_options=[2 2 2];
 figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel(plot_type_options), 'un',0),'_'));
 [resp_coeff,scan_params_sensit,scan_params_up_down_sensit,fig_filename]=fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
                                                            stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
@@ -370,11 +372,11 @@ figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel
                                                            scan_params,scan_params_up_down,... % transition rates to scan in
                                                            sensit_cutoff,plot_param_settings);
 
-% <resp_coeffs> dimensions: (parameters, values,nodes), so eg. resp_coeffs(:,:,7) are the resp. coeff values across the param ranges for the 7th node
+% <resp_coeffs> dimensions: (parameters, values,nodes), so eg. resp_coeffs(:,:,7)=resp. coeff values across param ranges for the 7th node
 
 % SAVE figure
 magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig(strcat(fig_filename,'_cutoff'),save_folder,fig_file_type{2},'overwrite',resolution_dpi);
+fcn_save_fig(strcat(fig_filename,'_cutoff',num2str(sensit_cutoff)),save_folder,fig_file_type{2},'overwrite',resolution_dpi);
 
 %% multidimensional parameter scan: LATIN HYPERCUBE SAMPLING (random multidimensional sampling within given parameter ranges)
 
@@ -411,22 +413,24 @@ max_stdev=2; % repmat(0.5,1,numel(cell2mat(scan_params_up_down(:))));
 
 %% SCATTERPLOTS of STATE or NODE values as a function of the selected parameters, with the trendline shown (average value per parameter bin)
 
-sel_nodes=[6 10 11 12 13 14 15];
-for k=sel_nodes
+% sel_nodes=[6 10 11 12 13 14 15];
+for k=scan_params_sensit
 var_ind=k; % find(strcmp(nodes,'CHEK1')); % which STATE or NODE to plot
 % <all_par_vals_lhs>: parameter sets
-param_settings = [50 4 16 stat_sol_states_lhs_parscan_cell]; % [number_bins_for_mean,trendline_width,axes_fontsize,index nonzero states]
+param_settings = [50 4 16 size(stat_sol_states_lhs_parscan_cell)]; % [number_bins_for_mean,trendline_width,axes_fontsize,index nonzero states]
 % STATES or NODES? <scan_values>: values to be plotted
 scan_values=stat_sol_nodes_lhs_parscan; % stat_sol_states_lhs_parscan
 % PLOT
 sampling_type=sampling_types{3}; % sampling_types={'lognorm','linear','logunif'};
-file_name_prefix=strcat('LHS_parscan_trend_',nodes{var_ind}); figure('name',file_name_prefix)
+file_name_prefix=strcat('LHS_parscan_trend_',nodes{var_ind}); 
+figure('name',file_name_prefix)
 fcn_multidim_parscan_scatterplot(var_ind,all_par_vals_lhs,scan_values,...
         scan_params_sensit,scan_params_up_down_sensit,...
         nodes,sampling_type,param_settings)
 end
 
-% full_filename_with_path=fcn_save_fig(file_name_prefix,save_folder,fig_file_type{1},'y');
+magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
+fcn_save_fig(file_name_prefix,save_folder,fig_file_type{2},'overwrite',resolution_dpi);
 
 %% calculating & plotting (heatmap) correlations between variables OR between params and variables by linear/logist regression
 

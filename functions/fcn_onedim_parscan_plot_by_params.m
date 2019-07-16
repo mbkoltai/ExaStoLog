@@ -14,7 +14,8 @@ elseif strcmp(state_or_node_flag,'nodes')
 else
     error('<state_or_node_flag> has to be ''nodes'' or ''states''.')
 end
-sensit_params_table=arrayfun(@(x) (max(scan_variable(:,:,x),[],2)-min(scan_variable(:,:,x),[],2))'>diff_cutoff,1:size(scan_variable,3),'un',0);
+sensit_params_table=arrayfun(@(x) (max(scan_variable(:,:,x),[],2)-min(scan_variable(:,:,x),[],2))'>diff_cutoff,...
+    1:size(scan_variable,3),'un',0);
 % sensit_params_table=vertcat(sensit_params_table{:});
 sensit_params = find(sum(vertcat(sensit_params_table{:}))>0); 
 % sensit_states=nonzero_states_inds(sum(vertcat(sensit_params_table{:}),2)>0)';
@@ -47,20 +48,20 @@ for k=1:size(scan_variable,1)
         semilogx(parscan_matrix(:,k),data_plot(:,sensit_vars_indiv_param(j)),'LineWidth',linewidth_val,'Color',color_vals(j,:)); hold on;
       end
       % legends for states
-      if strcmp(state_or_node_flag,'states')
-      states_legend_index=cellfun(@num2str,num2cell(nonzero_states_inds(sensit_vars_indiv_param)),'un',0)'; 
-      states_legend_binary=num2str(truth_table_inputs(nonzero_states_inds(sensit_vars_indiv_param),:));
-      states_legend_binary=arrayfun(@(x) strrep(states_legend_binary(x,:),' ',''), 1:size(states_legend_binary,1), 'un', 0 );
-      legend_combined_strings=arrayfun(@(x) strcat(states_legend_index{x},', [',states_legend_binary{x},']'), 1:numel(states_legend_index),'un',0);
-      legend(legend_combined_strings); output_cell{counter} = {param_names(k) nonzero_states_inds(sensit_vars_indiv_param)};
-      elseif strcmp(state_or_node_flag,'nodes')
+   if strcmp(state_or_node_flag,'states')
+    states_legend_index=cellfun(@num2str,num2cell(nonzero_states_inds(sensit_vars_indiv_param)),'un',0)'; 
+    states_legend_binary=num2str(truth_table_inputs(nonzero_states_inds(sensit_vars_indiv_param),:));
+    states_legend_binary=arrayfun(@(x) strrep(states_legend_binary(x,:),' ',''), 1:size(states_legend_binary,1), 'un', 0 );
+ legend_combined_strings=arrayfun(@(x) strcat(states_legend_index{x},', [',states_legend_binary{x},']'),1:numel(states_legend_index),'un',0);
+    legend(legend_combined_strings); output_cell{counter} = {param_names(k) nonzero_states_inds(sensit_vars_indiv_param)};
+   elseif strcmp(state_or_node_flag,'nodes')
           legend(nodes(sensit_vars_indiv_param),'FontSize',legend_fontsize,'Interpreter','none');
           output_cell{counter} = {param_names(k) nodes(sensit_vars_indiv_param)};
-      end
+   end
       title(param_names(k),'Interpreter','none','FontSize',title_fontsize)
       % output
     end
 end
 
 model_name=plot_param_settings{6};
-figure_name = strcat('onedim_parscan_lineplot_',state_or_node_flag,'_',model_name);
+figure_name = strcat('onedim_parscan_lineplot_',state_or_node_flag,'_',model_name,'_by_params');
