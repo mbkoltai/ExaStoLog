@@ -148,9 +148,9 @@ truth_table_inputs(stat_sol>0,:) % logical states that are nonzero
 % x_sol=((x0')*A_sparse^1e5)';
 % stationary_node_vals=x_sol'*truth_table_inputs;
 % 
-% checked with MaBoSS simuls, results are identical (up to 1% dev.) as they have to be
-% comparing with simulation of mammalian cell cycle model with 12
-% nodes: look in folder <sample_plots/mammalian_cc/maboss_files_plots>
+% Checked with MaBoSS simuls, results are identical (up to 1% dev.).
+% Comparing with simulation of mammalian cell cycle model with 12 nodes: 
+% look in folder <sample_plots/mammalian_cc/maboss_files_plots>
 
 %% PLOTTING RESULTS
 
@@ -167,7 +167,7 @@ plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.01;
 % WARNING!!! if more than 12 nodes, generating the figure for A/K can be time-consuming
 matrix_input=A_sparse;
 figure('name','A_K_stat_sol')
-fcn_plot_A_K_stat_sol(matrix_input, nodes, sel_nodes, stat_sol, x0, plot_settings,prob_thresh)
+fcn_plot_A_K_stat_sol(matrix_input,nodes,sel_nodes,stat_sol,x0,plot_settings,prob_thresh)
 
 % SAVE
 % enter any string for the last argument to overwrite existing plot!!
@@ -507,8 +507,9 @@ fcn_save_fig('regression_tree_pred_import',save_folder,fig_file_type{2},'overwri
 % [parameter sets, variable values]: [all_par_vals_lhs,stat_sol_nodes_lhs_parscan]
 
 % select only parameters with an R-squared over some value
-% [par_ind_table,~,~]=fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes);
-r_sq_thresh=0.2; par_ind_table_filtered=par_ind_table(sum(r_squared>r_sq_thresh)>0,:);
+% careful to use same parameters as for R^2 calculations!!!
+[par_ind_table,sequential_indices_lhs,~] = fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes);
+r_sq_thresh=0.1; par_ind_table_filtered=par_ind_table(sum(r_squared>r_sq_thresh)>0,:);
 scan_params_filtered=unique(par_ind_table_filtered(:,1))'; % scan_params_unique=unique(par_ind_table(sum(r_squared>0.2)>0,1))'; 
 scan_params_up_down_filtered=arrayfun(@(x) par_ind_table_filtered(par_ind_table_filtered(:,1)==x,2)', scan_params_filtered,'un',0);
 
@@ -524,17 +525,18 @@ var_types={'nodes','states'}; % analysis for states or nodes
 % to calculate Sobol total sensitivity we need <sample_size*numel(scan_params_up_down)> evaluations of the model
 figure('name','sobol sensitivity index')
 sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{1},...
-                            all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan,...
-                            sample_size,...
-                            scan_params_filtered,scan_params_up_down_filtered,...% scan_params_sensit,scan_params_up_down_sensit
-                            stg_table,x0,nodes,sel_nodes,plot_settings);
+                      all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan,...
+                      sample_size,... % # of calculations per parameter
+                      sequential_indices_lhs,scan_params_filtered,scan_params_up_down_filtered,...% scan_params_sensit,scan_params_up_down_sensit
+                      stg_table,x0,nodes,sel_nodes,plot_settings);
 
 % if already calculated <sobol_sensit_index> and only want to plot results, provide <sobol_sensit_index> as FIRST argument 
 % fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{1},[],[],[],[],...
 %                                 scan_params_filtered,scan_params_up_down_filtered,[],[],nodes,sel_nodes,plot_settings);
 
 % SAVE
-fcn_save_fig('sobol_sensitivity_index',save_folder,fig_file_type{1},'y')
+magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0,'ScreenPixelsPerInch')));
+fcn_save_fig('sobol_sensitivity_index',save_folder,fig_file_type{2},'overwrite',resolution_dpi)
 
 %% PARAMETER FITTING
 

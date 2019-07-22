@@ -1,8 +1,11 @@
-function [stat_sol_lhs_parscan,stat_sol_states_lhs_parscan]=fcn_calc_paramsample_table(all_par_vals_lhs,scan_params,scan_params_up_down,...
+function [stat_sol_lhs_parscan,stat_sol_states_lhs_parscan]=fcn_calc_paramsample_table(all_par_vals_lhs,...
+                                                                scan_params,scan_params_up_down,...
                                                                 transition_rates_table,stg_table,x0,disp_var)
 
-par_ind_table=[repelem(scan_params, cellfun(@(x) numel(x),scan_params_up_down))', horzcat(scan_params_up_down{:})'];
-trans_rate_scan_inds=sub2ind(size(transition_rates_table),par_ind_table(:,2),par_ind_table(:,1));
+                                                            
+par_ind_table=[repelem(scan_params, cellfun(@(x) numel(x),scan_params_up_down))', ...
+                               horzcat(scan_params_up_down{:})'];
+trans_rate_scan_inds=sub2ind(size(transition_rates_table),par_ind_table(:,2),par_ind_table(:,1))';
 
 % [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,'');
 % [stat_sol,~,~]=split_calc_inverse(A_sparse,transition_rates_table,x0);

@@ -1,11 +1,20 @@
-function tau_i=fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_type,all_par_vals_lhs,stat_sol_lhs_parscan,stat_sol_states_lhs_parscan,...
-                                                        sample_size,scan_params,scan_params_up_down,stg_table,x0,nodes,sel_nodes,plot_settings)
+function tau_i=fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_type,all_par_vals_lhs,...
+                                            stat_sol_lhs_parscan,stat_sol_states_lhs_parscan,...
+                                            sample_size,...
+                                            sequential_indices_lhs,scan_params_sobol,scan_params_up_down_sobol,...
+                                            stg_table,x0,nodes,sel_nodes,plot_settings)
 
-
-par_ind_table=[repelem(scan_params, cellfun(@(x) numel(x),scan_params_up_down))', horzcat(scan_params_up_down{:})'];
-prefix={'u_','d_'}; predictor_names=arrayfun(@(x) strcat(prefix(par_ind_table(x,2)), nodes(par_ind_table(x,1))), 1:size(par_ind_table,1),'un',0);
+par_ind_table=[repelem(scan_params_sobol, cellfun(@(x) numel(x),scan_params_up_down_sobol))', horzcat(scan_params_up_down_sobol{:})'];
+prefix={'u_','d_'}; 
+predictor_names=arrayfun(@(x) strcat(prefix(par_ind_table(x,2)), nodes(par_ind_table(x,1))), 1:size(par_ind_table,1),'un',0);
 predictor_names=vertcat(predictor_names{:})'; 
-    
+
+[~,sequential_indices_sobol,~] = fcn_get_trans_rates_tbl_inds(scan_params_sobol,scan_params_up_down_sobol,nodes);
+% if Sobol index calculated not for all params of original LHS scan, but only a subset
+if numel(sequential_indices_sobol)~=numel(sequential_indices_lhs)
+    all_par_vals_lhs_subset=all_par_vals_lhs(:,ismember(sequential_indices_lhs,sequential_indices_sobol));
+end
+
 if strfind(var_type,'node')
     scan_values=stat_sol_lhs_parscan;
     if isempty(sel_nodes)
@@ -27,33 +36,38 @@ if isempty(sobol_sensit_index)
 if ~isempty(sample_size)
     M=sample_size;
 else
-    M=size(all_par_vals_lhs,1)/2; 
+    M=size(all_par_vals_lhs_subset,1)/2; 
 end
 
-A=all_par_vals_lhs(1:M,:); B=all_par_vals_lhs(M+1:2*M,:);
-tau_i=zeros(size(all_par_vals_lhs,2),numel(sel_nodes));
+A=all_par_vals_lhs_subset(1:M,:); B=all_par_vals_lhs_subset(M+1:2*M,:);
+tau_i=zeros(size(all_par_vals_lhs_subset,2),numel(sel_nodes));
 transition_rates_table=ones(2,numel(nodes));
 
-        if numel(plot_settings)==6
-            disp_var=plot_settings(6);
-        else
-            disp_var=[];
-        end
+if numel(plot_settings)==6
+  disp_var=plot_settings(6);
+else
+  disp_var=[];
+end
 
-    for k=1:size(all_par_vals_lhs,2)
+    for k=1:size(all_par_vals_lhs_subset,2)
     %%%%
     fprintf(strcat('\n','recalculating variance for parameter #',num2str(k),'\n\n'))
     B_i = A; B_i(:,k) = B(:,k);
         % rerun calculations
       if strfind(var_type,'node')
-          [f_B_i,~]=fcn_calc_paramsample_table(B_i,scan_params,scan_params_up_down,transition_rates_table,stg_table,x0,disp_var);
+          [f_B_i,~]=fcn_calc_paramsample_table(B_i,scan_params_sobol,scan_params_up_down_sobol,transition_rates_table,stg_table,x0,disp_var);
       elseif strfind(var_type,'state')
-          [~,f_B_i]=fcn_calc_paramsample_table(B_i,scan_params,scan_params_up_down,transition_rates_table,stg_table,x0,disp_var);
+          [~,f_B_i]=fcn_calc_paramsample_table(B_i,scan_params_sobol,scan_params_up_down_sobol,transition_rates_table,stg_table,x0,disp_var);
       end
+      
         % sensit index
         for varcount=1:numel(sel_nodes)
             diff_fA_fBi=( scan_values(1:M,sel_nodes(varcount)) - f_B_i(:,sel_nodes(varcount)) );
-            tau_i(k,varcount)=(diff_fA_fBi'*diff_fA_fBi)/( 2*M*var(scan_values(1:M,sel_nodes(varcount))) );
+            if sum(isnan(diff_fA_fBi))>0
+                disp(strcat(num2str(100*sum(isnan(diff_fA_fBi))/numel(diff_fA_fBi)),'% nans in solutions!!'));
+                diff_fA_fBi=diff_fA_fBi(~isnan(diff_fA_fBi));
+            end
+            tau_i(k,varcount)=(diff_fA_fBi'*diff_fA_fBi)/( 2*M*nanvar(scan_values(1:M,sel_nodes(varcount))) );
         end
     
     end
