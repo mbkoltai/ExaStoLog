@@ -52,8 +52,9 @@ for k=1:size(scan_variable,1)
     states_legend_index=cellfun(@num2str,num2cell(nonzero_states_inds(sensit_vars_indiv_param)),'un',0)'; 
     states_legend_binary=num2str(truth_table_inputs(nonzero_states_inds(sensit_vars_indiv_param),:));
     states_legend_binary=arrayfun(@(x) strrep(states_legend_binary(x,:),' ',''), 1:size(states_legend_binary,1), 'un', 0 );
- legend_combined_strings=arrayfun(@(x) strcat(states_legend_index{x},', [',states_legend_binary{x},']'),1:numel(states_legend_index),'un',0);
-    legend(legend_combined_strings); output_cell{counter} = {param_names(k) nonzero_states_inds(sensit_vars_indiv_param)};
+    legend_combined_strings=arrayfun(@(x) strcat(states_legend_index{x},', [',states_legend_binary{x},']'),1:numel(states_legend_index),'un',0);
+    legend(states_legend_index,'FontSize',legend_fontsize,'Interpreter','none'); % legend_combined_strings
+    output_cell{counter} = {param_names(k) nonzero_states_inds(sensit_vars_indiv_param)};
    elseif strcmp(state_or_node_flag,'nodes')
           legend(nodes(sensit_vars_indiv_param),'FontSize',legend_fontsize,'Interpreter','none');
           output_cell{counter} = {param_names(k) nodes(sensit_vars_indiv_param)};

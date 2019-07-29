@@ -2,7 +2,7 @@ function []=plot_STG_sel_param(A_sparse,subgraph_index,term_verts_cell,cell_subg
                                  stg_table,plot_settings,highlight_settings,tight_subpl,tight_subplot_pars)
 
 % identify all parameters that play a role
-sel_params_rep=cell2mat(arrayfun(@(x) repmat(sel_params(x),1,numel(sel_params_up_down{x})), 1:numel(sel_params_up_down), 'un', 0 ));
+sel_params_rep=cell2mat(arrayfun(@(x) repmat(sel_params(x),1,numel(sel_params_up_down{x})), 1:numel(sel_params_up_down),'un', 0));
 
 sel_params_up_down = cell2mat(sel_params_up_down);
 if size(sel_params_up_down,1)>1

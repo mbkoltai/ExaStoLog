@@ -13,6 +13,8 @@ predictor_names=vertcat(predictor_names{:})';
 % if Sobol index calculated not for all params of original LHS scan, but only a subset
 if numel(sequential_indices_sobol)~=numel(sequential_indices_lhs)
     all_par_vals_lhs_subset=all_par_vals_lhs(:,ismember(sequential_indices_lhs,sequential_indices_sobol));
+else
+    all_par_vals_lhs_subset=all_par_vals_lhs;
 end
 
 if strfind(var_type,'node')

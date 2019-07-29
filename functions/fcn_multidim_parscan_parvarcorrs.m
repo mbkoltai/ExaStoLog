@@ -80,7 +80,7 @@ elseif strcmp(plot_type_flag(3),'slope')
 end
 
 if strcmp(plot_type_flag(2),'heatmap')
-    num_size_plot=plot_settings(1); 
+    num_size_plot=plot_settings(1)/1.5; 
 
 % HEATMAP
 heatmap(val_to_plot',nodes(sel_nodes),predictor_names,'%0.2f','TickAngle',90,'Colormap','redblue',...
