@@ -469,7 +469,7 @@ figure('name',strjoin(plot_type_flag))
                                             nodes,sel_nodes,[],[],[],plot_settings);
 
 magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig(strcat(strjoin(plot_type_flag,'_'),'_corrs'),save_folder,fig_file_type{2},'overwrite',resolution_dpi);
+fcn_save_fig(strcat(strjoin(plot_type_flag,'_'),'_corrs'),save_folder,fig_file_type{1},'overwrite',resolution_dpi);
                    
 %% scatterplots of selected variables [i,j]: var_i VS var_j
 
@@ -480,7 +480,7 @@ fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_nodes_
                                     nodes,sel_nodes,[],[],[],plot_settings);
 
 magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig(strcat(strjoin(plot_type_flag,'_'),'_scatterplot'),save_folder,fig_file_type{2},'overwrite',resolution_dpi);
+fcn_save_fig(strcat(strjoin(plot_type_flag,'_'),'_scatterplot'),save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 
 %% linear or lin-log regression of VARIABLES as fcn of PARAMETERS: VARIABLE=f(PARAMETER), the function plots R squared
 
