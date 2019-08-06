@@ -1,18 +1,26 @@
 function [stat_sol_blocks,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,transition_rates_table,x0)
 
 % is the STG disconnected?
-stat_sol_blocks=zeros(numel(x0),1);
+stat_sol_blocks=sparse(numel(x0),1);
 A_digraph = digraph(A_sparse,'omitselfloops'); subnetws=conncomp(A_digraph,'Type','weak'); num_subnets=length(unique(subnetws));
 % preallocate cell of term vertices and of subgraphs
-term_verts_cell = cell(num_subnets,1); cell_subgraphs=cell(num_subnets,1);
+term_verts_cell=cell(num_subnets,1); cell_subgraphs=cell(num_subnets,1);
+
+if num_subnets>1
+    disp('STG has multiple subgraphs')
+end
 
 for counter=1:num_subnets
 
-submatrix_inds=find(subnetws==counter);
-cell_subgraphs{counter}=submatrix_inds;
+    
+submatrix_inds=find(subnetws==counter); cell_subgraphs{counter}=submatrix_inds;
 
 if sum(x0(submatrix_inds))>0
 
+if num_subnets>1
+    disp( strcat('calculating subgraph #', num2str(counter), ' of ', num2str(num_subnets)))
+end
+    
 A_sparse_sub=A_sparse(submatrix_inds,submatrix_inds);
 dim_matr=size(A_sparse_sub,1); scc_submat=conncomp(digraph(A_sparse_sub,'omitselfloops'),'Type','strong');
 
@@ -39,12 +47,11 @@ else % if there are cycles we need reordering of metagraph of SCC
         K_sp_sub_reord = (A_sparse_sub' - speye(dim_matr,dim_matr))*sum(transition_rates_table(:));
         kernel_col=((-1)^(dim_matr-1))*fcn_adjug_matrix(K_sp_sub_reord,'col');
         % normalization
-        r0_blocks=kernel_col/sum(kernel_col); l0_blocks=fcn_left_kernel(K_sp_sub_reord,r0_blocks,dim_matr);
+        r0_blocks=kernel_col'/sum(kernel_col); l0_blocks=fcn_left_kernel(K_sp_sub_reord,r0_blocks,dim_matr);
         % stat sol
         stat_sol_submatr_blocks=r0_blocks*l0_blocks*x0(submatrix_inds);
         stat_sol_blocks(submatrix_inds)=stat_sol_submatr_blocks;
         term_verts_cell{counter}=submatrix_inds;
-        
     else
     [vert_topol_sort,term_cycles_ind,~,~,term_cycle_bounds]=fcn_metagraph_scc(A_sparse_sub);
     % [vert_topol_sort,term_cycles_ind,A_metagraph,scc_cell,term_cycle_bounds]=fcn_metagraph_scc(A_orig)
@@ -63,10 +70,11 @@ else % if there are cycles we need reordering of metagraph of SCC
          %
          % probably we don't want it in symbolic form, but just in case
          if isa(K_sp_sub_reord,'double')
-            r_null_cycles=zeros(dim_matr,numel(term_cycle_bounds));
+            r_null_cycles=sparse(dim_matr,numel(term_cycle_bounds));
          else
             r_null_cycles=sym(zeros(dim_matr,numel(term_cycle_bounds)));
          end
+         
         for k=1:numel(term_cycle_bounds)
             cycle_inds=term_cycle_bounds{k}(1):term_cycle_bounds{k}(end);
             % calc kernel of SCC
@@ -79,7 +87,7 @@ else % if there are cycles we need reordering of metagraph of SCC
         % if there are single-vertex terminal states too
         if sum(ismember(diag(K_sp_sub_reord),0))>0
             n_terminal=find(ismember(diag(K_sp_sub_reord),0))'; 
-            r_null_single_vert = zeros(dim_matr,numel(n_terminal)); 
+            r_null_single_vert = sparse(dim_matr,numel(n_terminal)); 
             r_null_single_vert(sub2ind(size(r_null_single_vert),n_terminal, 1:numel(n_terminal)) )=1;
             % does the order of columns in the kernel matter? I think not, if l0_blocks consistent w r0_blocks
             r0_blocks=[r_null_cycles r_null_single_vert];

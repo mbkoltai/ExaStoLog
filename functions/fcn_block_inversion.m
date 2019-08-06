@@ -9,9 +9,10 @@ colnum_r_null_array=1:dim_kernel;
 term_block_inds = (dim_matr-dim_kernel+1):dim_matr; nonterm_block_inds = 1:dim_matr-dim_kernel;
 term_block = speye(dim_kernel,dim_kernel);
 % right kernel
-r0_blocks=zeros(dim_matr,dim_kernel); r0_blocks(term_block_inds, colnum_r_null_array)=term_block; r0_blocks=sparse(r0_blocks);
+r0_blocks=sparse(dim_matr,dim_kernel); r0_blocks(term_block_inds, colnum_r_null_array)=term_block; r0_blocks=sparse(r0_blocks);
 % left kernel
-l0_blocks = transpose(zeros(size(r0_blocks))); l0_blocks(transpose(~ismember(r0_blocks,0)))=1; 
+r0_blocks_size=size(r0_blocks);
+l0_blocks = transpose( sparse(r0_blocks_size(1),r0_blocks_size(2)) ); l0_blocks(transpose(~ismember(r0_blocks,0)))=1; 
 if isa(r0_blocks,'sym'); l0_blocks=sym(l0_blocks); end
 X_block = -r0_blocks(term_block_inds,colnum_r_null_array)*K_sp_sub_reord(term_block_inds,nonterm_block_inds)/(K_sp_sub_reord(nonterm_block_inds,nonterm_block_inds));
 l0_blocks(colnum_r_null_array,nonterm_block_inds)=X_block;

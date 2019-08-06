@@ -11,6 +11,10 @@ n=numel(nodes); truth_table_inputs=rem(floor([0:((2^n)-1)].'*pow2(0:-1:-n+1)),2)
 % marg_h: margins in height in normalized units
 % marg_w: margins in width in normalized units
 
+if issparse(stat_sol)
+    stat_sol=full(stat_sol);
+end
+
 if ~isempty(prob_thresh)
         term_verts_inds_cell_thresh=arrayfun(@(x) term_verts_inds_cell{x}(stat_sol(term_verts_inds_cell{x})>prob_thresh), ...
             1:numel(term_verts_inds_cell),'un',0);
@@ -51,8 +55,8 @@ inds=term_verts_inds_cell_thresh{k}; y_ax_leg=round(stat_sol(inds),3);
     end
     
     binary_heatmap=heatmap(truth_table_inputs(inds(ranking),sel_nodes),x_ax_leg,y_ax_leg(ranking),'%0.0f','TickAngle',90,...
-        'Colormap','redblue',...
-        'MinColorValue',-1,'MaxColorValue',1,'GridLines','-','FontSize',num_size_plot,'ShowAllTicks',true); set(gca,'FontSize',fontsize)
+        'Colormap','redblue','MinColorValue',-1,'MaxColorValue',1,'GridLines','-','FontSize',num_size_plot,'ShowAllTicks',true); 
+    set(gca,'FontSize',fontsize)
 end
 
 hold off

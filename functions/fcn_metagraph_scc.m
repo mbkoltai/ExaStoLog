@@ -4,21 +4,26 @@ matr_size=size(A_sparse_sub); scc_list=conncomp(digraph(A_sparse_sub,'omitselflo
 [num_verts_per_scc,scc_memb_per_vert]=histc(scc_list,unique(scc_list));
 scc_cell=conncomp(digraph(A_sparse_sub),'OutputForm','cell');
 
-numel_scc=numel(num_verts_per_scc);
-A_metagraph = zeros(numel_scc,numel_scc); size_A_metagr=size(A_metagraph);
+A_metagraph = sparse(numel(num_verts_per_scc),numel(num_verts_per_scc)); size_A_metagr=size(A_metagraph);
 % we need to convert indices
-[row,col]=ind2sub(matr_size,find((A_sparse_sub>0)- diag(diag(A_sparse_sub)) ) );
+[row,col]=ind2sub(matr_size,find(A_sparse_sub- diag(diag(A_sparse_sub)) > 0 ) ); % A_sparse_sub>0 - diag(diag(A_sparse_sub))
 % remove those that are within SCCs (since we remove diag elements, these belong to the same SCCs)
-rel_edges=find(scc_memb_per_vert(row)~=scc_memb_per_vert(col));
-metagraph_edges=scc_memb_per_vert([row(rel_edges),col(rel_edges)]); 
-A_metagraph(sub2ind(size_A_metagr,metagraph_edges(:,1),metagraph_edges(:,2))) = A_sparse_sub(sub2ind(matr_size,row(rel_edges),col(rel_edges)));
+% rel_edges=find(scc_memb_per_vert(row)~=scc_memb_per_vert(col));
+% metagraph_edges=scc_memb_per_vert([row(rel_edges),col(rel_edges)]); 
+row_sel=row(scc_memb_per_vert(row)~=scc_memb_per_vert(col));
+col_sel=col(scc_memb_per_vert(row)~=scc_memb_per_vert(col));
+
+A_metagraph(sub2ind(size_A_metagr,scc_memb_per_vert(row_sel),scc_memb_per_vert(col_sel)))=...
+    A_sparse_sub(sub2ind(matr_size,row_sel, col_sel ));
 % are terminal vertices in the lower right block of matrix?
 
 metagraph_ordering=toposort(digraph(A_metagraph));
 terminal_scc_ind=find(sum(A_metagraph,2)==0)'; terminal_scc_pos=ismember(metagraph_ordering,terminal_scc_ind);
-nonterm_scc_num=numel_scc-numel(terminal_scc_ind);
+nonterm_scc_num=numel(num_verts_per_scc)-numel(terminal_scc_ind);
 % identify terminal cycles
 term_cycles_ind=intersect(find(cellfun(@(x) numel(x),scc_cell)>1),terminal_scc_ind);
+% cycle_scc_ind=find(cellfun(@(x) numel(x),scc_cell)>1); term_cycles_ind=cycle_scc_ind(ismember(cycle_scc_ind,terminal_scc_ind));
+
 
 if sum(~(terminal_scc_pos>nonterm_scc_num))>0
     nonterm_scc_inds = ~ismember(metagraph_ordering,terminal_scc_ind);
@@ -37,8 +42,7 @@ if ~isempty(term_cycles_ind)
     term_cycle_bounds = num2cell([cycle_first_verts; cycle_last_verts]',2);
     
 else
-    term_cycles_ind=[];
-    term_cycle_bounds=[];
+    term_cycles_ind=[]; term_cycle_bounds=[];
 end
 
 % reordered original vertices

@@ -37,28 +37,23 @@ set(0,'DefaultAxesTitleFontWeight','normal'); set(0,'DefaultFigureWindowStyle','
 % models can be defined 
 % A) by entering the list of nodes and their
 % corresponding rules as a cell of strings, using MATLAB logical notation ('&', '|', '~', '(', ')'),
-% for instance:
-% nodes = {'cc','kras', 'dna_dam', 'chek1', 'mk2', 'atm_atr', 'hr','cdc25b', 'g2m_trans', 'cell_death'};
-% 
-% rules={'cc',...
-% 'kras',...
-% '(dna_dam | kras) & ~hr',...
-% 'atm_atr',...
-% 'atm_atr & kras',...
-% 'dna_dam',...
-% '(atm_atr  | hr) & ~cell_death',...
-% '(cc|kras) & (~chek1 & ~mk2) & ~cell_death',...
-% 'g2m_trans | cdc25b',...
-% 'cell_death | (dna_dam & g2m_trans)'}; 
+% for instance a toy model with cyclic attractor:
+% nodes={'A','B','C'}; % rules={'~A','A','A&~C'}
 
+% LIST of MODELS
+model_name_list = {'mammalian_cc', ...
+'krasmodel15vars', ...
+'breast_cancer_zanudo2017', 'breast_cancer_zanudo2017_alp1_ever1'};
 % name of the model
-model_name='mammalian_cc'; % 'mammalian_cc'; % kras15vars
+model_index=3;
+model_name=model_name_list{model_index};
 
 % where to save figures
-save_folder=strcat('doc/sample_plots/',model_name,'/');
+plot_save_folder=strcat('doc/sample_plots/',model_name,'/');
 
 % OR B) the model can be read in from an existing BOOLNET file
-[nodes,rules]=fcn_bnet_readin('model_files/traynard2016_mammalian_cellcycle.bnet'); % krasmodel10vars.bnet, krasmodel15vars.bnet
+% krasmodel10vars.bnet, krasmodel15vars.bnet
+[nodes,rules]=fcn_bnet_readin(strcat('model_files/',model_name,'.bnet')); 
 
 % once we have the list of nodes and their logical rules, we can check if
 % all variables referred to by rules are found in the list of nodes:
@@ -69,6 +64,12 @@ truth_table_filename='fcn_truthtable.m'; fcn_write_logicrules(nodes,rules,truth_
 
 % from the model we generate the STG table, that is independent of values of transition rates
 tic; stg_table=fcn_build_stg_table(truth_table_filename,nodes); toc
+
+% density of transition matrix
+size(stg_table,1)/((2^numel(nodes))^2)
+% visualize transition matrix
+% spy(A_sparse); xlabel('model states'); ylabel('model states'); set(gca,'FontSize',24)
+% save: export_fig(strcat(save_folder,model_name,'_A_sparse.pdf'),'-transparent','-nocrop','-r350')
 
 %% generate transition matrix from existing STG table
 
@@ -89,36 +90,46 @@ transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,
 tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,''); toc
 % if we want the kinetic matrix too, this is the 2nd output of the function
 % tic; [A_sparse,K_sparse]=fcn_build_trans_matr(stg_table,transition_rates_table,'kinetic'); toc
+%
 
+% VISUALIZE transition matrix
+% spy(A_sparse); xlabel('model states'); ylabel('model states'); set(gca,'FontSize',24)
 % density of transition matrix A
-% nnz(A_sparse)/numel(A_sparse)
+nnz(A_sparse)/numel(A_sparse)
 
-%% calculate steady states with kernel/nullspace calculation functions
+%% define initial condition
 
-% defining an initial condition
 n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2);
 % define some nodes with a fixed value and a probability <dom_prob>: states
 % that satisfy this condition will have a total initial probability of
 % <dom_prob>, the other states 1-dom_prob
 
-initial_fixed_nodes={'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}; initial_fixed_nodes_vals=[0 0 0 1 1 1 1 1];
-
-% KRAS 15 nodes mutant
-% {'cc','KRAS','cell_death'}; initial_fixed_nodes_vals=[1 1 0];
-%
 % CELL CYCLE MODEL
-% {'CycD','Rb_b1','Rb_b2','p27_b1','p27_b2','Cdh1','Skp2','E2F','CycE','CycA','CycB','Cdc20','UbcH10'}; 
+% initial_fixed_nodes={'CycD','Rb_b1','Rb_b2','p27_b1','p27_b2','Cdh1','Skp2','E2F','CycE','CycA','CycB','Cdc20','UbcH10'}; 
 % initial_fixed_nodes_vals=[ones(1,7) zeros(1,6)];
-% {'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}; initial_fixed_nodes_vals=[0 0 0 1 1 1 1 1];
-% for cell cycle model initial state: CycE=0 & CycA=0 & CycB=0 & Cdh1=1 & % Rb=1 & p27=1, meaning 
-% {CycE CycA CycB Cdh1 Rb_b1 Rb_b2 p27_b1 p27_b2} [0 0 0 1 1 1 1 1]
+% 
+% for the initial state: CycE=0 & CycA=0 & CycB=0 & Cdh1=1 & % Rb=1 & p27=1, meaning 
+% initial_fixed_nodes={'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}; initial_fixed_nodes_vals=[0 0 0 1 1 1 1 1];
 %
 % KRAS model, WT: {'cc','KRAS'}, [1 0]. Mutant: {'cc','KRAS'}, [1 0]
+% KRAS 15 nodes mutant
+% initial_fixed_nodes={'cc','KRAS','cell_death'}; initial_fixed_nodes_vals=[1 1 0];
+%
+% Zanudo model
+% initial_fixed_nodes={'Proliferation','Apoptosis'}; initial_fixed_nodes_vals=[1 0];
+
+initial_fixed_nodes_list = { {'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}, ... % mammalian_cc
+                             {'cc','KRAS','cell_death'}, ... % krasmodel15vars
+                             {'Alpelisib', 'Everolimus', 'PI3K', 'PIM', 'PDK1', 'Proliferation', 'Apoptosis'} }; % breast_cancer_zanudo2017
+initial_fixed_nodes_vals_list = {[ones(1,7) zeros(1,6)], ... % mammalian_cc
+    [1 1 0], ... % krasmodel15vars: [1 1] is cell cycle ON, KRAS mutation ON
+    [ones(1,6) 0]}; % breast_cancer_zanudo2017
+initial_fixed_nodes=initial_fixed_nodes_list{model_index}; initial_fixed_nodes_vals=initial_fixed_nodes_vals_list{model_index};
 
 % what is the probability of this state, (eg. dom_prob=0.8, ie. 80% probability)
 dom_prob=1;
 % if <random> the probability is randomly distributed among states, if <uniform> uniformly
-distrib_types={'random','uniform'}; 
+distrib_types={'random','uniform'};
 % if plot_flag non-empty, we get a bar plot of initial values
 plot_flag='';
 % function assigns a probability of <dom_prob> to the states with the fixed nodes having the defined values
@@ -130,6 +141,7 @@ x0=fcn_define_initial_states(initial_fixed_nodes,initial_fixed_nodes_vals,dom_pr
 % x0=ones(1,2^n_nodes)/2^n_nodes;
 
 %% CALCULATE STATIONARY STATE
+
 % ARGUMENTS:
 % transition matrix: A
 % table of transition rates: transition_rates_table
@@ -172,7 +184,7 @@ truth_table_inputs(stat_sol>0,:) % logical states that are nonzero
 % barwidth_states_val: width of the bars for bar plot of stationary solutions of states
 % sel_nodes: nodes to show. If left empty, all nodes are shown
 % nonzero_flag: minimal value for probability to display - if this is non-empty, only plot nonzero states, useful for visibility if there are many states
-sel_nodes=[]; min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[10 20]; % fontsize_hm,fontsize_stat_sol
+sel_nodes=3:numel(nodes); min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[10 20]; % fontsize_hm,fontsize_stat_sol
 plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.01;
 % WARNING!!! if more than 12 nodes, generating the figure for A/K can be time-consuming
 matrix_input=A_sparse;
@@ -181,13 +193,13 @@ fcn_plot_A_K_stat_sol(matrix_input,nodes,sel_nodes,stat_sol,x0,plot_settings,pro
 
 % SAVE
 % enter any string for the last argument to overwrite existing plot!!
-if exist(save_folder,'dir')==0; mkdir(save_folder); end
+if exist(plot_save_folder,'dir')==0; mkdir(plot_save_folder); end
 fig_file_type={'.png','.eps','.pdf','.jpg','.tif'}; if ~isempty(matrix_input); matrix_input_str='_with_matrix'; else; matrix_input_str=''; end
 % if <overwrite_flag> non-empty then existing file with same name is overwritten. 
 overwrite_flag='yes'; 
 % for <resolution> you can enter dpi value manually, if left empty then it is manually set
 magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig(strcat('single_solution_states_nodes_stat_sol',matrix_input_str),save_folder,fig_file_type{2},overwrite_flag,resolution_dpi);
+fcn_save_fig(strcat('single_solution_states_nodes_stat_sol',matrix_input_str),plot_save_folder,fig_file_type{2},overwrite_flag,resolution_dpi);
 
 %% PLOT stationary solutions (without A/K matrix)
 
@@ -204,7 +216,7 @@ fcn_plot_A_K_stat_sol(matrix_input, nodes, sel_nodes, stat_sol, x0, plot_setting
 overwrite_flag='yes'; 
 % for <resolution> you can enter dpi value manually, if left empty then it is manually set
 magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig(strcat('single_solution_states_nodes_stat_sol'),save_folder,fig_file_type{2},overwrite_flag,resolution_dpi);
+fcn_save_fig(strcat('single_solution_states_nodes_stat_sol'),plot_save_folder,fig_file_type{2},overwrite_flag,resolution_dpi);
 
 %% PLOT binary heatmap of nonzero stationary states by NODES
 
@@ -231,14 +243,16 @@ figure('name','statsol_binary_heatmap')
 % of them there are fixed points, in others a cyclic attractor: 
 % for mammalian cell cycle model: [term_verts_cell{1} term_verts_cell{2}]
 statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,...
-                            [term_verts_cell{1} term_verts_cell{2}],... % if providing a single cell: term_verts_cell{4}
+                            term_verts_cell{~cellfun(@(x) isempty(x),term_verts_cell)},...  
+                            ... % if stable states are in multiple cells of subgraphs provide them as: [term_verts_cell{1} term_verts_cell{2}]. 
+                            ... % if they are in a single cell: term_verts_cell{4}
                             nodes,sel_nodes,plot_param_settings,tight_subplot_flag,ranking_flag);
 % SAVE
 % if <overwrite_flag> non-empty then existing file with same name is overwritten. 
 overwrite_flag='yes'; 
 % for <resolution> you can enter dpi value manually, if left empty then it is manually set
 magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig('binary_heatmap_states',save_folder,fig_file_type{2},overwrite_flag,resolution_dpi);
+fcn_save_fig('binary_heatmap_states',plot_save_folder,fig_file_type{2},overwrite_flag,resolution_dpi);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% plot of STG (state transition graph) with source and sink (terminal) vertices highlighted
@@ -271,7 +285,7 @@ subgraph_index=2; title_str=strcat('subgraph #', num2str(subgraph_index));
 subplot(1,2,2); plot_STG(A_sparse,subgraph_index,term_verts_cell,cell_subgraphs,stat_sol,plot_settings,title_str)
 % SAVE
 magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig('STG_subgraph',save_folder,fig_file_type{1},overwrite_flag,resolution_dpi);
+fcn_save_fig('STG_subgraph',plot_save_folder,fig_file_type{1},overwrite_flag,resolution_dpi);
 
 %% STGs on subplots, with given parameter highlighted on each
 
@@ -311,7 +325,7 @@ plot_STG_sel_param(A_sparse,subgraph_index,term_verts_cell,cell_subgraphs,stat_s
 
 % SAVE
 magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig('STG_subgraph4_highlighted_params_all',save_folder,fig_file_type{1},overwrite_flag,resolution_dpi);
+fcn_save_fig('STG_subgraph4_highlighted_params_all',plot_save_folder,fig_file_type{1},overwrite_flag,resolution_dpi);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Parameter sensitivity analysis: one-dimensional parameter scans
@@ -344,8 +358,10 @@ parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_dow
 % initial conditions: x0
 % stg_table: generated by stg_table=fcn_build_stg_table(truth_table_filename,nodes);
 % [~,scan_par_inds,~]=fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,nodes);
+tic;
 [stationary_state_vals_onedimscan,stationary_node_vals_onedimscan,stationary_state_inds_scan]=...
     fcn_onedim_parscan_calc(stg_table,transition_rates_table,x0,nodes,parscan_matrix,scan_params,scan_params_up_down);
+toc;
 
 %% PLOT RESULTS of 1-by-1 parameter scan on heatmap/lineplot BY PARAMETERS
 
@@ -367,7 +383,7 @@ figure('name','onedim parscan by param')
                                       plot_param_settings);
 % SAVE figure
 resolution_dpi='-r350'; % magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig(strcat(fig_filename,'_r350'),save_folder,fig_file_type{2},'overwrite',resolution_dpi);
+fcn_save_fig(strcat(fig_filename,'_r350'),plot_save_folder,fig_file_type{2},'overwrite',resolution_dpi);
 
 %% PLOT RESULTS of 1-by-1 parameter scan on heatmap/lineplot BY VARIABLES
 
@@ -396,7 +412,7 @@ figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel
 % SAVE figure
 magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
 fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),...
-    save_folder,fig_file_type{2},'overwrite',resolution_dpi);
+    plot_save_folder,fig_file_type{2},'overwrite',resolution_dpi);
 
 %% multidimensional parameter scan: LATIN HYPERCUBE SAMPLING (random multidimensional sampling within given parameter ranges)
 
@@ -451,7 +467,7 @@ fcn_multidim_parscan_scatterplot(var_ind,all_par_vals_lhs,scan_values,...
 end
 
 magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig(file_name_prefix,save_folder,fig_file_type{2},'overwrite',resolution_dpi);
+fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{2},'overwrite',resolution_dpi);
 
 %% calculating & plotting (heatmap) correlations between variables OR between params and variables by linear/logist regression
 
@@ -469,7 +485,7 @@ figure('name',strjoin(plot_type_flag))
                                             nodes,sel_nodes,[],[],[],plot_settings);
 
 magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig(strcat(strjoin(plot_type_flag,'_'),'_corrs'),save_folder,fig_file_type{1},'overwrite',resolution_dpi);
+fcn_save_fig(strcat(strjoin(plot_type_flag,'_'),'_corrs'),plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi);
                    
 %% scatterplots of selected variables [i,j]: var_i VS var_j
 
@@ -480,7 +496,7 @@ fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_nodes_
                                     nodes,sel_nodes,[],[],[],plot_settings);
 
 magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig(strcat(strjoin(plot_type_flag,'_'),'_scatterplot'),save_folder,fig_file_type{3},'overwrite',resolution_dpi);
+fcn_save_fig(strcat(strjoin(plot_type_flag,'_'),'_scatterplot'),plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 
 %% linear or lin-log regression of VARIABLES as fcn of PARAMETERS: VARIABLE=f(PARAMETER), the function plots R squared
 
@@ -497,7 +513,7 @@ figure('name',strjoin(plot_type_flag))
                                  regr_types{1},plot_settings);
 
 magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig(strjoin(plot_type_flag,'_'),save_folder,fig_file_type{2},'overwrite',resolution_dpi)
+fcn_save_fig(strjoin(plot_type_flag,'_'),plot_save_folder,fig_file_type{2},'overwrite',resolution_dpi)
 
 %% Quantify importance of parameters from LHS by a regression tree
 
@@ -519,7 +535,7 @@ figure('name','regression_tree_pred_import')
                                                 plot_type_flags{2});
                                             
 magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig('regression_tree_pred_import',save_folder,fig_file_type{1},'overwrite',resolution_dpi)
+fcn_save_fig('regression_tree_pred_import',plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi)
    
 %% Sobol total sensitivity metric                                            
 
@@ -561,7 +577,7 @@ fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{1},[],[],[]
 
 % SAVE
 % magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0,'ScreenPixelsPerInch')));
-resolution_dpi='-r350'; fcn_save_fig('sobol_sensitivity_index',save_folder,fig_file_type{2},'overwrite',resolution_dpi)
+resolution_dpi='-r350'; fcn_save_fig('sobol_sensitivity_index',plot_save_folder,fig_file_type{2},'overwrite',resolution_dpi)
 
 %% PARAMETER FITTING
 
@@ -622,7 +638,7 @@ xlabel('stationary probabilities')
 
 resolution_dpi='-r350';
 fcn_save_fig(strcat('simulated_annealing_',num2str(numel(predictor_names)),'fittingpars'),...
-    save_folder,fig_file_type{2},'overwrite',resolution_dpi)
+    plot_save_folder,fig_file_type{2},'overwrite',resolution_dpi)
 
 % mean absolute error: mean(abs(y_data - fcn_statsol_values(optim_par_vals)))
 % distance of fitted params from true values: abs(optim_par_vals - sel_param_vals)./sel_param_vals
