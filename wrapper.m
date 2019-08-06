@@ -133,7 +133,7 @@ distrib_types={'random','uniform'};
 % if plot_flag non-empty, we get a bar plot of initial values
 plot_flag='';
 % function assigns a probability of <dom_prob> to the states with the fixed nodes having the defined values
-x0=fcn_define_initial_states(initial_fixed_nodes,initial_fixed_nodes_vals,dom_prob,nodes,distrib_types{1},plot_flag);
+tic; x0=fcn_define_initial_states(initial_fixed_nodes,initial_fixed_nodes_vals,dom_prob,nodes,distrib_types{1},plot_flag); toc
 
 % completely random initial condition: 
 % x0=zeros(2^n_nodes,1); x0=rand(1,size(truth_table_inputs,1))'; x0=x0/sum(x0);

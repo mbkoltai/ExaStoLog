@@ -12,15 +12,14 @@ end
 
 for counter=1:num_subnets
 
-    
 submatrix_inds=find(subnetws==counter); cell_subgraphs{counter}=submatrix_inds;
 
-if sum(x0(submatrix_inds))>0
+if sum(x0(subnetws==counter))>0
 
 if num_subnets>1
     disp( strcat('calculating subgraph #', num2str(counter), ' of ', num2str(num_subnets)))
 end
-    
+
 A_sparse_sub=A_sparse(submatrix_inds,submatrix_inds);
 dim_matr=size(A_sparse_sub,1); scc_submat=conncomp(digraph(A_sparse_sub,'omitselfloops'),'Type','strong');
 
@@ -36,8 +35,6 @@ stat_sol_submatr_blocks=fcn_block_inversion(K_sp_sub_reord,sorted_vertices_termi
 % global solution: stat_sol_split(rel_states)=stat_sol_submatr;
 stat_sol_blocks(submatrix_inds(sorted_vertices_terminal_bottom))=stat_sol_submatr_blocks;
 term_verts_cell{counter} = num2cell(intersect(submatrix_inds,find(stat_sol_blocks>0))); % find(stat_sol_blocks>0)
-% disp(counter); disp(find(stat_sol_submatr_blocks>0)'); 
-% disp(intersect(submatrix_inds,find(stat_sol_blocks>0))') % reshape(sort(submatrix_inds(sorted_vertices_terminal_bottom)),128,64)
 
 else % if there are cycles we need reordering of metagraph of SCC
     disp('cycles in STG');

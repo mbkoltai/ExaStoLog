@@ -6,24 +6,20 @@ scc_cell=conncomp(digraph(A_sparse_sub),'OutputForm','cell');
 
 A_metagraph = sparse(numel(num_verts_per_scc),numel(num_verts_per_scc)); size_A_metagr=size(A_metagraph);
 % we need to convert indices
-[row,col]=ind2sub(matr_size,find(A_sparse_sub- diag(diag(A_sparse_sub)) > 0 ) ); % A_sparse_sub>0 - diag(diag(A_sparse_sub))
+seq_inds_nondiag=find(A_sparse_sub- diag(diag(A_sparse_sub)) > 0 );
+col=ceil(seq_inds_nondiag/matr_size(1)); row=seq_inds_nondiag-(col-1)*matr_size(1);
 % remove those that are within SCCs (since we remove diag elements, these belong to the same SCCs)
-% rel_edges=find(scc_memb_per_vert(row)~=scc_memb_per_vert(col));
-% metagraph_edges=scc_memb_per_vert([row(rel_edges),col(rel_edges)]); 
 row_sel=row(scc_memb_per_vert(row)~=scc_memb_per_vert(col));
 col_sel=col(scc_memb_per_vert(row)~=scc_memb_per_vert(col));
 
-A_metagraph(sub2ind(size_A_metagr,scc_memb_per_vert(row_sel),scc_memb_per_vert(col_sel)))=...
-    A_sparse_sub(sub2ind(matr_size,row_sel, col_sel ));
+A_metagraph(scc_memb_per_vert(row_sel) + (scc_memb_per_vert(col_sel)-1)*size_A_metagr(1))=...
+    A_sparse_sub((col_sel-1)*matr_size(1) + row_sel);
 % are terminal vertices in the lower right block of matrix?
-
 metagraph_ordering=toposort(digraph(A_metagraph));
 terminal_scc_ind=find(sum(A_metagraph,2)==0)'; terminal_scc_pos=ismember(metagraph_ordering,terminal_scc_ind);
 nonterm_scc_num=numel(num_verts_per_scc)-numel(terminal_scc_ind);
 % identify terminal cycles
 term_cycles_ind=intersect(find(cellfun(@(x) numel(x),scc_cell)>1),terminal_scc_ind);
-% cycle_scc_ind=find(cellfun(@(x) numel(x),scc_cell)>1); term_cycles_ind=cycle_scc_ind(ismember(cycle_scc_ind,terminal_scc_ind));
-
 
 if sum(~(terminal_scc_pos>nonterm_scc_num))>0
     nonterm_scc_inds = ~ismember(metagraph_ordering,terminal_scc_ind);
@@ -39,8 +35,7 @@ if ~isempty(term_cycles_ind)
     scc_cell_reordered_lengths=cellfun(@(x) numel(x),scc_cell_reordered);
     cycle_first_verts=scc_cell_reordered_cumsum(term_cycles_ind) - scc_cell_reordered_lengths(term_cycles_ind)+1;
     cycle_last_verts=scc_cell_reordered_cumsum(term_cycles_ind);
-    term_cycle_bounds = num2cell([cycle_first_verts; cycle_last_verts]',2);
-    
+    term_cycle_bounds = num2cell([cycle_first_verts; cycle_last_verts]',2);    
 else
     term_cycles_ind=[]; term_cycle_bounds=[];
 end
