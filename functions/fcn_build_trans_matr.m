@@ -4,7 +4,7 @@ dim_matr=2^size(transition_rates_table,2);
 
 % state_transitions_inds=[trans_source_states_mat, trans_target_states_mat, cell2mat(node_inds), up_down_inds_arr];
     
-% trans_source_states_mat=stg_table(:,1); trans_target_states_mat=stg_table(:,2); % up_down_inds_arr=stg_table(:,4); 
+% trans_source_states_mat=stg_table(:,1); trans_target_states_mat=stg_table(:,2); up_down_inds_arr=stg_table(:,4); 
 rate_inds=(stg_table(:,3)-1)*2+stg_table(:,4);
 % sub2ind(size(transition_rates_table),up_down_inds_arr, stg_table(:,3));
 

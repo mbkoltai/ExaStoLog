@@ -4,7 +4,7 @@ matr_size=size(A_sparse_sub); scc_list=conncomp(digraph(A_sparse_sub,'omitselflo
 [num_verts_per_scc,scc_memb_per_vert]=histc(scc_list,unique(scc_list));
 scc_cell=conncomp(digraph(A_sparse_sub),'OutputForm','cell');
 
-A_metagraph = sparse(numel(num_verts_per_scc),numel(num_verts_per_scc)); size_A_metagr=size(A_metagraph);
+% A_metagraph = sparse(numel(num_verts_per_scc),numel(num_verts_per_scc)); size_A_metagr=size(A_metagraph);
 % we need to convert indices
 seq_inds_nondiag=find(A_sparse_sub- diag(diag(A_sparse_sub)) > 0 );
 col=ceil(seq_inds_nondiag/matr_size(1)); row=seq_inds_nondiag-(col-1)*matr_size(1);
@@ -12,8 +12,11 @@ col=ceil(seq_inds_nondiag/matr_size(1)); row=seq_inds_nondiag-(col-1)*matr_size(
 row_sel=row(scc_memb_per_vert(row)~=scc_memb_per_vert(col));
 col_sel=col(scc_memb_per_vert(row)~=scc_memb_per_vert(col));
 
-A_metagraph(scc_memb_per_vert(row_sel) + (scc_memb_per_vert(col_sel)-1)*size_A_metagr(1))=...
-    A_sparse_sub((col_sel-1)*matr_size(1) + row_sel);
+A_metagraph = sparse(scc_memb_per_vert(row_sel), scc_memb_per_vert(col_sel), ...
+    A_sparse_sub((col_sel-1)*matr_size(1) + row_sel),numel(num_verts_per_scc),numel(num_verts_per_scc)); 
+% A_metagraph(scc_memb_per_vert(row_sel) + (scc_memb_per_vert(col_sel)-1)*size_A_metagr(1))=...
+%     A_sparse_sub((col_sel-1)*matr_size(1) + row_sel);
+
 % are terminal vertices in the lower right block of matrix?
 metagraph_ordering=toposort(digraph(A_metagraph));
 terminal_scc_ind=find(sum(A_metagraph,2)==0)'; terminal_scc_pos=ismember(metagraph_ordering,terminal_scc_ind);

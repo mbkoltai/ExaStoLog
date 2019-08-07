@@ -29,7 +29,7 @@ for k=1:n_nodes
     trans_source_states{k}=all_binary_states(:,k)~=update_asynchr_table(:,k); 
     % this is the time consuming step
     new_states = update_asynchr_table(trans_source_states{k},:);
-    [~,I_outputs,I_inputs]=intersect(all_binary_states_decim(~trans_source_states{k}), ...
+    [~,I_outputs,I_inputs]=intersect(all_binary_states_decim, ... % (~trans_source_states{k})
                                       sum( bsxfun(@times,new_states,(2.^fliplr(0:n_nodes-1)) ),2) );
     % 
     [~,b]=ismember(1:numel(I_inputs),I_inputs); % [~,b]=intersect(I_inputs,(1:numel(I_inputs))'); 

@@ -45,7 +45,7 @@ model_name_list = {'mammalian_cc', ...
 'krasmodel15vars', ...
 'breast_cancer_zanudo2017', 'breast_cancer_zanudo2017_alp1_ever1'};
 % name of the model
-model_index=3;
+model_index=1;
 model_name=model_name_list{model_index};
 
 % where to save figures
@@ -121,7 +121,7 @@ n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:
 initial_fixed_nodes_list = { {'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}, ... % mammalian_cc
                              {'cc','KRAS','cell_death'}, ... % krasmodel15vars
                              {'Alpelisib', 'Everolimus', 'PI3K', 'PIM', 'PDK1', 'Proliferation', 'Apoptosis'} }; % breast_cancer_zanudo2017
-initial_fixed_nodes_vals_list = {[ones(1,7) zeros(1,6)], ... % mammalian_cc
+initial_fixed_nodes_vals_list = {[0 0 0 1 1 1 1 1], ... % mammalian_cc
     [1 1 0], ... % krasmodel15vars: [1 1] is cell cycle ON, KRAS mutation ON
     [ones(1,6) 0]}; % breast_cancer_zanudo2017
 initial_fixed_nodes=initial_fixed_nodes_list{model_index}; initial_fixed_nodes_vals=initial_fixed_nodes_vals_list{model_index};
@@ -184,7 +184,8 @@ truth_table_inputs(stat_sol>0,:) % logical states that are nonzero
 % barwidth_states_val: width of the bars for bar plot of stationary solutions of states
 % sel_nodes: nodes to show. If left empty, all nodes are shown
 % nonzero_flag: minimal value for probability to display - if this is non-empty, only plot nonzero states, useful for visibility if there are many states
-sel_nodes=3:numel(nodes); min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[10 20]; % fontsize_hm,fontsize_stat_sol
+sel_nodes=[];  % 3:numel(nodes)
+min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[10 20]; % fontsize_hm,fontsize_stat_sol
 plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.01;
 % WARNING!!! if more than 12 nodes, generating the figure for A/K can be time-consuming
 matrix_input=A_sparse;
@@ -237,16 +238,17 @@ numsize_plot=24; fontsize=24; hor_gap=0.02; bottom_marg=0.27; left_marg=0.08;
 plot_param_settings=[numsize_plot fontsize hor_gap bottom_marg left_marg];
 % want to use tight subplot? | order states by probability?
 tight_subplot_flag='yes'; ranking_flag='yes';
-% PLOT
-figure('name','statsol_binary_heatmap')
+% input of terminal states
+term_vertices_input = [term_verts_cell{1} term_verts_cell{2}];
+% if all of them in a single subgraph: term_verts_cell{~cellfun(@(x) isempty(x),term_verts_cell)};
 % inputting terminal vertices if there are multiple subgraphs and in some
 % of them there are fixed points, in others a cyclic attractor: 
 % for mammalian cell cycle model: [term_verts_cell{1} term_verts_cell{2}]
+
+% PLOT
+figure('name','statsol_binary_heatmap')
 statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,...
-                            term_verts_cell{~cellfun(@(x) isempty(x),term_verts_cell)},...  
-                            ... % if stable states are in multiple cells of subgraphs provide them as: [term_verts_cell{1} term_verts_cell{2}]. 
-                            ... % if they are in a single cell: term_verts_cell{4}
-                            nodes,sel_nodes,plot_param_settings,tight_subplot_flag,ranking_flag);
+                        term_vertices_input ,nodes,sel_nodes,plot_param_settings,tight_subplot_flag,ranking_flag);
 % SAVE
 % if <overwrite_flag> non-empty then existing file with same name is overwritten. 
 overwrite_flag='yes'; 

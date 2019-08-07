@@ -1,6 +1,5 @@
-
 % build STG
-% tic; stg_table=fcn_build_stg_table(truth_table_filename,nodes); toc
+tic; stg_table=fcn_build_stg_table(truth_table_filename,nodes); toc
 
 % build A sparse
 % tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,''); toc
