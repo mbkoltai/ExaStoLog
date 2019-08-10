@@ -45,7 +45,7 @@ model_name_list = {'mammalian_cc', ...
 'krasmodel15vars', ...
 'breast_cancer_zanudo2017', 'breast_cancer_zanudo2017_alp1_ever1'};
 % name of the model
-model_index=1;
+model_index=3;
 model_name=model_name_list{model_index};
 
 % where to save figures
@@ -66,7 +66,7 @@ truth_table_filename='fcn_truthtable.m'; fcn_write_logicrules(nodes,rules,truth_
 tic; stg_table=fcn_build_stg_table(truth_table_filename,nodes); toc
 
 % density of transition matrix
-size(stg_table,1)/((2^numel(nodes))^2)
+size(stg_table,1)/(2^(2*numel(nodes)))
 % visualize transition matrix
 % spy(A_sparse); xlabel('model states'); ylabel('model states'); set(gca,'FontSize',24)
 % save: export_fig(strcat(save_folder,model_name,'_A_sparse.pdf'),'-transparent','-nocrop','-r350')
@@ -100,16 +100,18 @@ nnz(A_sparse)/numel(A_sparse)
 %% define initial condition
 
 n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2);
-% define some nodes with a fixed value and a probability <dom_prob>: states
-% that satisfy this condition will have a total initial probability of
-% <dom_prob>, the other states 1-dom_prob
+
+% define some nodes with a fixed value and a probability <dom_prob>: 
+% states satisfying this condition will have a total initial probability of <dom_prob>, the other states 1-dom_prob
 
 % CELL CYCLE MODEL
+% initial state specifying all variables:
 % initial_fixed_nodes={'CycD','Rb_b1','Rb_b2','p27_b1','p27_b2','Cdh1','Skp2','E2F','CycE','CycA','CycB','Cdc20','UbcH10'}; 
 % initial_fixed_nodes_vals=[ones(1,7) zeros(1,6)];
 % 
-% for the initial state: CycE=0 & CycA=0 & CycB=0 & Cdh1=1 & % Rb=1 & p27=1, meaning 
+% initial state specifying some variables:: CycE=0 & CycA=0 & CycB=0 & Cdh1=1 & % Rb=1 & p27=1
 % initial_fixed_nodes={'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}; initial_fixed_nodes_vals=[0 0 0 1 1 1 1 1];
+%
 %
 % KRAS model, WT: {'cc','KRAS'}, [1 0]. Mutant: {'cc','KRAS'}, [1 0]
 % KRAS 15 nodes mutant
@@ -119,15 +121,15 @@ n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:
 % initial_fixed_nodes={'Proliferation','Apoptosis'}; initial_fixed_nodes_vals=[1 0];
 
 initial_fixed_nodes_list = { {'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}, ... % mammalian_cc
-                             {'cc','KRAS','cell_death'}, ... % krasmodel15vars
+                             {'cc','KRAS','DSB','cell_death'}, ... % krasmodel15vars
                              {'Alpelisib', 'Everolimus', 'PI3K', 'PIM', 'PDK1', 'Proliferation', 'Apoptosis'} }; % breast_cancer_zanudo2017
 initial_fixed_nodes_vals_list = {[0 0 0 1 1 1 1 1], ... % mammalian_cc
-    [1 1 0], ... % krasmodel15vars: [1 1] is cell cycle ON, KRAS mutation ON
-    [ones(1,6) 0]}; % breast_cancer_zanudo2017
+    [1 1 1 0], ... % krasmodel15vars: [1 1] is cell cycle ON, KRAS mutation ON
+    [ones(1,5) 0 0]}; % breast_cancer_zanudo2017
 initial_fixed_nodes=initial_fixed_nodes_list{model_index}; initial_fixed_nodes_vals=initial_fixed_nodes_vals_list{model_index};
 
 % what is the probability of this state, (eg. dom_prob=0.8, ie. 80% probability)
-dom_prob=1;
+dom_prob=0.7;
 % if <random> the probability is randomly distributed among states, if <uniform> uniformly
 distrib_types={'random','uniform'};
 % if plot_flag non-empty, we get a bar plot of initial values
@@ -138,7 +140,7 @@ tic; x0=fcn_define_initial_states(initial_fixed_nodes,initial_fixed_nodes_vals,d
 % completely random initial condition: 
 % x0=zeros(2^n_nodes,1); x0=rand(1,size(truth_table_inputs,1))'; x0=x0/sum(x0);
 % completely uniform initial condition
-% x0=ones(1,2^n_nodes)/2^n_nodes;
+% x0=ones(2^n_nodes,1)/(2^n_nodes);
 
 %% CALCULATE STATIONARY STATE
 
@@ -155,26 +157,32 @@ tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,trans
 % probabilities by subgraph:
 % arrayfun(@(x) sum(stat_sol(cell2mat(term_verts_cell{x}))), 1:numel(term_verts_cell))
 
-% nonzero states can be quickly queried by:
+% nonzero states displayed:
 stat_sol(stat_sol>0)' % probability values of nonzero states
-truth_table_inputs(stat_sol>0,:) % logical states that are nonzero
+truth_table_inputs(stat_sol>0,:) % list of logical states that are nonzero
 
 % sum the probabilities of nonzero states by nodes, both for the initial condition and the stationary solution
 % ARGUMENTS
 % initial conditions: x0
 % % stat_sol: stationary solution for all the states
 % nodes: list of nodes
-[stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol);
+[stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol,'x0');
 
-% can check results by doing direct matrix exponentiation, for systems up to ~10 nodes, but note this will not be stationary if there are cycles.
+% can check results by doing direct matrix exponentiation, for systems up to ~8-10 nodes, 
+% but note this will not be stationary if there are terminal cycles.
 % x_sol=((x0')*A_sparse^1e5)';
 % stationary_node_vals=x_sol'*truth_table_inputs;
 % 
 % Checked with MaBoSS simuls, results are identical (up to 1% dev.).
 % Comparing with simulation of mammalian cell cycle model with 12 nodes: 
-% look in folder <sample_plots/mammalian_cc/maboss_files_plots>
+% look in folder 'doc/sample_plots/maboss'
 
 %% PLOTTING RESULTS
+
+% this function plots 2 or 3 subplots:
+% 1) transition matrix (optional)
+% 2) stationary probability of the model's states
+% 3) stationary probability of the model's variables (having the value of 1)
 
 % PLOT A/K and stat solutions
 % ARGUMENTS
@@ -186,38 +194,22 @@ truth_table_inputs(stat_sol>0,:) % logical states that are nonzero
 % nonzero_flag: minimal value for probability to display - if this is non-empty, only plot nonzero states, useful for visibility if there are many states
 sel_nodes=[];  % 3:numel(nodes)
 min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[10 20]; % fontsize_hm,fontsize_stat_sol
-plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.01;
+plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.03;
 % WARNING!!! if more than 12 nodes, generating the figure for A/K can be time-consuming
-matrix_input=A_sparse;
+matrix_input=A_sparse; % leave this variable empty to have only 2 subplots, without transition matrix
 figure('name','A_K_stat_sol')
 fcn_plot_A_K_stat_sol(matrix_input,nodes,sel_nodes,stat_sol,x0,plot_settings,prob_thresh)
 
 % SAVE
 % enter any string for the last argument to overwrite existing plot!!
 if exist(plot_save_folder,'dir')==0; mkdir(plot_save_folder); end
-fig_file_type={'.png','.eps','.pdf','.jpg','.tif'}; if ~isempty(matrix_input); matrix_input_str='_with_matrix'; else; matrix_input_str=''; end
+fig_file_type={'.png','.eps','.pdf','.jpg','.tif'}; 
+if ~isempty(matrix_input);  matrix_input_str='_with_matrix'; else; matrix_input_str=''; end
 % if <overwrite_flag> non-empty then existing file with same name is overwritten. 
 overwrite_flag='yes'; 
-% for <resolution> you can enter dpi value manually, if left empty then it is manually set
-magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig(strcat('single_solution_states_nodes_stat_sol',matrix_input_str),plot_save_folder,fig_file_type{2},overwrite_flag,resolution_dpi);
-
-%% PLOT stationary solutions (without A/K matrix)
-
-% nonzero_flag: if non-empty, only the nonzero states with a probability above this value are shown
-sel_nodes=[]; prob_thresh=0.01; barwidth_states_val=0.8; % for 3 nonzero states ~0.8 is a good value
-fontsize=[9 20]; % [fontsize_y_axis_states,fontsize_x_axes_and_titles]
-plot_settings=[fontsize barwidth_states_val]; matrix_input=[];
-figure('name','stat_sol')
-fcn_plot_A_K_stat_sol(matrix_input, nodes, sel_nodes, stat_sol, x0, plot_settings,prob_thresh)
-
-% SAVE
-% enter any string for the last argument to overwrite existing plot!!
-% if <overwrite_flag> non-empty then existing file with same name is overwritten. 
-overwrite_flag='yes'; 
-% for <resolution> you can enter dpi value manually, if left empty then it is manually set
-magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig(strcat('single_solution_states_nodes_stat_sol'),plot_save_folder,fig_file_type{2},overwrite_flag,resolution_dpi);
+% for <resolution> you can enter dpi value manually
+resolution_dpi='-r350'; % magnification=0.8;  strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
+fcn_save_fig(strcat('single_solution_states_nodes_stat_sol',matrix_input_str),plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi);
 
 %% PLOT binary heatmap of nonzero stationary states by NODES
 
@@ -234,12 +226,15 @@ sel_nodes=[]; % setdiff(2:numel(nodes)-1,[find(strcmp(nodes,{'Rb_b2'})) find(str
 % plot_param_settings
 % num_size_plot: font size of 0/1s on the heatmap
 % hor_gap: horizontal gap between terminal SCCs, bottom_marg: bottom margin, left_marg: left margin
-numsize_plot=24; fontsize=24; hor_gap=0.02; bottom_marg=0.27; left_marg=0.08; 
+numsize_plot=10; fontsize=24; hor_gap=0.02; bottom_marg=0.27; left_marg=0.08; 
 plot_param_settings=[numsize_plot fontsize hor_gap bottom_marg left_marg];
 % want to use tight subplot? | order states by probability?
 tight_subplot_flag='yes'; ranking_flag='yes';
 % input of terminal states
-term_vertices_input = [term_verts_cell{1} term_verts_cell{2}];
+term_vertices_input=arrayfun(@(x) cell2mat(term_verts_cell{x}), 1:numel(term_verts_cell),'un',0); 
+% if we have multiple terminal vertices with some of them cyclic attractors (multi-state), then: 
+% arrayfun(@(x) cell2mat(term_verts_cell{x}), 1:numel(term_verts_cell),'un',0)
+%
 % if all of them in a single subgraph: term_verts_cell{~cellfun(@(x) isempty(x),term_verts_cell)};
 % inputting terminal vertices if there are multiple subgraphs and in some
 % of them there are fixed points, in others a cyclic attractor: 
@@ -248,21 +243,22 @@ term_vertices_input = [term_verts_cell{1} term_verts_cell{2}];
 % PLOT
 figure('name','statsol_binary_heatmap')
 statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,...
-                        term_vertices_input ,nodes,sel_nodes,plot_param_settings,tight_subplot_flag,ranking_flag);
+                        term_vertices_input, nodes,sel_nodes,plot_param_settings,tight_subplot_flag,ranking_flag);
 % SAVE
 % if <overwrite_flag> non-empty then existing file with same name is overwritten. 
 overwrite_flag='yes'; 
-% for <resolution> you can enter dpi value manually, if left empty then it is manually set
-magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig('binary_heatmap_states',plot_save_folder,fig_file_type{2},overwrite_flag,resolution_dpi);
+% for <resolution> you can enter dpi value manually
+% magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
+resolution_dpi='-r350'; fcn_save_fig('binary_heatmap_states',plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% plot of STG (state transition graph) with source and sink (terminal) vertices highlighted
 
-% NOTE: for models larger than ~10-12 nodes generating these plots can be very time consuming!
+% NOTE: for models larger than ~10-12 nodes generating these plots can be very time consuming or can crash MATLAB
 
 % calculate the sum of probabilities per disconnected subgraphs
-probs_by_subgraph=arrayfun(@(x) sum(stat_sol(cell2mat(term_verts_cell{x}))), 1:numel(term_verts_cell)); % [~,subgraph_index]=max(probs_by_subgraph); 
+probs_by_subgraph=arrayfun(@(x) sum(full(stat_sol(cell2mat(term_verts_cell{x})))), 1:numel(term_verts_cell)); 
+% [~,subgraph_index]=max(probs_by_subgraph); 
 
 % ARGUMENTS of function: 
 % plot_STG(A_sparse,subgraph_index,term_verts_cell,cell_subgraphs,stat_sol,plot_settings,title_str,source_color)
@@ -279,6 +275,7 @@ plot_settings=[20 1 7 3 9];
 
 figure('name','subgraph')
 % below is example of the mammalian cell cycle model with 2 subgraphs, modify accordingly
+% nonempty subgraphs: find(cellfun(@(x) sum(ismember(find(x0>0), x)), cell_subgraphs)>0)
 subgraph_index=4; title_str=strcat('subgraph #', num2str(subgraph_index));
 % subplot(1,2,1); 
 stg_plot=plot_STG(A_sparse,subgraph_index,term_verts_cell,cell_subgraphs,stat_sol,plot_settings,title_str);
@@ -286,30 +283,37 @@ stg_plot=plot_STG(A_sparse,subgraph_index,term_verts_cell,cell_subgraphs,stat_so
 subgraph_index=2; title_str=strcat('subgraph #', num2str(subgraph_index)); 
 subplot(1,2,2); plot_STG(A_sparse,subgraph_index,term_verts_cell,cell_subgraphs,stat_sol,plot_settings,title_str)
 % SAVE
-magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig('STG_subgraph',plot_save_folder,fig_file_type{1},overwrite_flag,resolution_dpi);
+resolution_dpi='-r350'; fcn_save_fig('STG_subgraph',plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi);
 
 %% STGs on subplots, with given parameter highlighted on each
 
-% all transition rates that have actual transitions
-par_inds_table=unique(stg_table(:,[3 4]),'rows');
+% transitions in non-empty subgraph
+popul_subgraphs=cellfun(@(x) sum(ismember(find(x0>0), x)), cell_subgraphs)>0;
+subgraph_states=cell2mat(cell_subgraphs(popul_subgraphs)');
+% subgraph_states=cell2mat(cell_subgraphs(~cellfun(@(x) isempty(x),term_verts_cell))');
+% identify all transition rates that have corresponding transitions
+par_inds_table = unique(stg_table(ismember(stg_table(:,1), subgraph_states) | ismember(stg_table(:,2), subgraph_states),3:4),'rows');
+stg_table_subgraph = stg_table(ismember(stg_table(:,1), subgraph_states) | ismember(stg_table(:,2), subgraph_states),:);
 
 for k=1:size(par_inds_table,1)
-    param_freq(k) = sum(stg_table(:,3)==par_inds_table(k,1) & stg_table(:,4)==par_inds_table(k,2));
+    param_freq(k)=sum(stg_table_subgraph(:,3)==par_inds_table(k,1) & stg_table_subgraph(:,4)==par_inds_table(k,2));
 end
 % top n most frequent transitions
-[~,b]=maxk(param_freq,6);
+[~,b]=maxk(param_freq,2);
 
 % ARGUMENTS of function
 % A_sparse,subgraph_index,term_verts_cell,cell_subgraphs,stat_sol,nodes: same as previous function
 % selected_pars: parameters to highlight, either 'all', or numeric array [1 2 3]
 % which node this parameter corresponds to?
-sel_params=par_inds_table(b,1)'; % unique(par_inds_table(:,1)); % all transition rates: unique(par_inds_table(:,1))'
+sel_params=unique(par_inds_table(:,1)); 
+% top n most frequent: sel_params=sel_params(b);
+% all transition rates: unique(par_inds_table(:,1))'
+% highest frequency: par_inds_table(b,1)'; % 
 % up or down rate?
-sel_params_up_down=num2cell(par_inds_table(b,2)');
-% mat2cell(repmat([1 2],numel(sel_params),1),ones(1,numel(sel_params)))'; % up and down rate for all sel_params values
-% manually: {[1 2],[1 2]}; 
+sel_params_up_down=arrayfun(@(x) par_inds_table(par_inds_table(:,1)==x,2)', sel_params,'un',0);
 % all transition rates: arrayfun(@(x) par_inds_table(par_inds_table(:,1)==x,2)', sel_params,'un',0)
+% highest frequency: num2cell(par_inds_table(b,2)');
+% manually: {[1 2],[1 2]}; 
 %
 % stg_table: state transition table (generated by stg_table=fcn_build_stg_table(truth_table_filename,nodes))
 plot_pars=[20 0.1 7 3 9]; % plot_pars=[fontsize,linewidth_val, arrowsize, default_markersize, highlight_markersize]
@@ -318,30 +322,45 @@ highlight_settings={'yellow',3};
 % if using tight_subplots toolbox:
 tight_subpl_flag='yes'; tight_subplot_pars=[0.06 0.02; 0.05 0.05; 0.05 0.05]; 
 
+subgraph_index=find(cellfun(@(x) sum(ismember(find(x0>0), x)), cell_subgraphs)>0);
+
 figure('name','STG select params');
 plot_STG_sel_param(A_sparse,subgraph_index,term_verts_cell,cell_subgraphs,stat_sol,nodes,sel_params,sel_params_up_down,stg_table,...
     plot_pars,highlight_settings,tight_subpl_flag,tight_subplot_pars)
-% show all params that have an effect:
-% plot_STG_sel_param(A_sparse,subgraph_index,term_verts_cell,cell_subgraphs,stat_sol,nodes,'all',stg_table,...
-    % plot_pars,highlight_settings,tight_subpl_flag,tight_subplot_pars)
 
 % SAVE
-magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig('STG_subgraph4_highlighted_params_all',plot_save_folder,fig_file_type{1},overwrite_flag,resolution_dpi);
+resolution_dpi='-r350'; fcn_save_fig('STG_subgraph4_highlighted_params_all',plot_save_folder,fig_file_type{1},overwrite_flag,resolution_dpi);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Parameter sensitivity analysis: one-dimensional parameter scans
 
 % select the nodes whose parameters we want to scan in:
 % all nodes that have actual transitions
-par_inds_table=unique(stg_table(:,[3 4]),'rows');
+% par_inds_table=unique(stg_table(:,[3 4]),'rows');
+popul_subgraphs=cellfun(@(x) sum(ismember(find(x0>0), x)), cell_subgraphs)>0;
+subgraph_states=cell2mat(cell_subgraphs(popul_subgraphs)');
+% subgraph_states=cell2mat(cell_subgraphs(~cellfun(@(x) isempty(x),term_verts_cell))');
+par_inds_table=unique(stg_table(ismember(stg_table(:,1), subgraph_states) | ismember(stg_table(:,2), subgraph_states),3:4),'rows');
+
+% most common transitions
+for k=1:size(par_inds_table,1)
+    param_freq(k) = sum(stg_table(:,3)==par_inds_table(k,1) & stg_table(:,4)==par_inds_table(k,2));
+end
+% top n most frequent transitions
+[~,top_freq_trans_rates]=maxk(param_freq,6);
+
+% all rates that have corresponding transitions
 scan_params=unique(par_inds_table(:,1))'; 
-% or by selecting given nodes by their names: scan_params=find(ismember(nodes,{'cdc25b','atm_atr'}));
 scan_params_up_down=arrayfun(@(x) par_inds_table(par_inds_table(:,1)==x,2)', scan_params,'un',0); 
+%
 % num2cell(repelem([1 2],numel(scan_params),1),2)'; % both up and down rates
 % num2cell(ones(1,numel(scan_params))); % only up 
 % num2cell(2*ones(1,numel(scan_params))); % only down
 % {[1 2], 1, [1 2]}; % manually selected
+
+% top frequency trans rates:
+% scan_params=par_inds_table(top_freq_trans_rates,1)'; 
+% scan_params_up_down=arrayfun(@(x) par_inds_table( top_freq_trans_rates(par_inds_table(top_freq_trans_rates,1)==x),2)', scan_params,'un',0); 
 
 % min and max of range of values; resolution of the scan; linear or logarithmic sampling
 parscan_min_max = [1e-2 1e2]; n_steps=10; sampling_types={'log','linear'}; 
@@ -349,9 +368,7 @@ parscan_min_max = [1e-2 1e2]; n_steps=10; sampling_types={'log','linear'};
 % FUNCTION for generating matrix of ordered values for the parameters to scan in
 % [scan_par_table,scan_par_inds,~]= fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,transition_rates_table);
 parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_down,nodes,sampling_types{1},parscan_min_max,n_steps);
-% set values in one/more columns manually (order is {3,1}->{3,2}->{4,1}->{4,2} etc)
-% parscan_matrix(:,2)=logspace(-1,1,size(parscan_matrix,1));
-% entire matrix can be made a random matrix
+% to set values in one/more columns manually (order is {3,1}->{3,2}->{4,1}->{4,2} etc)
 
 % FUNCTION for 1-DIMENSIONAL PARSCAN
 % ARGUMENTS
@@ -375,7 +392,9 @@ nonzero_states_inds=find(stat_sol>0);
 height_width_gap=[0.08 0.03]; bott_top_marg =[0.05 0.05]; left_right_marg=[0.04 0.01];
 % [fontsize_axes,fontsize_title,legend_fontsize,linewidth,params_tight_subplots(leave empty if not installed),model_name]
 plot_param_settings={20,20,20,4,{height_width_gap bott_top_marg left_right_marg},model_name}; % plot_param_settings={12,14,[],model_name}; 
-state_or_node_flags={'nodes','states'}; diff_cutoff=0.15;
+state_or_node_flags={'nodes','states'}; 
+% cutoff for minimal variation to show a variable
+diff_cutoff=0.01/2;
 figure('name','onedim parscan by param')
 [fig_filename,output_cell]=fcn_onedim_parscan_plot_by_params(state_or_node_flags{2},...
                                       stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
@@ -384,13 +403,12 @@ figure('name','onedim parscan by param')
                                       diff_cutoff,... % minimal variation for variable to be shown on plot
                                       plot_param_settings);
 % SAVE figure
-resolution_dpi='-r350'; % magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig(strcat(fig_filename,'_r350'),plot_save_folder,fig_file_type{2},'overwrite',resolution_dpi);
+resolution_dpi='-r350'; fcn_save_fig(strcat(fig_filename,'_r350'),plot_save_folder,fig_file_type{2},'overwrite',resolution_dpi);
 
 %% PLOT RESULTS of 1-by-1 parameter scan on heatmap/lineplot BY VARIABLES
 
 %%% SECOND PLOT TYPE: show stationary value/response coefficient of 1 variable (state or node) on 1 subplot, as a fcn of all relevant parameters
-sensit_cutoff=0.3; % minimal value for response coefficient (local sensitivity) or for the variation of node/state values
+sensit_cutoff=0.01; % minimal value for response coefficient (local sensitivity) or for the variation of node/state values
 % nonzero states of the model
 % nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))';
 % select parameters of plot
@@ -412,9 +430,7 @@ figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel
 % <resp_coeffs> dimensions: (parameters, values,nodes), so eg. resp_coeffs(:,:,7)=resp. coeff values across param ranges for the 7th node
 
 % SAVE figure
-magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),...
-    plot_save_folder,fig_file_type{2},'overwrite',resolution_dpi);
+resolution_dpi='-r350'; fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 
 %% multidimensional parameter scan: LATIN HYPERCUBE SAMPLING (random multidimensional sampling within given parameter ranges)
 
@@ -427,7 +443,7 @@ fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p'
 sampling_types={'lognorm','linear','logunif'};
 sampling_type=sampling_types{3};
 % <lhs_scan_dim>: number of param sets
-lhs_scan_dim=1e3;
+lhs_scan_dim=50;
 % par_min_mean: minimum or in case of lognormal the mean of distribution. Can be a scalar or a vector, 
 % if we want different values for different parameters
 % max_stdev: maximum or in case of lognormal the mean of distribution. 
@@ -452,8 +468,8 @@ max_stdev=2; % repmat(0.5,1,numel(cell2mat(scan_params_up_down(:))));
 %% SCATTERPLOTS of STATE or NODE values as a function of the selected parameters, with the trendline shown (average value per parameter bin)
 
 % sel_nodes=[6 10 11 12 13 14 15];
-for k=scan_params_sensit
-var_ind=k; % find(strcmp(nodes,'CHEK1')); % which STATE or NODE to plot
+for var_ind=scan_params_sensit
+% find(strcmp(nodes,'CHEK1')); % which STATE or NODE to plot
 % <all_par_vals_lhs>: parameter sets
 % [number_bins_for_mean,trendline_width,axes_fontsize,index nonzero states]
 param_settings = [50 4 30 size(stat_sol_states_lhs_parscan_cell)]; 
@@ -468,8 +484,7 @@ fcn_multidim_parscan_scatterplot(var_ind,all_par_vals_lhs,scan_values,...
         nodes,sampling_type,param_settings)
 end
 
-magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{2},'overwrite',resolution_dpi);
+resolution_dpi='-r350'; fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 
 %% calculating & plotting (heatmap) correlations between variables OR between params and variables by linear/logist regression
 
@@ -479,15 +494,14 @@ fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{2},'overwrite',reso
 % sel_nodes: name of selected nodes (pls provide in ascending order)
 % fontsize: ~ for labels and titles (displaying correlation)
 % HEATMAPS of correlations between selected variables
-sel_nodes=3:numel(nodes); % scan_params_sensit
+sel_nodes=[]; % 3:numel(nodes); % scan_params_sensit
 plot_settings=[20 30]; % [fontsize on plot, fontsize on axes/labels]
 plot_type_flag={'var_var','heatmap'}; % this is plotting the heatmap of correlations between variables
 figure('name',strjoin(plot_type_flag))
 [varvar_corr_matr,p_matrix_vars]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_nodes_lhs_parscan,...
                                             nodes,sel_nodes,[],[],[],plot_settings);
 
-magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig(strcat(strjoin(plot_type_flag,'_'),'_corrs'),plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi);
+resolution_dpi='-r350'; fcn_save_fig(strcat(strjoin(plot_type_flag,'_'),'_corrs'),plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi);
                    
 %% scatterplots of selected variables [i,j]: var_i VS var_j
 
@@ -497,13 +511,13 @@ figure('name',strjoin(plot_type_flag))
 fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_nodes_lhs_parscan,...
                                     nodes,sel_nodes,[],[],[],plot_settings);
 
-magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
+resolution_dpi='-r350'; 
 fcn_save_fig(strcat(strjoin(plot_type_flag,'_'),'_scatterplot'),plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 
 %% linear or lin-log regression of VARIABLES as fcn of PARAMETERS: VARIABLE=f(PARAMETER), the function plots R squared
 
 plot_type_flag={'par_var','heatmap','r_sq'}; % {'par_var','heatmap'/'lineplot','r_sq'/'slope'}
-sel_nodes=3:numel(nodes); % scan_params_sensit;
+sel_nodes=[]; % 3:numel(nodes); % scan_params_sensit;
 % plot_settings=[fontsize,maximum value for heatmap colors], if plot_settings(2)=NaN, then max color automatically selected
 plot_settings=[30 1]; 
 % if regression type is 'linlog', then the fit is y = a + b*log10(x)
@@ -514,8 +528,7 @@ figure('name',strjoin(plot_type_flag))
                                  scan_params_sensit,scan_params_up_down_sensit, ... % parameters (CAREFUL that they are the same as in LHS!)
                                  regr_types{1},plot_settings);
 
-magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig(strjoin(plot_type_flag,'_'),plot_save_folder,fig_file_type{2},'overwrite',resolution_dpi)
+resolution_dpi='-r350'; fcn_save_fig(strjoin(plot_type_flag,'_'),plot_save_folder,fig_file_type{2},'overwrite',resolution_dpi)
 
 %% Quantify importance of parameters from LHS by a regression tree
 
@@ -531,13 +544,13 @@ sel_nodes=scan_params_sensit; % STATES or NODES to be analyzed
 % CALCULATE and PLOT predictor importance
 plot_type_flags={'line','bar'};
 figure('name','regression_tree_pred_import')
-[predictor_names,predictorImportance_vals] = fcn_multidim_parscan_predictorimport(scan_params_sensit,scan_params_up_down_sensit,...
+% [predictor_names,predictorImportance_vals]
+[~,predictorImportance_vals] = fcn_multidim_parscan_predictorimport(scan_params_sensit,scan_params_up_down_sensit,...
                                                 all_par_vals_lhs,scan_values,...
                                                 nodes,sel_nodes,...
                                                 plot_type_flags{2});
                                             
-magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig('regression_tree_pred_import',plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi)
+resolution_dpi='-r350'; fcn_save_fig('regression_tree_pred_import',plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
    
 %% Sobol total sensitivity metric                                            
 
@@ -558,24 +571,25 @@ scan_params_up_down_filtered=arrayfun(@(x) par_ind_table_filtered(par_ind_table_
 
 % Sobol total sensitivity: calculated for one variable at a time
 % selected nodes to display
-sel_nodes=3:numel(nodes); % scan_params_sensit;
+sel_nodes=[]; % 3:numel(nodes); % scan_params_sensit;
 % setdiff(1:numel(nodes),find(sum(cell2mat(arrayfun(@(x) strcmp(nodes,x), {'cc','KRAS','CDC25B'},'un',0)'))));
 % sel_vars=[]; % if left empty, all nodes/states are analyzed
-sample_size=300; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
+sample_size=20; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
 % PLOT SETTINGS: [fontsize_plot,fontsize_axes,fontsize_title, min_color(optional), max_color(opt), progress_calcul_every_x_% (opt)];
 plot_settings=[20 30 30 NaN NaN 10];
-var_types={'nodes','states'}; % analysis for states or nodes
+var_types={'node','state'}; % analysis for states or nodes
 % to calculate Sobol total sensitivity we need <sample_size*numel(scan_params_up_down)> evaluations of the model
 figure('name','sobol sensitivity index')
 sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{1},...
                       all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan,...
                       sample_size,... % # of calculations per parameter
-                      sequential_indices_lhs,scan_params_filtered,scan_params_up_down_filtered,...% scan_params_sensit,scan_params_up_down_sensit
-                      stg_table,x0,nodes,sel_nodes,plot_settings);
+                      sequential_indices_lhs,... % this is indices of transition rates in the original LHS
+                      scan_params_filtered,scan_params_up_down_filtered,...% scan_params_sensit,scan_params_up_down_sensit
+                      stg_table,transition_rates_table,x0,nodes,sel_nodes,plot_settings);
 
 % if already calculated <sobol_sensit_index> and only want to plot results, provide <sobol_sensit_index> as FIRST argument 
 fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{1},[],[],[],[],...
-                                sequential_indices_lhs,scan_params_filtered,scan_params_up_down_filtered,[],[],nodes,sel_nodes,plot_settings);
+                       sequential_indices_lhs,scan_params_filtered,scan_params_up_down_filtered,[],[],[],nodes,sel_nodes,plot_settings);
 
 % SAVE
 % magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0,'ScreenPixelsPerInch')));
@@ -587,7 +601,7 @@ resolution_dpi='-r350'; fcn_save_fig('sobol_sensitivity_index',plot_save_folder,
 % transition_rates_table=fcn_trans_rates_table(nodes,'uniform',[],[],chosen_rates,chosen_rates_vals); % transition_rates_table=ones(size(transition_rates_table));
 % tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,''); toc; 
 % tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,transition_rates_table,x0); toc
-% [stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol);
+% [stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol,'x0');
 
 % define parameters to vary (predictor_names)
 % sensitive parameters identified by 1-dimensional param scan: scan_params_sensit,scan_params_up_down_sensit
@@ -595,7 +609,7 @@ resolution_dpi='-r350'; fcn_save_fig('sobol_sensitivity_index',plot_save_folder,
 % define data vector (generate some data OR load from elsewhere)
 sel_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
 transition_rates_table=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,sel_param_vals);
-y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table,''),transition_rates_table,x0));
+y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table,''),transition_rates_table,x0),'x0');
 
 % create functions that calculate sum of squared deviations & values of
 % variables (composed of different fcns) - RERUN THIS if you want to fit to new data or new non-fitted transition rates!!
@@ -607,20 +621,21 @@ init_vals= lognrnd(0,2,size(predictor_names)); init_error=fcn_statsol_sum_sq_dev
 % initial value of model nodes
 y_init=fcn_calc_init_stat_nodevals(x0,...
     split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,init_vals),''),...
-    transition_rates_table,x0));
+    transition_rates_table,x0),'');
 
 % simulated annealing with existing algorithm anneal/anneal.m, with modifications in script: 
-% defined counter=0 before while loop, and inserted <T_loss(counter,:)=[T oldenergy];> at line 175, defined <T_loss> as 3rd output
+% 1) defined counter=0 before while loop
+% 2) inserted <T_loss(counter,:)=[T oldenergy];> at line 175, defined <T_loss> as 3rd output
 % arguments for algorithm need to be provided as structure: 
 % struct('Verbosity',2, 'StopVal', 0.01, 'StopTemp',1e-8) % stopping error value, stopping temperature parameter
-fitting_arguments=struct('Verbosity',2, 'StopVal', 0.001);
+fitting_arguments=struct('Verbosity',2, 'StopVal', 0.0001);
 tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_vals,fitting_arguments); toc 
 % 20-40 mins for 15var KRAS model
 
 % output with fitted parameters
 y_optim_param=fcn_calc_init_stat_nodevals(x0,...
     split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,optim_par_vals),''),...
-    transition_rates_table,x0));
+    transition_rates_table,x0),'');
 % plot data, initial values, optimized values
 data_init_optim=[y_data; y_init; y_optim_param]; min_val=min(min(data_init_optim(:,3:end))); max_val=max(max(data_init_optim(:,3:end)));
 

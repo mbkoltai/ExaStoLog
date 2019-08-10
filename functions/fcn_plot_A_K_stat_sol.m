@@ -3,7 +3,7 @@ function fcn_plot_A_K_stat_sol(A, nodes, sel_nodes, stat_sol, x0, plot_settings,
 
 fontsize=plot_settings(1:2); barwidth_states_val=plot_settings(3);
 
-[stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol);
+[stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol,'x0');
 n=numel(nodes); 
 truth_table_inputs=rem(floor([0:((2^n)-1)].'*pow2(0:-1:-n+1)),2);
 
@@ -56,7 +56,7 @@ fig_subpl3_vals=flipud([init_node_vals(sel_nodes); stationary_node_vals(sel_node
 bar_subpl3=barh(fig_subpl3_vals, 'grouped'); grid on;  xlabel('probability', 'FontSize', fontsize_stat_sol);
 title('stationary solution: nodes','FontSize',fontsize_stat_sol,'FontWeight','normal'); 
 set(fig_subpl3,'Position',[0.72 y_position 0.27 0.815]);
-set(gca,'YtickLabel',strrep(fliplr(nodes(sel_nodes)),'_',' ')); shift=0.4; ylim([1-shift numel(sel_nodes)+shift])
+set(gca,'ytick',1:numel(sel_nodes)); set(gca,'YtickLabel',strrep(fliplr(nodes(sel_nodes)),'_',' ')); shift=0.4; ylim([1-shift numel(sel_nodes)+shift])
 set(bar_subpl3(2),'FaceColor',[1 0 0],'EdgeColor',[1 0 0]);
 [~,min_ind]=min(max(fig_subpl3_vals,[],2));
 leg=legend(bar_subpl3,{'x_0', 'steady state'},'FontSize',fontsize_stat_sol/1.2,'Location','SouthEast'); % 'Location','SouthEast',
@@ -66,6 +66,8 @@ else
     legend_pos=y_position;
 end
 set(leg,'Position',[leg.Position(1) legend_pos leg.Position(3) leg.Position(4)])
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 else % without the kinetic/transition matrix
 
@@ -100,7 +102,7 @@ if ~isempty(init_node_vals)
 else
     plot_vals=fliplr(stationary_node_vals(sel_nodes))';
 end
-bar1=barh(plot_vals,'grouped'); set(gca, 'YTickLabel',fliplr(strrep(nodes(sel_nodes),'_',' '))); 
+bar1=barh(plot_vals,'grouped'); set(gca,'ytick',1:numel(sel_nodes)); set(gca, 'YTickLabel',fliplr(strrep(nodes(sel_nodes),'_',' '))); 
 set(fig_subpl2,'Position',[subplot_x_pos+subplot_x_size+0.08 y_position subplot_x_size 0.8]); 
 n=size(plot_vals,2); set(bar1(n),'FaceColor',[1 0 0]); set(gca,'FontSize',fontsize(2)/1.5); 
 xlim([0 1.05]); ylim([0.5 numel(sel_nodes)+0.5]); grid on

@@ -1,8 +1,10 @@
 function tau_i=fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_type,all_par_vals_lhs,...
-                                            stat_sol_lhs_parscan,stat_sol_states_lhs_parscan,...
+                                            stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan,...
                                             sample_size,...
-                                            sequential_indices_lhs,scan_params_sobol,scan_params_up_down_sobol,...
-                                            stg_table,x0,nodes,sel_nodes,plot_settings)
+                                            sequential_indices_lhs,...
+                                            scan_params_sobol,scan_params_up_down_sobol,...
+                                            stg_table,transition_rates_table,x0,nodes,...
+                                            sel_nodes,plot_settings)
 
 par_ind_table=[repelem(scan_params_sobol, cellfun(@(x) numel(x),scan_params_up_down_sobol))', horzcat(scan_params_up_down_sobol{:})'];
 prefix={'u_','d_'}; 
@@ -10,6 +12,7 @@ predictor_names=arrayfun(@(x) strcat(prefix(par_ind_table(x,2)), nodes(par_ind_t
 predictor_names=vertcat(predictor_names{:})'; 
 
 [~,sequential_indices_sobol,~] = fcn_get_trans_rates_tbl_inds(scan_params_sobol,scan_params_up_down_sobol,nodes);
+
 % if Sobol index calculated not for all params of original LHS scan, but only a subset
 if numel(sequential_indices_sobol)~=numel(sequential_indices_lhs)
     all_par_vals_lhs_subset=all_par_vals_lhs(:,ismember(sequential_indices_lhs,sequential_indices_sobol));
@@ -17,20 +20,20 @@ else
     all_par_vals_lhs_subset=all_par_vals_lhs;
 end
 
-if strfind(var_type,'node')
-    scan_values=stat_sol_lhs_parscan;
+if strcmp(var_type,'node')
+    scan_values=stat_sol_nodes_lhs_parscan;
     if isempty(sel_nodes)
         sel_nodes=1:size(scan_values,2);
     end
     x_ax_string=nodes(sel_nodes);
-elseif strfind(var_type,'state')
+elseif strcmp(var_type,'state')
     scan_values=stat_sol_states_lhs_parscan;
     if isempty(sel_nodes)
         sel_nodes=1:size(scan_values,2);
     end
     x_ax_string=arrayfun(@(x) strcat('state #',num2str(x)), sel_nodes,'un',0);
 else
-    error('<var_type> must be ''states'' or ''nodes''.')
+    error('<var_type> must be ''state'' or ''node''.')
 end
 
 if isempty(sobol_sensit_index)
@@ -43,7 +46,7 @@ end
 
 A=all_par_vals_lhs_subset(1:M,:); B=all_par_vals_lhs_subset(M+1:2*M,:);
 tau_i=zeros(size(all_par_vals_lhs_subset,2),numel(sel_nodes));
-transition_rates_table=ones(2,numel(nodes));
+% transition_rates_table=ones(2,numel(nodes));
 
 if numel(plot_settings)==6
   disp_var=plot_settings(6);
@@ -56,9 +59,9 @@ end
     fprintf(strcat('\n','recalculating variance for parameter #',num2str(k),'\n\n'))
     B_i = A; B_i(:,k) = B(:,k);
         % rerun calculations
-      if strfind(var_type,'node')
+      if strcmp(var_type,'node')
           [f_B_i,~]=fcn_calc_paramsample_table(B_i,scan_params_sobol,scan_params_up_down_sobol,transition_rates_table,stg_table,x0,disp_var);
-      elseif strfind(var_type,'state')
+      elseif strcmp(var_type,'state')
           [~,f_B_i]=fcn_calc_paramsample_table(B_i,scan_params_sobol,scan_params_up_down_sobol,transition_rates_table,stg_table,x0,disp_var);
       end
       

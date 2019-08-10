@@ -1,4 +1,4 @@
-function binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,term_verts_inds_cell,nodes,sel_nodes,...
+function binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,term_vertices_input,nodes,sel_nodes,...
                                                     plot_param_settings,tight_subplot_flag,ranking_flag)
 
 % param_settings=[numsize_plot fontsize hor_gap bottom_marg left_marg];
@@ -16,10 +16,10 @@ if issparse(stat_sol)
 end
 
 if ~isempty(prob_thresh)
-        term_verts_inds_cell_thresh=arrayfun(@(x) term_verts_inds_cell{x}(stat_sol(term_verts_inds_cell{x})>prob_thresh), ...
-            1:numel(term_verts_inds_cell),'un',0);
-        term_verts_inds_cell_thresh=...
-            term_verts_inds_cell_thresh(arrayfun(@(x) ~isempty(term_verts_inds_cell_thresh{x}), 1:numel(term_verts_inds_cell_thresh)));
+ term_verts_inds_cell_thresh=arrayfun(@(x) term_vertices_input{x}(stat_sol(term_vertices_input{x})>prob_thresh), 1:numel(term_vertices_input),'un',0);
+ term_verts_inds_cell_thresh=term_verts_inds_cell_thresh(arrayfun(@(x) ~isempty(term_verts_inds_cell_thresh{x}), 1:numel(term_verts_inds_cell_thresh)));
+else
+    term_verts_inds_cell_thresh=term_vertices_input;
 end
 
 if ~isempty(tight_subplot_flag)
@@ -38,7 +38,9 @@ end
 for k=1:numel(term_verts_inds_cell_thresh)
     
 if k==numel(term_verts_inds_cell_thresh); x_ax_leg=nodes(sel_nodes); else x_ax_leg=[]; end
-inds=term_verts_inds_cell_thresh{k}; y_ax_leg=round(stat_sol(inds),3); 
+inds=term_verts_inds_cell_thresh{k};
+if iscell(inds); inds=cell2mat(term_verts_inds_cell_thresh{k}); end
+y_ax_leg=round(stat_sol(inds),3); 
 
     % subplot(numel(term_verts_inds_cell),1,k);
     if ~isempty(tight_subplot_flag)

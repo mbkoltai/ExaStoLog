@@ -24,7 +24,8 @@ end
 for k=1:n_pars
     subplot(n_row_plot,n_col_plot,k);
     % scatter: parameter-variable value
-    scatter(all_par_vals_lhs(:,k), scan_values(:,var_ind)); ylim([0 max(scan_values(:,var_ind))]); % xlim(xlim_val_log); 
+    scatter(all_par_vals_lhs(:,k), scan_values(:,var_ind)); 
+    if max(scan_values(:,var_ind))>0; ylim([0 max(scan_values(:,var_ind))]); end % xlim(xlim_val_log); 
     % title( strrep(strcat(nodes{var_ind},', rate: ',up_down_str(par_ind_table(k,2)),nodes(par_ind_table(k,1)) ),'_','\_'), 'FontWeight', 'normal') 
     xlabel( strcat(up_down_str(par_ind_table(k,2)),nodes(par_ind_table(k,1))),'Interpreter','none', 'FontSize', label_fontsize ); % grid on
     % plot means

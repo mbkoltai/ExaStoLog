@@ -1,6 +1,8 @@
 function [corr_matr,p_matrix_vars]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,scan_values,...
                                         nodes,sel_nodes,scan_params,scan_params_up_down,regr_type,plot_settings)
 
+if isempty(sel_nodes); sel_nodes=1:numel(nodes); end
+                                    
 % CORRELATIONS BETWEEN VARIABLES
 if strcmp(plot_type_flag(1),'var') || strcmp(plot_type_flag(1),'var_var') 
 
@@ -10,15 +12,15 @@ disp(strcat(num2str(sum(isnan(scan_values))), 'nan values!'))
 else
 [corr_matr,p_matrix_vars]=corrcoef(scan_values);     
 end
+
 corr_matr(p_matrix_vars>0.05)=NaN; corr_matr=triu(corr_matr); corr_matr(corr_matr==0)=NaN;
 % corr_matr(isnan(corr_matr))=0;
 
 % HEATMAP
 if strcmp(plot_type_flag(2),'heatmap')
 
-if ~isempty(sel_nodes); var_selection=sel_nodes; else; var_selection=1:numel(nodes); end
 num_size_plot=plot_settings(1); fontsize=plot_settings(2);
-heatmap(corr_matr(var_selection(1:end-1),var_selection(2:end)),nodes(var_selection(2:end)),nodes(var_selection(1:end-1)),...
+heatmap(corr_matr(sel_nodes(1:end-1),sel_nodes(2:end)),nodes(sel_nodes(2:end)),nodes(sel_nodes(1:end-1)),...
   '%0.2f','TickAngle',90,'Colormap','redblue','MinColorValue',-1,'MaxColorValue',1,...
   'GridLines','-','FontSize',num_size_plot,'ShowAllTicks',true,'NaNColor',[.4 .4 .4]); set(gca,'FontSize',fontsize)
 title('correlation coefficients between variables', 'FontWeight','normal','FontSize', plot_settings(2) ) 
@@ -49,7 +51,10 @@ end
 
 % PAR-VAR PLOT
 elseif strcmp(plot_type_flag(1),'par') || strcmp(plot_type_flag(1),'par_var') 
-    % disp('regression between parameters and variable values')
+    
+% disp('regression between parameters and variable values')
+% disp(regr_type)
+    
 [~,~,predictor_names] = fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,nodes);
     % disp(strcat(predictor_names,', ',sampling_type))
 
@@ -57,7 +62,9 @@ r_squared=zeros(numel(sel_nodes),numel(predictor_names)); slope_intercept=cell(n
 for k=1:numel(sel_nodes)
     for par_c=1:numel(predictor_names)
 if strfind(regr_type,'log')
-    x=log(all_par_vals_lhs(:,par_c)); str_regr_type=strcat(' (',regr_type,' of)');
+    disp('log');
+    x=log(all_par_vals_lhs(:,par_c)); 
+    str_regr_type=strcat(' (',regr_type,' of)');
 else
     x=all_par_vals_lhs(:,par_c); str_regr_type=[];
 end
@@ -69,7 +76,7 @@ r_squared(k,par_c)=1-SSresid/SStotal; slope_intercept{k,par_c}=p;
 end
 
 corr_matr=r_squared; p_matrix_vars=slope_intercept;
- 
+
 if strcmp(plot_type_flag(3),'r_sq') || strcmp(plot_type_flag(3),'r_squared')
     val_to_plot=r_squared; min_col_val=0;
     if ~isnan(plot_settings(2)); maxval_color=plot_settings(2); else maxval_color=1.05*max(abs(val_to_plot(:))); end

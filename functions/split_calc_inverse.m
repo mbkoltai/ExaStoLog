@@ -2,7 +2,8 @@ function [stat_sol_blocks,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_s
 
 % is the STG disconnected?
 stat_sol_blocks=sparse(numel(x0),1);
-A_digraph = digraph(A_sparse,'omitselfloops'); subnetws=conncomp(A_digraph,'Type','weak'); num_subnets=length(unique(subnetws));
+% A_digraph=digraph(A_sparse,'omitselfloops'); 
+subnetws=conncomp(digraph(A_sparse,'omitselfloops'),'Type','weak'); num_subnets=length(unique(subnetws));
 % preallocate cell of term vertices and of subgraphs
 term_verts_cell=cell(num_subnets,1); cell_subgraphs=cell(num_subnets,1);
 
