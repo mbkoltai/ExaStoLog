@@ -60,10 +60,58 @@
 
 %% Sobol param scan
 
-sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{1},...
-                      all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan,...
-                      sample_size,... % # of calculations per parameter
-                      sequential_indices_lhs,... % this is indices of transition rates in the original LHS
-                      scan_params_filtered,scan_params_up_down_filtered,...% scan_params_sensit,scan_params_up_down_sensit
-                      stg_table,transition_rates_table,x0,nodes,sel_nodes,plot_settings);
+% sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{1},...
+%                       all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan,...
+%                       sample_size,... % # of calculations per parameter
+%                       sequential_indices_lhs,... % this is indices of transition rates in the original LHS
+%                       scan_params_filtered,scan_params_up_down_filtered,...% scan_params_sensit,scan_params_up_down_sensit
+%                       stg_table,transition_rates_table,x0,nodes,sel_nodes,plot_settings);
 
+%% open a figure
+
+uiopen('doc/sample_plots/breast_cancer_zanudo2017/A_sol_init_101_PIMfree.fig',1)
+
+%% init cond
+
+node_inds=ismember(nodes,{'Alpelisib','Everolimus','PI3K','PIM','PDK1','PRAS40','TSC','mTORC1','Proliferation','Apoptosis'});
+
+subgr_ind=find(ismember(input_nodes_per_subgraph, [0 1 0 0],'rows')); if numel(subgr_ind)>1; subgr_ind=subgr_ind(1); end
+output_nodes_zero=sum(truth_table_inputs(:,ismember(nodes,{'Apoptosis','Proliferation'})),2)==0;
+pos_inds=ismember(1:numel(x0),cell_subgraphs{subgr_ind}) & output_nodes_zero'; % sum(pos_inds)
+x0=zeros(size(x0)); x0(pos_inds)=1/sum(pos_inds); % sum(truth_table_inputs(x0>0,[1:3 7 8 18]))/sum(x0>0)
+
+% nodes(node_inds)
+sel_nodes_inds=3:(numel(nodes)-2);
+t=array2table(sum(truth_table_inputs(x0>0,sel_nodes_inds))/sum(x0>0)); t.Properties.VariableNames=nodes(sel_nodes_inds); t
+
+%% STAT SOL
+
+tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,transition_rates_table,x0); toc
+% nonzero states displayed:
+stat_sol(stat_sol>0)' % probability values of nonzero states
+truth_table_inputs(stat_sol>0,:) % list of logical states that are nonzero
+[stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol,'x0');
+
+sel_nodes_inds=3:numel(nodes);
+t=array2table(truth_table_inputs(stat_sol>0,sel_nodes_inds)); t.Properties.VariableNames=nodes(sel_nodes_inds); t
+
+%% PARCAN
+
+parscan_min_max = [1e-2 1e2]; n_steps=2; sampling_types={'log','linear'}; 
+parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_down,nodes,sampling_types{1},parscan_min_max,n_steps);
+
+tic;
+[stationary_state_vals_onedimscan,stationary_node_vals_onedimscan,stationary_state_inds_scan]=...
+    fcn_onedim_parscan_calc(stg_table,transition_rates_table,x0,nodes,parscan_matrix,scan_params,scan_params_up_down);
+toc;
+
+%% PLOT
+
+sensit_cutoff=0.01; 
+
+figure()
+[resp_coeff,scan_params_sensit,scan_params_up_down_sensit,fig_filename]=fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
+                                                   stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
+                                                   nonzero_states_inds,parscan_matrix,nodes,...
+                                                   scan_params,scan_params_up_down,... % transition rates to scan in
+                                                   sensit_cutoff,plot_param_settings);

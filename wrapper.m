@@ -45,7 +45,7 @@ model_name_list = {'mammalian_cc', ...
 'krasmodel15vars', ...
 'breast_cancer_zanudo2017'}; % 
 % name of the model
-model_index=1;
+model_index=3;
 model_name=model_name_list{model_index};
 
 % where to save figures
@@ -119,11 +119,11 @@ n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:
 
 initial_fixed_nodes_list = { {'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}, ... % mammalian_cc
                              {'cc','KRAS','DSB','cell_death'}, ... % krasmodel15vars
-                              {'Alpelisib', 'Everolimus','PDK1','Proliferation','Apoptosis'} }; % breast_cancer_zanudo2017 % ,'PIM'
+                              {'Alpelisib', 'Everolimus','PIM','Proliferation','Apoptosis'} }; % breast_cancer_zanudo2017 % ,'PIM'
                           % {'Alpelisib', 'Everolimus', 'PI3K', 'PIM', 'PDK1', 'Proliferation', 'Apoptosis'}
 initial_fixed_nodes_vals_list = {[0 0 0 1 1 1 1 1], ... % mammalian_cc
     [1 1 1 0], ... % krasmodel15vars: [1 1] is cell cycle ON, KRAS mutation ON
-    [1 0 1 0 0] }; % breast_cancer_zanudo2017
+    [0 1 0 zeros(1,2)] }; % breast_cancer_zanudo2017
 initial_fixed_nodes=initial_fixed_nodes_list{model_index}; initial_fixed_nodes_vals=initial_fixed_nodes_vals_list{model_index};
 
 % what is the probability of this state, (eg. dom_prob=0.8, ie. 80% probability)
@@ -216,7 +216,7 @@ sel_nodes=[]; % setdiff(2:numel(nodes)-1,[find(strcmp(nodes,{'Rb_b2'})) find(str
 % plot_param_settings
 % num_size_plot: font size of 0/1s on the heatmap
 % hor_gap: horizontal gap between terminal SCCs, bottom_marg: bottom margin, left_marg: left margin
-numsize_plot=20; fontsize=24; hor_gap=0.02; bottom_marg=0.17; left_marg=0.11; 
+numsize_plot=22; fontsize=30; hor_gap=0.02; bottom_marg=0.31; left_marg=0.16; 
 plot_param_settings=[numsize_plot fontsize hor_gap bottom_marg left_marg];
 % want to use tight subplot? | order states by probability?
 tight_subplot_flag='yes'; ranking_flag='yes';
@@ -295,8 +295,12 @@ end
 [~,top_freq_trans_rates]=maxk(param_freq,6);
 
 % all rates that have corresponding transitions
-scan_params=find(ismember(nodes,{'AKT','SGK1','TSC','FOXO3','BIM','BAD','mTORC1'})); % unique(par_inds_table(:,1))'; 
+scan_params=find(ismember(nodes,{'AKT','SGK1','TSC','FOXO3','BIM','BAD','mTORC1','PI3K','PRAS40'})); 
+% all nodes that have transitions, except phenotypes: setdiff(unique(par_inds_table(:,1))',find(ismember(nodes,{'Apoptosis','Proliferation'})))
+% all nodes that have transitions: unique(par_inds_table(:,1))'; 
+% selected nodes: find(ismember(nodes,{'AKT','SGK1','TSC','FOXO3','BIM','BAD','mTORC1'})); % 
 scan_params_up_down=arrayfun(@(x) par_inds_table(par_inds_table(:,1)==x,2)', scan_params,'un',0); 
+% how many transition rates we'll scan? sum(cellfun(@(x) numel(x),scan_params_up_down))
 %
 % num2cell(repelem([1 2],numel(scan_params),1),2)'; % both up and down rates
 % num2cell(ones(1,numel(scan_params))); % only up 
@@ -308,7 +312,7 @@ scan_params_up_down=arrayfun(@(x) par_inds_table(par_inds_table(:,1)==x,2)', sca
 % scan_params_up_down=arrayfun(@(x) par_inds_table( top_freq_trans_rates(par_inds_table(top_freq_trans_rates,1)==x),2)', scan_params,'un',0); 
 
 % min and max of range of values; resolution of the scan; linear or logarithmic sampling
-parscan_min_max = [1e-2 1e2]; n_steps=3; sampling_types={'log','linear'}; 
+parscan_min_max = [1e-2 1e2]; n_steps=2; sampling_types={'log','linear'}; 
 
 % FUNCTION for generating matrix of ordered values for the parameters to scan in
 % [scan_par_table,scan_par_inds,~]= fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,transition_rates_table);
@@ -353,7 +357,7 @@ figure('name','onedim parscan by param')
 %% PLOT RESULTS of 1-by-1 parameter scan on heatmap/lineplot BY VARIABLES
 
 %%% SECOND PLOT TYPE: show stationary value/response coefficient of 1 variable (state or node) on 1 subplot, as a fcn of all relevant parameters
-sensit_cutoff=0.01; % minimal value for response coefficient (local sensitivity) or for the variation of node/state values
+sensit_cutoff=0.05; % minimal value for response coefficient (local sensitivity) or for the variation of node/state values
 % nonzero states of the model
 % nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))';
 % select parameters of plot
