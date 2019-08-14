@@ -27,11 +27,12 @@ for k=1:n_pars
     scatter(all_par_vals_lhs(:,k), scan_values(:,var_ind)); 
     if max(scan_values(:,var_ind))>0; ylim([0 max(scan_values(:,var_ind))]); end % xlim(xlim_val_log); 
     % title( strrep(strcat(nodes{var_ind},', rate: ',up_down_str(par_ind_table(k,2)),nodes(par_ind_table(k,1)) ),'_','\_'), 'FontWeight', 'normal') 
+    set(gca,'FontSize', label_fontsize/1.5);
     xlabel( strcat(up_down_str(par_ind_table(k,2)),nodes(par_ind_table(k,1))),'Interpreter','none', 'FontSize', label_fontsize ); % grid on
     % plot means
         % n_bins=round(sqrt(size(all_par_vals_lhs,1)));
         
-    if strfind(sampling_type,'log'); 
+    if strfind(sampling_type,'log')
         set(gca,'xscale','log'); set(gca,'XTick',10.^round(logrange(1):logrange(end)) ); % round(logrange(1):logrange(end)) (logrange(1):logrange(end))
     % set(gca, 'XMinorTick','off') % , 'YMinorGrid','on'
     % set(gca,'xticklabel',num2str(get(gca,'xtick')','%.1f'))
@@ -43,7 +44,8 @@ for k=1:n_pars
 
         [a,b]=histc(all_par_vals_lhs(:,k),mean_range_vals); mean_range_vals=mean_range_vals(a>0);
         var_bin_means=cell2mat(arrayfun(@(x) nanmean( scan_values(b==x,var_ind) ), 1:n_bins,'un',0)); var_bin_means=var_bin_means(a>0);
-        hold on; plot(mean_range_vals,var_bin_means,'LineWidth',linewidth_val); 
+        hold on; 
+        plot(mean_range_vals,var_bin_means,'LineWidth',linewidth_val); 
         hold off;
     if rem(k,n_col_plot)==1 && size(scan_values,2)==numel(nodes)
             ylabel(nodes{var_ind},'Interpreter','none','FontSize',label_fontsize);

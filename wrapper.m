@@ -6,30 +6,8 @@ editor_service = com.mathworks.mlservices.MLEditorServices; editor_app = editor_
 active_editor = editor_app.getActiveEditor; storage_location = active_editor.getStorageLocation;
 file = char(storage_location.getFile); path_to_toolbox = fileparts(file); cd(path_to_toolbox);
 
-%% ADD FUNCTIONS to PATH
-
-addpath('functions/') 
-% using these publicly available MATLAB toolboxes:
-% needed for PLOTS:
-addpath('heatmaps') % https://mathworks.com/matlabcentral/fileexchange/24253-customizable-heat-maps
-addpath('redblue'); % https://mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap (for redblue colormaps)
-
-% optional for generating and saving plots
-% for subplots with smaller gaps:
-addpath('tight_subplot') % https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w
-
-% export figures as EPS or PDF as they appear on plots:
-% Optional. https://mathworks.com/matlabcentral/fileexchange/23629-export_fig
-export_fig_name=dir('altman*'); export_fig_name=export_fig_name.name; addpath(genpath(export_fig_name)) 
-
-% optional for PARAMETER FITTING by simulated annealing:
-addpath('anneal') % https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm
-
-% optional for maximal distinguishable colors on plots
-addpath('distinguishable_colors/')
-
-% optional defaults settings: title font weight normal, docked figures
-set(0,'DefaultAxesTitleFontWeight','normal'); set(0,'DefaultFigureWindowStyle','docked');
+% ADD FUNCTIONS to PATH
+add_functions
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% model set-up
@@ -51,18 +29,17 @@ model_name=model_name_list{model_index};
 % where to save figures
 plot_save_folder=strcat('doc/sample_plots/',model_name,'/');
 
-% OR B) the model can be read in from an existing BOOLNET file
-% krasmodel10vars.bnet, krasmodel15vars.bnet
+% model read in from an existing BOOLNET file
 [nodes,rules]=fcn_bnet_readin(strcat('model_files/',model_name,'.bnet')); 
 
-% once we have the list of nodes and their logical rules, we can check if
-% all variables referred to by rules are found in the list of nodes:
+% once we have list of nodes and their logical rules, check if all variables referred to by rules found in list of nodes:
 fcn_nodes_rules_cmp(nodes,rules)
 
 % if yes, we generate a function file, which will create the model
 truth_table_filename='fcn_truthtable.m'; fcn_write_logicrules(nodes,rules,truth_table_filename)
 
 % from the model we generate the STG table, that is independent of values of transition rates
+% this takes 20-30 seconds for 20 node model
 tic; stg_table=fcn_build_stg_table(truth_table_filename,nodes); toc
 
 % density of transition matrix
@@ -357,6 +334,7 @@ figure('name','onedim parscan by param')
 %% PLOT RESULTS of 1-by-1 parameter scan on heatmap/lineplot BY VARIABLES
 
 %%% SECOND PLOT TYPE: show stationary value/response coefficient of 1 variable (state or node) on 1 subplot, as a fcn of all relevant parameters
+nonzero_states_inds=find(stat_sol>0);
 sensit_cutoff=0.05; % minimal value for response coefficient (local sensitivity) or for the variation of node/state values
 % nonzero states of the model
 % nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))';
@@ -392,7 +370,7 @@ figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel
 sampling_types={'lognorm','linear','logunif'};
 sampling_type=sampling_types{3};
 % <lhs_scan_dim>: number of param sets
-lhs_scan_dim=50;
+lhs_scan_dim=500;
 % par_min_mean: minimum or in case of lognormal the mean of distribution. Can be a scalar or a vector, 
 % if we want different values for different parameters
 % max_stdev: maximum or in case of lognormal the mean of distribution. 
@@ -421,7 +399,7 @@ for var_ind=scan_params_sensit
 % find(strcmp(nodes,'CHEK1')); % which STATE or NODE to plot
 % <all_par_vals_lhs>: parameter sets
 % [number_bins_for_mean,trendline_width,axes_fontsize,index nonzero states]
-param_settings = [50 4 30 size(stat_sol_states_lhs_parscan_cell)]; 
+param_settings = [50 4 24 size(stat_sol_states_lhs_parscan_cell)]; 
 % STATES or NODES? <scan_values>: values to be plotted
 scan_values=stat_sol_nodes_lhs_parscan; % stat_sol_states_lhs_parscan
 % PLOT
@@ -435,7 +413,7 @@ end
 
 resolution_dpi='-r350'; fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 
-%% calculating & plotting (heatmap) correlations between variables OR between params and variables by linear/logist regression
+%% calculating & plotting (heatmap) correlations between variables 
 
 % ARGUMENTS
 % stat_sol_nodes_lhs_parscan: values from parameter sampling
@@ -444,13 +422,13 @@ resolution_dpi='-r350'; fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_
 % fontsize: ~ for labels and titles (displaying correlation)
 % HEATMAPS of correlations between selected variables
 sel_nodes=[]; % 3:numel(nodes); % scan_params_sensit
-plot_settings=[20 30]; % [fontsize on plot, fontsize on axes/labels]
+plot_settings=[10 30]; % [fontsize on plot, fontsize on axes/labels]
 plot_type_flag={'var_var','heatmap'}; % this is plotting the heatmap of correlations between variables
 figure('name',strjoin(plot_type_flag))
 [varvar_corr_matr,p_matrix_vars]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_nodes_lhs_parscan,...
                                             nodes,sel_nodes,[],[],[],plot_settings);
 
-resolution_dpi='-r350'; fcn_save_fig(strcat(strjoin(plot_type_flag,'_'),'_corrs'),plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi);
+% resolution_dpi='-r350'; fcn_save_fig(strcat(strjoin(plot_type_flag,'_'),'_corrs'),plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi);
                    
 %% scatterplots of selected variables [i,j]: var_i VS var_j
 
@@ -466,9 +444,9 @@ fcn_save_fig(strcat(strjoin(plot_type_flag,'_'),'_scatterplot'),plot_save_folder
 %% linear or lin-log regression of VARIABLES as fcn of PARAMETERS: VARIABLE=f(PARAMETER), the function plots R squared
 
 plot_type_flag={'par_var','heatmap','r_sq'}; % {'par_var','heatmap'/'lineplot','r_sq'/'slope'}
-sel_nodes=[]; % 3:numel(nodes); % scan_params_sensit;
+sel_nodes=numel(nodes); % 3:numel(nodes); % scan_params_sensit;
 % plot_settings=[fontsize,maximum value for heatmap colors], if plot_settings(2)=NaN, then max color automatically selected
-plot_settings=[30 1]; 
+plot_settings=[20 20 0.5]; 
 % if regression type is 'linlog', then the fit is y = a + b*log10(x)
 regr_types={'log','linear'}; % linlog recommended if parameter values log-uniformly distributed in sampling
 figure('name',strjoin(plot_type_flag))
@@ -477,7 +455,7 @@ figure('name',strjoin(plot_type_flag))
                                  scan_params_sensit,scan_params_up_down_sensit, ... % parameters (CAREFUL that they are the same as in LHS!)
                                  regr_types{1},plot_settings);
 
-resolution_dpi='-r350'; fcn_save_fig(strjoin(plot_type_flag,'_'),plot_save_folder,fig_file_type{2},'overwrite',resolution_dpi)
+resolution_dpi='-r350'; fcn_save_fig(strjoin(plot_type_flag,'_'),plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
 
 %% Quantify importance of parameters from LHS by a regression tree
 
@@ -499,7 +477,7 @@ figure('name','regression_tree_pred_import')
                                                 nodes,sel_nodes,...
                                                 plot_type_flags{2});
                                             
-resolution_dpi='-r350'; fcn_save_fig('regression_tree_pred_import',plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
+% resolution_dpi='-r350'; fcn_save_fig('regression_tree_pred_import',plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
    
 %% Sobol total sensitivity metric                                            
 
@@ -513,7 +491,7 @@ resolution_dpi='-r350'; fcn_save_fig('regression_tree_pred_import',plot_save_fol
 % careful to use same parameters as for R^2 calculations!!!
 [par_ind_table,sequential_indices_lhs,~] = fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes);
 % R^2>=0.1
-r_sq_thresh=0.1; 
+r_sq_thresh=0.05;
 par_ind_table_filtered=par_ind_table(sum(r_squared>r_sq_thresh)>0,:);
 scan_params_filtered=unique(par_ind_table_filtered(:,1))'; % scan_params_unique=unique(par_ind_table(sum(r_squared>0.2)>0,1))'; 
 scan_params_up_down_filtered=arrayfun(@(x) par_ind_table_filtered(par_ind_table_filtered(:,1)==x,2)', scan_params_filtered,'un',0);
@@ -523,7 +501,7 @@ scan_params_up_down_filtered=arrayfun(@(x) par_ind_table_filtered(par_ind_table_
 sel_nodes=[]; % 3:numel(nodes); % scan_params_sensit;
 % setdiff(1:numel(nodes),find(sum(cell2mat(arrayfun(@(x) strcmp(nodes,x), {'cc','KRAS','CDC25B'},'un',0)'))));
 % sel_vars=[]; % if left empty, all nodes/states are analyzed
-sample_size=20; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
+sample_size=[]; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
 % PLOT SETTINGS: [fontsize_plot,fontsize_axes,fontsize_title, min_color(optional), max_color(opt), progress_calcul_every_x_% (opt)];
 plot_settings=[20 30 30 NaN NaN 10];
 var_types={'node','state'}; % analysis for states or nodes
@@ -542,15 +520,9 @@ fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{1},[],[],[]
 
 % SAVE
 % magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0,'ScreenPixelsPerInch')));
-resolution_dpi='-r350'; fcn_save_fig('sobol_sensitivity_index',plot_save_folder,fig_file_type{2},'overwrite',resolution_dpi)
+resolution_dpi='-r350'; fcn_save_fig('sobol_sensitivity_index',plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
 
 %% PARAMETER FITTING
-
-% Relevant functions:
-% transition_rates_table=fcn_trans_rates_table(nodes,'uniform',[],[],chosen_rates,chosen_rates_vals); % transition_rates_table=ones(size(transition_rates_table));
-% tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,''); toc; 
-% tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,transition_rates_table,x0); toc
-% [stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol,'x0');
 
 % define parameters to vary (predictor_names)
 % sensitive parameters identified by 1-dimensional param scan: scan_params_sensit,scan_params_up_down_sensit
@@ -566,7 +538,7 @@ y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(st
 
 % FITTING by simulated annealing (look at arguments in anneal/anneal.m)
 % initial guess for parameters
-init_vals= lognrnd(0,2,size(predictor_names)); init_error=fcn_statsol_sum_sq_dev(init_vals);
+init_vals=lognrnd(0,2,size(predictor_names)); init_error=fcn_statsol_sum_sq_dev(init_vals);
 % initial value of model nodes
 y_init=fcn_calc_init_stat_nodevals(x0,...
     split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,init_vals),''),...
@@ -575,9 +547,9 @@ y_init=fcn_calc_init_stat_nodevals(x0,...
 % simulated annealing with existing algorithm anneal/anneal.m, with modifications in script: 
 % 1) defined counter=0 before while loop
 % 2) inserted <T_loss(counter,:)=[T oldenergy];> at line 175, defined <T_loss> as 3rd output
-% arguments for algorithm need to be provided as structure: 
+% arguments for algorithm need to be provided as a structure: 
 % struct('Verbosity',2, 'StopVal', 0.01, 'StopTemp',1e-8) % stopping error value, stopping temperature parameter
-fitting_arguments=struct('Verbosity',2, 'StopVal', 0.0001);
+fitting_arguments=struct('Verbosity',2, 'StopVal', 0.01);
 tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_vals,fitting_arguments); toc 
 % 20-40 mins for 15var KRAS model
 
@@ -588,23 +560,27 @@ y_optim_param=fcn_calc_init_stat_nodevals(x0,...
 % plot data, initial values, optimized values
 data_init_optim=[y_data; y_init; y_optim_param]; min_val=min(min(data_init_optim(:,3:end))); max_val=max(max(data_init_optim(:,3:end)));
 
-figure('param fitting'); sel_nodes=3:numel(nodes);
+figure('name','param fitting'); sel_nodes=3:numel(nodes);
 % PLOT fitting process
 thres_ind=size(T_loss,1); % thres_ind=find(T_loss(:,2)<1e-2,1); 
 vars_show=2; % 1=temperature, 2=error
 % figure('name','simul anneal')
-subplot(1,2,1);
+fig_subpl1=subplot(1,2,1);
 plot(1:thres_ind, T_loss(1:thres_ind,vars_show),'LineWidth',4); xlim([0 thres_ind]); if init_error/best_error>30; set(gca,'yscale','log'); end
-legend_strs = {'temperature', 'sum of squared error'}; legend(legend_strs{vars_show},'FontSize',30); grid on;
-xlabel('number of iterations','FontSize',30); set(gca,'FontSize',30); % title('Parameter fitting by simulated annealing','FontSize',22)
+label_ticks_fontsize=24; label_fontsize=30; set(gca,'FontSize',label_ticks_fontsize);
+legend_strs={'temperature', 'sum of squared error'}; ylabel(legend_strs{vars_show},'FontSize',label_fontsize); grid on; 
+xlabel('number of iterations','FontSize',label_fontsize); % title('Parameter fitting by simulated annealing','FontSize',22)
+% 
 fig_subpl2=subplot(1,2,2); 
-barh(data_init_optim(:,sel_nodes)'); set(fig_subpl2,'ytick',1:numel(sel_nodes)); 
-set(fig_subpl2,'yticklabel',strrep(nodes(sel_nodes),'_','\_'),'FontSize',30); legend({'data','initial guess','optimized'},'FontSize',30)
-xlabel('stationary probabilities')
+barplot_gca=barh(data_init_optim(:,sel_nodes)'); set(fig_subpl2,'ytick',1:numel(sel_nodes)); 
+legend({'data','initial guess','optimized'},'FontSize',label_fontsize)
+set(gca,'FontSize',label_ticks_fontsize); 
+xticklabels=get(gca,'xtick'); set(fig_subpl2,'xticklabel',xticklabels,'FontSize',label_ticks_fontsize);
+xlabel('stationary probabilities','FontSize',label_fontsize); 
+set(fig_subpl2,'yticklabel','');  % strrep(nodes(sel_nodes),'_','\_'),'FontSize',label_fontsize
 
 resolution_dpi='-r350';
-fcn_save_fig(strcat('simulated_annealing_',num2str(numel(predictor_names)),'fittingpars'),...
-    plot_save_folder,fig_file_type{2},'overwrite',resolution_dpi)
+fcn_save_fig(strcat('simulated_annealing_',num2str(numel(predictor_names)),'fittingpars'),plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
 
 % mean absolute error: mean(abs(y_data - fcn_statsol_values(optim_par_vals)))
 % distance of fitted params from true values: abs(optim_par_vals - sel_param_vals)./sel_param_vals

@@ -19,11 +19,11 @@ corr_matr(p_matrix_vars>0.05)=NaN; corr_matr=triu(corr_matr); corr_matr(corr_mat
 % HEATMAP
 if strcmp(plot_type_flag(2),'heatmap')
 
-num_size_plot=plot_settings(1); fontsize=plot_settings(2);
+num_size_plot=plot_settings(2); fontsize=plot_settings(3);
 heatmap(corr_matr(sel_nodes(1:end-1),sel_nodes(2:end)),nodes(sel_nodes(2:end)),nodes(sel_nodes(1:end-1)),...
   '%0.2f','TickAngle',90,'Colormap','redblue','MinColorValue',-1,'MaxColorValue',1,...
   'GridLines','-','FontSize',num_size_plot,'ShowAllTicks',true,'NaNColor',[.4 .4 .4]); set(gca,'FontSize',fontsize)
-title('correlation coefficients between variables', 'FontWeight','normal','FontSize', plot_settings(2) ) 
+title('correlation coefficients between variables', 'FontWeight','normal','FontSize', plot_settings(3) ) 
 
 % VAR-VAR SCATTERPLOT
 elseif strcmp(plot_type_flag(2),'scatter')
@@ -35,7 +35,7 @@ else
     n_row_plot=round_sqrt; n_col_plot=round_sqrt+1;
 end
 
-fontsize_labels=plot_settings(1); fontsize_title=plot_settings(2);
+fontsize_labels=plot_settings(1); fontsize_title=plot_settings(3);
 for k=1:size(varcorr_plot_indices,1)
    subplot(n_row_plot,n_col_plot,k); 
    scatter(scan_values(:,varcorr_plot_indices(k,1)),scan_values(:,varcorr_plot_indices(k,2))); 
@@ -79,7 +79,7 @@ corr_matr=r_squared; p_matrix_vars=slope_intercept;
 
 if strcmp(plot_type_flag(3),'r_sq') || strcmp(plot_type_flag(3),'r_squared')
     val_to_plot=r_squared; min_col_val=0;
-    if ~isnan(plot_settings(2)); maxval_color=plot_settings(2); else maxval_color=1.05*max(abs(val_to_plot(:))); end
+    if ~isnan(plot_settings(3)); maxval_color=plot_settings(3); else maxval_color=1.05*max(abs(val_to_plot(:))); end
     title_text=strcat('R^2 (linear regression of variables as a fcn of',str_regr_type,' parameters)');
 elseif strcmp(plot_type_flag(3),'slope')
     val_to_plot=cellfun(@(v)v(1),slope_intercept); min_col_val=-1.1*max(abs(val_to_plot(:))); maxval_color=abs(min_col_val);
@@ -87,7 +87,7 @@ elseif strcmp(plot_type_flag(3),'slope')
 end
 
 if strcmp(plot_type_flag(2),'heatmap')
-    num_size_plot=plot_settings(1)/1.5; 
+    num_size_plot=plot_settings(2);
 
 % HEATMAP
 heatmap(val_to_plot',nodes(sel_nodes),predictor_names,'%0.2f','TickAngle',90,'Colormap','redblue',...
