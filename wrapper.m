@@ -17,13 +17,15 @@ add_functions
 % corresponding rules as a cell of strings, using MATLAB logical notation ('&', '|', '~', '(', ')'),
 % for instance a toy model with cyclic attractor:
 % nodes={'A','B','C'}; % rules={'~A','A','A&~C'}
+% nodes={'A','B','C','D'}; rules={'~B','~A&C','B|C&~D','C'}
 
 % LIST of MODELS
 model_name_list = {'mammalian_cc', ...
 'krasmodel15vars', ...
-'breast_cancer_zanudo2017'}; % 
+'breast_cancer_zanudo2017'....
+'dnarepair_rodriguez_15nodes'}; % 
 % name of the model
-model_index=3;
+model_index=4;
 model_name=model_name_list{model_index};
 
 % where to save figures
@@ -71,8 +73,6 @@ tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,''); toc
 
 % VISUALIZE transition matrix
 % spy(A_sparse); xlabel('model states'); ylabel('model states'); set(gca,'FontSize',24)
-% density of transition matrix A
-nnz(A_sparse)/numel(A_sparse)
 
 %% define initial condition
 
