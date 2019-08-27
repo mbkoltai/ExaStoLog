@@ -11,7 +11,8 @@ A_dim=2^numel(nodes);
 % states corresponding to the transition rates
 trans_matr_inds=arrayfun(@(x) ismember(2*(stg_table(:,3)-1)+stg_table(:,4),x),scan_par_inds,'un',0); % 0.8 sec
 [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,'');
-        
+stg_sorting_cell=fcn_scc_subgraphs(A_sparse,x0);
+
 stationary_node_vals_scan=zeros(numel(scan_par_inds),size(parscan_matrix,1),numel(nodes)); % transition_rates_table_mod=transition_rates_table;
 
 scan_size = size(parscan_matrix,2);
@@ -32,7 +33,7 @@ for k=1:scan_size
         A_sparse_mod(seq_inds)=trans_rate_normalized; % 0.05-0.1 sec for 20 nodes
         % diagonal has to be recalculated
         A_sparse_mod = A_sparse_mod + speye(size(A_sparse_mod)) - diag(sum(A_sparse_mod,2)); % 0.33sec
-        [stat_sol,~,~]=split_calc_inverse(A_sparse_mod,transition_rates_table_mod,x0);
+        [stat_sol,~,~]=split_calc_inverse(A_sparse_mod,stg_sorting_cell,transition_rates_table_mod,x0);
         % sols per node
         [stationary_node_vals,~]=fcn_calc_init_stat_nodevals(x0,stat_sol,'');
         stationary_node_vals_scan(k,val_counter,:)=stationary_node_vals;

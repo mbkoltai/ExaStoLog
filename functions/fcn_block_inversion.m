@@ -13,7 +13,7 @@ r0_blocks=sparse(dim_matr,dim_kernel); r0_blocks(term_block_inds, colnum_r_null_
 % left kernel
 r0_blocks_size=size(r0_blocks);
 l0_blocks = transpose( sparse(r0_blocks_size(1),r0_blocks_size(2)) ); l0_blocks(transpose(~ismember(r0_blocks,0)))=1; 
-if isa(r0_blocks,'sym'); l0_blocks=sym(l0_blocks); end
+% if isa(r0_blocks,'sym'); l0_blocks=sym(l0_blocks); end
 X_block = -r0_blocks(term_block_inds,colnum_r_null_array)*K_sp_sub_reord(term_block_inds,nonterm_block_inds)/(K_sp_sub_reord(nonterm_block_inds,nonterm_block_inds));
 l0_blocks(colnum_r_null_array,nonterm_block_inds)=X_block;
 % due to reordering of states init cond state inds need to be reordered too

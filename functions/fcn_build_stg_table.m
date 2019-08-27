@@ -14,7 +14,6 @@ up_trans_target=arrayfun(@(x) [[up_trans_source{x}]+2^(x-1) repmat([x 1],numel(u
 state_transitions_inds=[ [cell2mat(vertcat(down_trans_source(:))); cell2mat(vertcat(up_trans_source(:)))] ...
            [cell2mat(vertcat(down_trans_target(:))); cell2mat(vertcat(up_trans_target(:)))] ];
 
-
 % %
 % all_binary_states=sparse( rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2)); % dim_matr=2^n_nodes;
 % all_binary_states_decim = sum( bsxfun(@times,all_binary_states,(2.^fliplr(0:n_nodes-1))) ,2);

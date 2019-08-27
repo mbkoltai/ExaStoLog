@@ -71,7 +71,7 @@ for k=1:numel(relev_params)
     A_selected_trans=zeros(size(A_sparse(cell_subgraphs{subgraph_index},cell_subgraphs{subgraph_index}))); 
     % select the highlighted edges
     A_selected_trans(row_inds,col_inds) = A_sparse(cell_subgraphs{subgraph_index}(row_inds),cell_subgraphs{subgraph_index}(col_inds));
-    highlight(full_stg_plot,digraph(A_selected_trans,'omitselfloops'),'EdgeColor', highlight_settings{1},'LineWidth',highlight_settings{2}) 
+    highlight(full_stg_plot,digraph(A_selected_trans,'omitselfloops'),'EdgeColor', highlight_settings{1},'LineWidth',highlight_settings{2})
     title(strrep(rate_names_sel{k},'_','\_'),'FontWeight','normal','FontSize',14)
     end
 end

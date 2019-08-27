@@ -169,7 +169,8 @@ x0=zeros(1,2^n_nodes)'; x0=rand(1,size(truth_table_inputs,1))'; x0=x0/sum(x0);
 With the transition matrix, table of transition rates and the initial condition defined we can now calculate the stationary solution of the model (it is informative to time this calculation for larger calculations later on when it will be repeated):
 
 ```MATLAB
-tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,transition_rates_table,x0); toc
+tic; stg_sorting_cell=fcn_scc_subgraphs(A_sparse,x0); toc
+tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_sorting_cell,transition_rates_table,x0); toc
 ```
 
 The outputs of the calculation are:  
@@ -573,7 +574,7 @@ First we need to provide the parameters we want to fit, which can be the sensiti
 % define data vector (generate some data OR load from elsewhere)
 sel_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
 transition_rates_table=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,sel_param_vals);
-y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table,''),transition_rates_table,x0));
+y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table,''),stg_sorting_cell,transition_rates_table,x0));
 ```
 
 We also need to define anonymous functions to calculate the squared error from the data (and the stationary solution for a given parameter set):

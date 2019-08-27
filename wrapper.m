@@ -23,9 +23,10 @@ add_functions
 model_name_list = {'mammalian_cc', ...
 'krasmodel15vars', ...
 'breast_cancer_zanudo2017'....
-'dnarepair_rodriguez_15nodes'}; % 
+'dnarepair_rodriguez_15nodes',...
+'EMT_cohen_ModNet'}; % 
 % name of the model
-model_index=4;
+model_index=5;
 model_name=model_name_list{model_index};
 
 % where to save figures
@@ -76,7 +77,8 @@ tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,''); toc
 
 %% define initial condition
 
-n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2);
+n_nodes=numel(nodes); 
+% truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2);
 
 % define some nodes with a fixed value and a probability <dom_prob>: 
 % states satisfying this condition will have a total initial probability of <dom_prob>, the other states 1-dom_prob
@@ -94,13 +96,18 @@ n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:
 % KRAS 15 nodes mutant
 % initial_fixed_nodes={'cc','KRAS','cell_death'}; initial_fixed_nodes_vals=[1 1 0];
 
-initial_fixed_nodes_list = { {'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}, ... % mammalian_cc
-                             {'cc','KRAS','DSB','cell_death'}, ... % krasmodel15vars
-                              {'Alpelisib', 'Everolimus','PIM','Proliferation','Apoptosis'} }; % breast_cancer_zanudo2017 % ,'PIM'
+initial_fixed_nodes_list={ {'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}, ... % mammalian_cc
+                             {'cc','KRAS','DSB','cell_death'}, ...                              % krasmodel15vars
+                              {'Alpelisib', 'Everolimus','PIM','Proliferation','Apoptosis'},...  % breast_cancer_zanudo2017 % ,'PIM'
+                          {''},... % Rodriguez
+                          {'ECMicroenv','DNAdamage','Metastasis','Migration','Invasion','EMT','Apoptosis'}}; % 
                           % {'Alpelisib', 'Everolimus', 'PI3K', 'PIM', 'PDK1', 'Proliferation', 'Apoptosis'}
+
 initial_fixed_nodes_vals_list = {[0 0 0 1 1 1 1 1], ... % mammalian_cc
     [1 1 1 0], ... % krasmodel15vars: [1 1] is cell cycle ON, KRAS mutation ON
-    [0 1 0 zeros(1,2)] }; % breast_cancer_zanudo2017
+    [0 1 0 zeros(1,2)],...  % breast_cancer_zanudo2017
+    [],...  % Rodriguez
+    [1 1 zeros(1,5)]}; % EMT-Cohen model
 initial_fixed_nodes=initial_fixed_nodes_list{model_index}; initial_fixed_nodes_vals=initial_fixed_nodes_vals_list{model_index};
 
 % what is the probability of this state, (eg. dom_prob=0.8, ie. 80% probability)
@@ -115,7 +122,7 @@ tic; x0=fcn_define_initial_states(initial_fixed_nodes,initial_fixed_nodes_vals,d
 % completely random initial condition: 
 % x0=zeros(2^n_nodes,1); x0=rand(size(truth_table_inputs,1),1); x0=x0/sum(x0);
 % completely uniform initial condition
-% x0=ones(2^n_nodes,1)/(2^n_nodes);
+% x0=ones(2^numel(nodes),1)/(2^numel(nodes));
 
 %% CALCULATE STATIONARY STATE
 
@@ -123,7 +130,17 @@ tic; x0=fcn_define_initial_states(initial_fixed_nodes,initial_fixed_nodes_vals,d
 % transition matrix: A
 % table of transition rates: transition_rates_table
 % initial conditions: x0
-tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,transition_rates_table,x0); toc
+% get the subnetworks of the STG and topologically sort them
+tic; stg_sorting_cell=fcn_scc_subgraphs(A_sparse,x0); toc
+% <stg_sorting_cell> contains
+% {subnetws: which subgraph each state belongs to,
+% scc_submat_cell: states in the subgraphs,
+% nonempty_subgraphs: which subgraphs are populated by the initial condition,
+% sorted_vertices_cell: states (vertices) topologically sorted in each nonempty subgraph,
+% cyclic_sorted_subgraphs_cell: sorted states within cycles}
+
+% calculated stationary solution
+tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_sorting_cell,transition_rates_table,x0); toc
 % OUTPUTS
 % stat_sol: stationary solution for all the states
 % term_verts_cell: index of nonzero states. If the STG is disconnected the nonzero states corresp to these disconn subgraphs are in separate cells
@@ -207,7 +224,7 @@ statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,...
 overwrite_flag='yes'; 
 % for <resolution> you can enter dpi value manually
 % magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-% resolution_dpi='-r350'; fcn_save_fig('binary_heatmap_states',plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi);
+resolution_dpi='-r350'; fcn_save_fig('binary_heatmap_states',plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% STGs on subplots, with given parameter highlighted on each
@@ -272,9 +289,11 @@ end
 [~,top_freq_trans_rates]=maxk(param_freq,6);
 
 % all rates that have corresponding transitions
-scan_params=find(ismember(nodes,{'AKT','SGK1','TSC','FOXO3','BIM','BAD','mTORC1','PI3K','PRAS40'})); 
-% all nodes that have transitions, except phenotypes: setdiff(unique(par_inds_table(:,1))',find(ismember(nodes,{'Apoptosis','Proliferation'})))
+scan_params=unique(par_inds_table(:,1))';
 % all nodes that have transitions: unique(par_inds_table(:,1))'; 
+% most frequent: par_inds_table(top_freq_trans_rates,1)';
+% Zanudo: find(ismember(nodes,{'AKT','SGK1','TSC','FOXO3','BIM','BAD','mTORC1','PI3K','PRAS40'})); 
+% all nodes that have transitions, except phenotypes: setdiff(unique(par_inds_table(:,1))',find(ismember(nodes,{'Apoptosis','Proliferation'})))
 % selected nodes: find(ismember(nodes,{'AKT','SGK1','TSC','FOXO3','BIM','BAD','mTORC1'})); % 
 scan_params_up_down=arrayfun(@(x) par_inds_table(par_inds_table(:,1)==x,2)', scan_params,'un',0); 
 % how many transition rates we'll scan? sum(cellfun(@(x) numel(x),scan_params_up_down))
@@ -289,7 +308,7 @@ scan_params_up_down=arrayfun(@(x) par_inds_table(par_inds_table(:,1)==x,2)', sca
 % scan_params_up_down=arrayfun(@(x) par_inds_table( top_freq_trans_rates(par_inds_table(top_freq_trans_rates,1)==x),2)', scan_params,'un',0); 
 
 % min and max of range of values; resolution of the scan; linear or logarithmic sampling
-parscan_min_max = [1e-2 1e2]; n_steps=2; sampling_types={'log','linear'}; 
+parscan_min_max = [1e-2 1e2]; n_steps=10; sampling_types={'log','linear'}; 
 
 % FUNCTION for generating matrix of ordered values for the parameters to scan in
 % [scan_par_table,scan_par_inds,~]= fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,transition_rates_table);
@@ -320,7 +339,7 @@ height_width_gap=[0.08 0.03]; bott_top_marg =[0.05 0.05]; left_right_marg=[0.04 
 plot_param_settings={20,20,20,4,{height_width_gap bott_top_marg left_right_marg},model_name}; % plot_param_settings={12,14,[],model_name}; 
 state_or_node_flags={'nodes','states'}; 
 % cutoff for minimal variation to show a variable
-diff_cutoff=0.01;
+diff_cutoff=0.1;
 figure('name','onedim parscan by param')
 [fig_filename,output_cell]=fcn_onedim_parscan_plot_by_params(state_or_node_flags{1},...
                                       stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
@@ -335,7 +354,7 @@ figure('name','onedim parscan by param')
 
 %%% SECOND PLOT TYPE: show stationary value/response coefficient of 1 variable (state or node) on 1 subplot, as a fcn of all relevant parameters
 nonzero_states_inds=find(stat_sol>0);
-sensit_cutoff=0.05; % minimal value for response coefficient (local sensitivity) or for the variation of node/state values
+sensit_cutoff=0.1; % minimal value for response coefficient (local sensitivity) or for the variation of node/state values
 % nonzero states of the model
 % nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))';
 % select parameters of plot
@@ -346,7 +365,7 @@ plot_param_settings={30,30,{height_width_gap bott_top_marg left_right_marg},mode
 % select type of plot
 plot_types={{'lineplot','heatmap'} {'nodes','states'} {'values','sensitivity'}};
 % if want to loop through all plot types: all_opts_perm=[[1 1 1]; unique([perms([1 1 2]); perms([2 2 1])],'rows'); [2 2 2]];
-plot_type_options=[1 1 1];
+plot_type_options=[1 2 1];
 figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel(plot_type_options), 'un',0),'_'));
 [resp_coeff,scan_params_sensit,scan_params_up_down_sensit,fig_filename]=fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
                                                    stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
@@ -370,7 +389,7 @@ figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel
 sampling_types={'lognorm','linear','logunif'};
 sampling_type=sampling_types{3};
 % <lhs_scan_dim>: number of param sets
-lhs_scan_dim=500;
+lhs_scan_dim=50;
 % par_min_mean: minimum or in case of lognormal the mean of distribution. Can be a scalar or a vector, 
 % if we want different values for different parameters
 % max_stdev: maximum or in case of lognormal the mean of distribution. 
@@ -407,8 +426,7 @@ sampling_type=sampling_types{3}; % sampling_types={'lognorm','linear','logunif'}
 file_name_prefix=strcat('LHS_parscan_trend_',nodes{var_ind}); 
 figure('name',nodes{var_ind})
 fcn_multidim_parscan_scatterplot(var_ind,all_par_vals_lhs,scan_values,...
-        scan_params_sensit,scan_params_up_down_sensit,...
-        nodes,sampling_type,param_settings)
+        scan_params_sensit,scan_params_up_down_sensit,nodes,sampling_type,param_settings)
 end
 
 resolution_dpi='-r350'; fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
@@ -422,7 +440,7 @@ resolution_dpi='-r350'; fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_
 % fontsize: ~ for labels and titles (displaying correlation)
 % HEATMAPS of correlations between selected variables
 sel_nodes=[]; % 3:numel(nodes); % scan_params_sensit
-plot_settings=[10 30]; % [fontsize on plot, fontsize on axes/labels]
+plot_settings=[10 8 8]; % [fontsize on plot, fontsize on axes/labels]
 plot_type_flag={'var_var','heatmap'}; % this is plotting the heatmap of correlations between variables
 figure('name',strjoin(plot_type_flag))
 [varvar_corr_matr,p_matrix_vars]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_nodes_lhs_parscan,...
@@ -432,7 +450,7 @@ figure('name',strjoin(plot_type_flag))
                    
 %% scatterplots of selected variables [i,j]: var_i VS var_j
 
-sel_nodes=scan_params_sensit; plot_settings=[10 12]; % [fontsize_axes, fontsize_titles]
+sel_nodes=scan_params_sensit; plot_settings=[10 12 12]; % [fontsize_axes, fontsize_titles]
 plot_type_flag={'var_var','scatter'}; % this is plotting the scatterplots of variables with correlation values
 figure('name',strjoin(plot_type_flag))
 fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_nodes_lhs_parscan,...
@@ -473,9 +491,7 @@ plot_type_flags={'line','bar'};
 figure('name','regression_tree_pred_import')
 % [predictor_names,predictorImportance_vals]
 [~,predictorImportance_vals] = fcn_multidim_parscan_predictorimport(scan_params_sensit,scan_params_up_down_sensit,...
-                                                all_par_vals_lhs,scan_values,...
-                                                nodes,sel_nodes,...
-                                                plot_type_flags{2});
+                                                all_par_vals_lhs,scan_values,nodes,sel_nodes,plot_type_flags{2});
                                             
 % resolution_dpi='-r350'; fcn_save_fig('regression_tree_pred_import',plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
    
@@ -530,18 +546,19 @@ resolution_dpi='-r350'; fcn_save_fig('sobol_sensitivity_index',plot_save_folder,
 % define data vector (generate some data OR load from elsewhere)
 sel_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
 transition_rates_table=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,sel_param_vals);
-y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table,''),transition_rates_table,x0),'x0');
+y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table,''),stg_sorting_cell,...
+                                   transition_rates_table,x0),'x0');
 
 % create functions that calculate sum of squared deviations & values of
 % variables (composed of different fcns) - RERUN THIS if you want to fit to new data or new non-fitted transition rates!!
-[fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_simul_anneal(y_data,x0,stg_table,nodes,predictor_names);
+[fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_simul_anneal(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
 
 % FITTING by simulated annealing (look at arguments in anneal/anneal.m)
 % initial guess for parameters
 init_vals=lognrnd(0,2,size(predictor_names)); init_error=fcn_statsol_sum_sq_dev(init_vals);
 % initial value of model nodes
 y_init=fcn_calc_init_stat_nodevals(x0,...
-    split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,init_vals),''),...
+    split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,init_vals),''),stg_sorting_cell,...
     transition_rates_table,x0),'');
 
 % simulated annealing with existing algorithm anneal/anneal.m, with modifications in script: 
@@ -549,13 +566,13 @@ y_init=fcn_calc_init_stat_nodevals(x0,...
 % 2) inserted <T_loss(counter,:)=[T oldenergy];> at line 175, defined <T_loss> as 3rd output
 % arguments for algorithm need to be provided as a structure: 
 % struct('Verbosity',2, 'StopVal', 0.01, 'StopTemp',1e-8) % stopping error value, stopping temperature parameter
-fitting_arguments=struct('Verbosity',2, 'StopVal', 0.01);
+fitting_arguments=struct('Verbosity',2, 'StopVal', 0.002);
 tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_vals,fitting_arguments); toc 
 % 20-40 mins for 15var KRAS model
 
 % output with fitted parameters
 y_optim_param=fcn_calc_init_stat_nodevals(x0,...
-    split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,optim_par_vals),''),...
+    split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,optim_par_vals),''),stg_sorting_cell,...
     transition_rates_table,x0),'');
 % plot data, initial values, optimized values
 data_init_optim=[y_data; y_init; y_optim_param]; min_val=min(min(data_init_optim(:,3:end))); max_val=max(max(data_init_optim(:,3:end)));

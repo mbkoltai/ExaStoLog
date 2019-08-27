@@ -1,9 +1,12 @@
-function [stat_sol_blocks,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,transition_rates_table,x0)
+function [stat_sol_blocks,term_verts_cell,cell_subgraphs]=split_calc_inverse_store_A(A_sparse,stg_sorting_cell,transition_rates_table,x0)
+
+subnetws=stg_sorting_cell{1}; scc_submat_cell=stg_sorting_cell{2}; nonempty_subgraphs=stg_sorting_cell{3}; 
+sorted_vertices_cell=stg_sorting_cell{4}; cyclic_sorted_subgraphs_cell=stg_sorting_cell{end};
 
 % is the STG disconnected?
 stat_sol_blocks=sparse(numel(x0),1);
 % A_digraph=digraph(A_sparse,'omitselfloops'); 
-subnetws=conncomp(digraph(A_sparse,'omitselfloops'),'Type','weak'); num_subnets=length(unique(subnetws));
+num_subnets=length(unique(subnetws));
 % preallocate cell of term vertices and of subgraphs
 term_verts_cell=cell(num_subnets,1); cell_subgraphs=cell(num_subnets,1);
 
@@ -11,25 +14,32 @@ if num_subnets>1
     disp('STG has multiple subgraphs')
 end
 
-for counter=1:num_subnets
-
+counter_subgraphs=0;
+for counter=nonempty_subgraphs
+counter_subgraphs=counter_subgraphs+1;
 submatrix_inds=find(subnetws==counter); cell_subgraphs{counter}=submatrix_inds;
-
-if sum(x0(subnetws==counter))>0
 
 if num_subnets>1
     disp( strcat('calculating subgraph #', num2str(counter), ' of ', num2str(num_subnets)))
 end
 
-A_sparse_sub=A_sparse(submatrix_inds,submatrix_inds);
-dim_matr=size(A_sparse_sub,1); scc_submat=conncomp(digraph(A_sparse_sub,'omitselfloops'),'Type','strong');
+A_sparse_sub=A_sparse(subnetws==counter,subnetws==counter); dim_matr=size(A_sparse_sub,1); scc_submat=scc_submat_cell{counter};
 
-% IF all SCCs are single vertices
+% IF all SCCs are single vertices (ie. no cycles)
 if numel(unique(scc_submat))==dim_matr
-    % disp('no (transient or terminal) cycles')
 
 % function to reorder vertices and keep ordering
-[A_sparse_sub_reordered_terminal,sorted_vertices_terminal_bottom]=fcn_toposort_terminals_bottom(A_sparse_sub);
+terminal_nodes=find(diag(A_sparse_sub)==1)';
+% this is a consistent ordering but terminals are not necessarily in lower right corner of matrix
+A_orig_reordered=A_sparse_sub(sorted_vertices_cell{counter_subgraphs},sorted_vertices_cell{counter_subgraphs});
+% but we want to have terminal states at the bottom
+terminal_indices = find(ismember(sorted_vertices_cell{counter_subgraphs},terminal_nodes)); 
+terminals_rem_inds = find(~ismember(sorted_vertices_cell{counter_subgraphs},terminal_nodes));
+sorted_vertices_terminal_bottom = [sorted_vertices_cell{counter_subgraphs}(~ismember(sorted_vertices_cell{counter_subgraphs}, terminal_nodes)) ...
+                                   sorted_vertices_cell{counter_subgraphs}(terminal_indices)];
+A_sparse_sub_reordered_terminal = A_orig_reordered([terminals_rem_inds terminal_indices],[terminals_rem_inds terminal_indices]);
+
+% [A_sparse_sub_reordered_terminal,sorted_vertices_terminal_bottom]=fcn_toposort_terminals_bottom(A_sparse_sub);
 K_sp_sub_reord = (A_sparse_sub_reordered_terminal' - speye(dim_matr,dim_matr))*sum(transition_rates_table(:));
 
 stat_sol_submatr_blocks=fcn_block_inversion(K_sp_sub_reord,sorted_vertices_terminal_bottom,x0,submatrix_inds);
@@ -48,11 +58,15 @@ else % if there are cycles we need reordering of metagraph of SCC
         r0_blocks=kernel_col'/sum(kernel_col); l0_blocks=fcn_left_kernel(K_sp_sub_reord,r0_blocks,dim_matr);
         % stat sol
         stat_sol_submatr_blocks=r0_blocks*l0_blocks*x0(submatrix_inds);
-        stat_sol_blocks(submatrix_inds)=stat_sol_submatr_blocks;
-        term_verts_cell{counter}=submatrix_inds;
+        stat_sol_blocks(submatrix_inds)=stat_sol_submatr_blocks; term_verts_cell{counter}=submatrix_inds;
     else
-    [vert_topol_sort,term_cycles_ind,~,~,term_cycle_bounds]=fcn_metagraph_scc(A_sparse_sub);
-    % [vert_topol_sort,term_cycles_ind,A_metagraph,scc_cell,term_cycle_bounds]=fcn_metagraph_scc(A_orig)
+
+    % cyclic_sorted_subgraphs_cell{counter_subgraphs}={vert_topol_sort,term_cycles_ind,term_cycle_bounds};
+    vert_topol_sort=cyclic_sorted_subgraphs_cell{counter_subgraphs}{1};
+    term_cycles_ind=cyclic_sorted_subgraphs_cell{counter_subgraphs}{2};
+    term_cycle_bounds=cyclic_sorted_subgraphs_cell{counter_subgraphs}{3};
+    % [vert_topol_sort,term_cycles_ind,~,~,term_cycle_bounds]=fcn_metagraph_scc(A_sparse_sub);
+
     A_sparse_sub_reordered_terminal=A_sparse_sub(vert_topol_sort,vert_topol_sort);
     K_sp_sub_reord = (A_sparse_sub_reordered_terminal' - speye(dim_matr,dim_matr))*sum(transition_rates_table(:));
 
@@ -86,7 +100,8 @@ else % if there are cycles we need reordering of metagraph of SCC
         if sum(ismember(diag(K_sp_sub_reord),0))>0
             n_terminal=find(ismember(diag(K_sp_sub_reord),0))'; 
             r_null_single_vert = sparse(dim_matr,numel(n_terminal)); 
-            r_null_single_vert(sub2ind(size(r_null_single_vert),n_terminal, 1:numel(n_terminal)) )=1;
+            % (1:numel(n_terminal)-1)*2 + n_terminal
+            r_null_single_vert( sub2ind(size(r_null_single_vert), n_terminal, 1:numel(n_terminal)) )=1;
             % does the order of columns in the kernel matter? I think not, if l0_blocks consistent w r0_blocks
             r0_blocks=[r_null_cycles r_null_single_vert];
         else
@@ -113,7 +128,7 @@ else % if there are cycles we need reordering of metagraph of SCC
     
 end % end of if gate abt cycles
 
-end % end of if: are there nonzero states in this subgraph?
+% end % end of if: are there nonzero states in this subgraph?
 
 end % end of for loop going thru disconnected subgraphs
 

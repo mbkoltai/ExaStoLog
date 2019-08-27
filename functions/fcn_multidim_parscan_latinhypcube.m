@@ -7,7 +7,7 @@ function [all_par_vals_lhs,stat_sol_lhs_parscan,...
 
 % sampling_type='logunif'; % sampling_type='lognorm' (logarithmically spaced normal distrib) or 
 % 'linear' (linearly spaced uniform distribution) or 
-% 'logunif' (logarithmically spaced uniform distribution) 
+% 'logunif' (logarithmically spaced uniform distribution)
 n_pars=sum(cellfun(@(x) numel(x), scan_params_up_down));
 
 if numel(min_mean_val)==1 && numel(max_stdev_val)
@@ -53,7 +53,8 @@ transition_rates_table_mod=transition_rates_table;
 stat_sol_lhs_parscan=zeros(size(all_par_vals_lhs,1),numel(nodes));
 
 [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table_mod,'');
-[stat_sol,~,~]=split_calc_inverse(A_sparse,transition_rates_table_mod,x0);
+stg_sorting_cell=fcn_scc_subgraphs(A_sparse,x0);
+[stat_sol,~,~]=split_calc_inverse(A_sparse,stg_sorting_cell,transition_rates_table_mod,x0);
 nonzero_states_inds=find(stat_sol>0);
 stat_sol_states_lhs_parscan=zeros(size(all_par_vals_lhs,1),sum(stat_sol>0));
 stat_sol_states_lhs_parscan_cell=cell(size(all_par_vals_lhs,1),2);
@@ -66,7 +67,7 @@ for k=1:lhs_scan_dim
 
 transition_rates_table_mod(trans_rate_scan_inds) = all_par_vals_lhs(k,:);
 [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table_mod,'');
-[stat_sol,~,~]=split_calc_inverse(A_sparse,transition_rates_table_mod,x0);
+[stat_sol,~,~]=split_calc_inverse(A_sparse,stg_sorting_cell,transition_rates_table_mod,x0);
 [stationary_node_vals,~]=fcn_calc_init_stat_nodevals(x0,stat_sol,'');
 stat_sol_lhs_parscan(k,:)=stationary_node_vals;
 nonzero_states=stat_sol(stat_sol>0);

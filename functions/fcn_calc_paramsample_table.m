@@ -13,6 +13,7 @@ trans_matr_inds=cell2mat(arrayfun(@(x) find(ismember(2*(stg_table(:,3)-1)+stg_ta
 trans_matr_inds_length=cell2mat(arrayfun(@(x) sum(ismember(2*(stg_table(:,3)-1)+stg_table(:,4),x)),trans_rate_scan_inds,'un',0)); % 0.8 sec
 n_par=numel(trans_rate_scan_inds);
 [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,'');
+stg_sorting_cell=fcn_scc_subgraphs(A_sparse,x0);
 
 stat_sol_states_lhs_parscan=cell(size(all_par_vals_lhs,1),1); % zeros(size(all_par_vals_lhs,1),sum(stat_sol>0));
 stat_sol_lhs_parscan=zeros(size(all_par_vals_lhs,1),size(transition_rates_table,2));
@@ -38,7 +39,7 @@ A_sparse_mod = A_sparse_mod + speye(size(A_sparse_mod)) - diag(sum(A_sparse_mod,
 
 % [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table_mod,'');
 
-[stat_sol,~,~]=split_calc_inverse(A_sparse_mod,transition_rates_table_mod,x0);
+[stat_sol,~,~]=split_calc_inverse(A_sparse_mod,stg_sorting_cell,transition_rates_table_mod,x0);
 [stationary_node_vals,~]=fcn_calc_init_stat_nodevals(x0,stat_sol,'');
 stat_sol_lhs_parscan(k,:) = stationary_node_vals;
 stat_sol_states_lhs_parscan{k} = stat_sol(stat_sol>0);
