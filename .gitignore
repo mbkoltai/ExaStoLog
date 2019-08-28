@@ -22,6 +22,7 @@ exact_stochlog_toolbox.zip
 wrapper_suppl.m
 launch_calc.m
 fitting_script.m
+run_sobol.m
 examples.m
 fcn_truthtable.m
 # wrapper.mlx
