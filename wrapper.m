@@ -519,8 +519,9 @@ sel_nodes=[]; % 3:numel(nodes); % scan_params_sensit;
 % setdiff(1:numel(nodes),find(sum(cell2mat(arrayfun(@(x) strcmp(nodes,x), {'cc','KRAS','CDC25B'},'un',0)'))));
 % sel_vars=[]; % if left empty, all nodes/states are analyzed
 sample_size=100; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
-% PLOT SETTINGS: [fontsize_plot,fontsize_axes,fontsize_title, min_color(optional), max_color(opt), progress_calcul_every_x_% (opt)];
-plot_settings=[20 30 30 NaN NaN 10];
+% how often should be progress displayed?
+disp_freq=10;
+plot_settings=[];
 var_types={'node','state'}; % analysis for states or nodes
 % to calculate Sobol total sensitivity we need <sample_size*numel(scan_params_up_down)> evaluations of the model
 figure('name','sobol sensitivity index')
@@ -529,9 +530,11 @@ sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{1},...
                       sample_size,... % # of calculations per parameter
                       sequential_indices_lhs,... % this is indices of transition rates in the original LHS
                       scan_params_filtered,scan_params_up_down_filtered,...% scan_params_sensit,scan_params_up_down_sensit
-                      stg_table,transition_rates_table,x0,nodes,sel_nodes,plot_settings);
+                      stg_table,transition_rates_table,x0,nodes,sel_nodes,plot_settings,disp_freq);
 
 % if already calculated <sobol_sensit_index> and only want to plot results, provide <sobol_sensit_index> as FIRST argument 
+% PLOT SETTINGS: [fontsize_plot,fontsize_axes,fontsize_title, min_color(optional), max_color(opt)];
+plot_settings=[20 30 30 NaN];
 % fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{1},[],[],[],[],...
 %                        sequential_indices_lhs,scan_params_filtered,scan_params_up_down_filtered,[],[],[],nodes,sel_nodes,plot_settings);
 

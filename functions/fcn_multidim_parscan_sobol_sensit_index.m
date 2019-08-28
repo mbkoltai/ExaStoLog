@@ -48,8 +48,8 @@ A=all_par_vals_lhs_subset(1:M,:); B=all_par_vals_lhs_subset(M+1:2*M,:);
 tau_i=zeros(size(all_par_vals_lhs_subset,2),numel(sel_nodes));
 % transition_rates_table=ones(2,numel(nodes));
 
-if numel(plot_settings)==6
-  disp_var=plot_settings(6);
+if ~isempty(disp_freq)
+  disp_var=disp_freq;
 else
   disp_var=[];
 end
@@ -81,6 +81,7 @@ else
     tau_i=sobol_sensit_index;
 end
 
+if ~isempty(plot_settings)
 num_size_plot=plot_settings(1); 
 if length(plot_settings)>=5 && ~isnan(plot_settings(4)) && ~isnan(plot_settings(5))
     min_col_val=plot_settings(4); maxval_color=plot_settings(5); % 1.05*max(tau_i(:))
@@ -92,3 +93,4 @@ heatmap(tau_i,x_ax_string,predictor_names,'%0.2f','TickAngle',0,'Colormap','redb
     'MinColorValue',min_col_val,'MaxColorValue',maxval_color,'GridLines','-',...
     'FontSize',num_size_plot,'ShowAllTicks',true,'colorbar',true,'NaNColor',[0 0 0])
 set(gca,'FontSize',plot_settings(2)); title('Sobol total sensitivity index', 'Fontweight','normal', 'FontSize',plot_settings(3));
+end
