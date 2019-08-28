@@ -47,14 +47,14 @@ if ~isempty(nonzero_flag)
 else
     set(fig_subpl2,'ytick','') 
 end
-title('stationary solution: states','FontWeight','normal','FontSize', fontsize(2)); xlabel('probability', 'FontSize', fontsize(2));
+title('states','FontWeight','normal','FontSize', fontsize(2)); xlabel('stationary probability', 'FontSize', fontsize(2));
 
 %%%%%
 % 3rd subplot with nodes
 fig_subpl3=subplot(1,3,3); 
 fig_subpl3_vals=flipud([init_node_vals(sel_nodes); stationary_node_vals(sel_nodes)]');
-bar_subpl3=barh(fig_subpl3_vals, 'grouped'); grid on;  xlabel('probability', 'FontSize', fontsize_stat_sol);
-title('stationary solution: nodes','FontSize',fontsize_stat_sol,'FontWeight','normal'); 
+bar_subpl3=barh(fig_subpl3_vals, 'grouped'); grid on;  xlabel('stationary probability', 'FontSize', fontsize_stat_sol);
+title('nodes','FontSize',fontsize_stat_sol,'FontWeight','normal'); 
 set(fig_subpl3,'Position',[0.72 y_position 0.27 0.815]);
 set(gca,'ytick',1:numel(sel_nodes)); set(gca,'YtickLabel',strrep(fliplr(nodes(sel_nodes)),'_',' ')); shift=0.4; ylim([1-shift numel(sel_nodes)+shift])
 set(bar_subpl3(2),'FaceColor',[1 0 0],'EdgeColor',[1 0 0]);

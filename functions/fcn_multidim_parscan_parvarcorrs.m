@@ -22,7 +22,7 @@ if strcmp(plot_type_flag(2),'heatmap')
 num_size_plot=plot_settings(2); fontsize=plot_settings(3);
 heatmap(corr_matr(sel_nodes(1:end-1),sel_nodes(2:end)),nodes(sel_nodes(2:end)),nodes(sel_nodes(1:end-1)),...
   '%0.2f','TickAngle',90,'Colormap','redblue','MinColorValue',-1,'MaxColorValue',1,...
-  'GridLines','-','FontSize',num_size_plot,'ShowAllTicks',true,'NaNColor',[.4 .4 .4]); set(gca,'FontSize',fontsize)
+  'GridLines','-','FontSize',num_size_plot,'ShowAllTicks',true,'NaNColor',[1 1 1]); set(gca,'FontSize',fontsize) % .4 .4 .4
 title('correlation coefficients between variables', 'FontWeight','normal','FontSize', plot_settings(3) ) 
 
 % VAR-VAR SCATTERPLOT

@@ -45,7 +45,7 @@ for k=1:n_pars
         [a,b]=histc(all_par_vals_lhs(:,k),mean_range_vals); mean_range_vals=mean_range_vals(a>0);
         var_bin_means=cell2mat(arrayfun(@(x) nanmean( scan_values(b==x,var_ind) ), 1:n_bins,'un',0)); var_bin_means=var_bin_means(a>0);
         hold on; 
-        plot(mean_range_vals,var_bin_means,'LineWidth',linewidth_val); 
+        plot(mean_range_vals,var_bin_means,'LineWidth',linewidth_val,'Color',[1 0 0]); 
         hold off;
     if rem(k,n_col_plot)==1 && size(scan_values,2)==numel(nodes)
             ylabel(nodes{var_ind},'Interpreter','none','FontSize',label_fontsize);

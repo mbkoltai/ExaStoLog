@@ -107,7 +107,7 @@ initial_fixed_nodes_vals_list = {[0 0 0 1 1 1 1 1], ... % mammalian_cc
     [1 1 1 0], ... % krasmodel15vars: [1 1] is cell cycle ON, KRAS mutation ON
     [0 1 0 zeros(1,2)],...  % breast_cancer_zanudo2017
     [],...  % Rodriguez
-    [1 1 zeros(1,5)]}; % EMT-Cohen model
+    [0 1 zeros(1,5)]}; % EMT-Cohen model: [0/1 0/1 zeros(1,5)]
 initial_fixed_nodes=initial_fixed_nodes_list{model_index}; initial_fixed_nodes_vals=initial_fixed_nodes_vals_list{model_index};
 
 % what is the probability of this state, (eg. dom_prob=0.8, ie. 80% probability)
@@ -119,7 +119,7 @@ plot_flag='';
 % function assigns a probability of <dom_prob> to the states with the fixed nodes having the defined values
 tic; x0=fcn_define_initial_states(initial_fixed_nodes,initial_fixed_nodes_vals,dom_prob,nodes,distrib_types{1},plot_flag); toc
 
-% completely random initial condition: 
+% completely random initial condition:
 % x0=zeros(2^n_nodes,1); x0=rand(size(truth_table_inputs,1),1); x0=x0/sum(x0);
 % completely uniform initial condition
 % x0=ones(2^numel(nodes),1)/(2^numel(nodes));
@@ -148,7 +148,6 @@ tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_s
 
 % nonzero states displayed:
 stat_sol(stat_sol>0)' % probability values of nonzero states
-truth_table_inputs(stat_sol>0,:) % list of logical states that are nonzero
 
 % sum the probabilities of nonzero states by nodes, both for the initial condition and the stationary solution
 % ARGUMENTS
@@ -177,7 +176,7 @@ truth_table_inputs(stat_sol>0,:) % list of logical states that are nonzero
 % sel_nodes: nodes to show. If left empty, all nodes are shown
 % nonzero_flag: minimal value for probability to display - if this is non-empty, only plot nonzero states, useful for visibility if there are many states
 sel_nodes=[];  % 3:numel(nodes)
-min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[10 20]; % fontsize_hm,fontsize_stat_sol
+min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[20 24]; % fontsize_hm,fontsize_stat_sol
 plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.03;
 % WARNING!!! if more than 12 nodes, generating the figure for A/K can be time-consuming
 matrix_input=A_sparse; % leave this variable empty to have only 2 subplots, without transition matrix
@@ -339,9 +338,9 @@ height_width_gap=[0.08 0.03]; bott_top_marg =[0.05 0.05]; left_right_marg=[0.04 
 plot_param_settings={20,20,20,4,{height_width_gap bott_top_marg left_right_marg},model_name}; % plot_param_settings={12,14,[],model_name}; 
 state_or_node_flags={'nodes','states'}; 
 % cutoff for minimal variation to show a variable
-diff_cutoff=0.1;
+diff_cutoff=0.15;
 figure('name','onedim parscan by param')
-[fig_filename,output_cell]=fcn_onedim_parscan_plot_by_params(state_or_node_flags{1},...
+[fig_filename,onedim_paramscan_output_cell]=fcn_onedim_parscan_plot_by_params(state_or_node_flags{1},...
                                       stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
                                       nonzero_states_inds,parscan_matrix,nodes,...
                                       scan_params,scan_params_up_down,... % selected parameters
@@ -354,7 +353,7 @@ figure('name','onedim parscan by param')
 
 %%% SECOND PLOT TYPE: show stationary value/response coefficient of 1 variable (state or node) on 1 subplot, as a fcn of all relevant parameters
 nonzero_states_inds=find(stat_sol>0);
-sensit_cutoff=0.1; % minimal value for response coefficient (local sensitivity) or for the variation of node/state values
+sensit_cutoff=0.15; % minimal value for response coefficient (local sensitivity) or for the variation of node/state values
 % nonzero states of the model
 % nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))';
 % select parameters of plot
@@ -365,7 +364,7 @@ plot_param_settings={30,30,{height_width_gap bott_top_marg left_right_marg},mode
 % select type of plot
 plot_types={{'lineplot','heatmap'} {'nodes','states'} {'values','sensitivity'}};
 % if want to loop through all plot types: all_opts_perm=[[1 1 1]; unique([perms([1 1 2]); perms([2 2 1])],'rows'); [2 2 2]];
-plot_type_options=[1 2 1];
+plot_type_options=[1 1 1];
 figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel(plot_type_options), 'un',0),'_'));
 [resp_coeff,scan_params_sensit,scan_params_up_down_sensit,fig_filename]=fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
                                                    stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
@@ -389,7 +388,7 @@ figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel
 sampling_types={'lognorm','linear','logunif'};
 sampling_type=sampling_types{3};
 % <lhs_scan_dim>: number of param sets
-lhs_scan_dim=50;
+lhs_scan_dim=500;
 % par_min_mean: minimum or in case of lognormal the mean of distribution. Can be a scalar or a vector, 
 % if we want different values for different parameters
 % max_stdev: maximum or in case of lognormal the mean of distribution. 
@@ -414,11 +413,11 @@ max_stdev=2; % repmat(0.5,1,numel(cell2mat(scan_params_up_down(:))));
 %% SCATTERPLOTS of STATE or NODE values as a function of the selected parameters, with the trendline shown (average value per parameter bin)
 
 % sel_nodes=[6 10 11 12 13 14 15];
-for var_ind=scan_params_sensit
+for var_ind=[4:8 scan_params_sensit]
 % find(strcmp(nodes,'CHEK1')); % which STATE or NODE to plot
 % <all_par_vals_lhs>: parameter sets
 % [number_bins_for_mean,trendline_width,axes_fontsize,index nonzero states]
-param_settings = [50 4 24 size(stat_sol_states_lhs_parscan_cell)]; 
+param_settings = [50 6 24 size(stat_sol_states_lhs_parscan_cell)]; 
 % STATES or NODES? <scan_values>: values to be plotted
 scan_values=stat_sol_nodes_lhs_parscan; % stat_sol_states_lhs_parscan
 % PLOT
@@ -439,48 +438,50 @@ resolution_dpi='-r350'; fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_
 % sel_nodes: name of selected nodes (pls provide in ascending order)
 % fontsize: ~ for labels and titles (displaying correlation)
 % HEATMAPS of correlations between selected variables
-sel_nodes=[]; % 3:numel(nodes); % scan_params_sensit
-plot_settings=[10 8 8]; % [fontsize on plot, fontsize on axes/labels]
+sel_nodes=setdiff(3:numel(nodes),[9 11 12 16]); % scan_params_sensit
+plot_settings=[20 18 22]; % [fontsize on plot, fontsize on axes/labels]
 plot_type_flag={'var_var','heatmap'}; % this is plotting the heatmap of correlations between variables
 figure('name',strjoin(plot_type_flag))
 [varvar_corr_matr,p_matrix_vars]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_nodes_lhs_parscan,...
                                             nodes,sel_nodes,[],[],[],plot_settings);
 
-% resolution_dpi='-r350'; fcn_save_fig(strcat(strjoin(plot_type_flag,'_'),'_corrs'),plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi);
+fig_prefix=strcat(strjoin(plot_type_flag,'_'),'_corrs');
+% resolution_dpi='-r350'; fcn_save_fig(fig_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
                    
 %% scatterplots of selected variables [i,j]: var_i VS var_j
 
-sel_nodes=scan_params_sensit; plot_settings=[10 12 12]; % [fontsize_axes, fontsize_titles]
+sel_nodes=[13 14 15 17 18 19 20]; % [3 4 5 6 7 8 10]; % scan_params_sensit;
+plot_settings=[16 16 16]; % [fontsize_axes, fontsize_titles]
 plot_type_flag={'var_var','scatter'}; % this is plotting the scatterplots of variables with correlation values
 figure('name',strjoin(plot_type_flag))
 fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_nodes_lhs_parscan,...
                                     nodes,sel_nodes,[],[],[],plot_settings);
 
 resolution_dpi='-r350'; 
-fcn_save_fig(strcat(strjoin(plot_type_flag,'_'),'_scatterplot'),plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
+% fcn_save_fig(strcat(strjoin(plot_type_flag,'_'),'_scatterplot'),plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 
 %% linear or lin-log regression of VARIABLES as fcn of PARAMETERS: VARIABLE=f(PARAMETER), the function plots R squared
 
 plot_type_flag={'par_var','heatmap','r_sq'}; % {'par_var','heatmap'/'lineplot','r_sq'/'slope'}
-sel_nodes=numel(nodes); % 3:numel(nodes); % scan_params_sensit;
-% plot_settings=[fontsize,maximum value for heatmap colors], if plot_settings(2)=NaN, then max color automatically selected
-plot_settings=[20 20 0.5]; 
+sel_nodes=setdiff(3:numel(nodes),[3 5 6 7 9 11 12 16]); % 3:numel(nodes); % scan_params_sensit;
+% plot_settings=[fontsize,maximum value for heatmap colors], if plot_settings(3)=NaN, then max color automatically selected
+plot_settings=[30 21 0.25]; 
 % if regression type is 'linlog', then the fit is y = a + b*log10(x)
 regr_types={'log','linear'}; % linlog recommended if parameter values log-uniformly distributed in sampling
 figure('name',strjoin(plot_type_flag))
 [r_squared,slope_intercept]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_nodes_lhs_parscan,...
                                  nodes,sel_nodes,... % which nodes
-                                 scan_params_sensit,scan_params_up_down_sensit, ... % parameters (CAREFUL that they are the same as in LHS!)
+                                 scan_params_sensit,scan_params_up_down_sensit, ... % parameters (CAREFUL that they are same as in LHS!)
                                  regr_types{1},plot_settings);
 
-resolution_dpi='-r350'; fcn_save_fig(strjoin(plot_type_flag,'_'),plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
+% fig_prefix=strjoin(plot_type_flag,'_'); resolution_dpi='-r350'; fcn_save_fig(fig_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
 
 %% Quantify importance of parameters from LHS by a regression tree
 
 % predictor importance values: look into arguments of <fitrtree> in MATLAB documentation to modulate regression tree
 % for STATES or NODES?
 scan_values=stat_sol_nodes_lhs_parscan; % stat_sol_states_lhs_parscan
-sel_nodes=scan_params_sensit; % STATES or NODES to be analyzed
+% sel_nodes=scan_params_sensit; % STATES or NODES to be analyzed
 % names of selected transition rates and their predictor importance values
 % [~,~,predictor_names] = fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,nodes);
 % predictorImportance_vals=cell2mat(arrayfun(@(x) predictorImportance(...
@@ -517,7 +518,7 @@ scan_params_up_down_filtered=arrayfun(@(x) par_ind_table_filtered(par_ind_table_
 sel_nodes=[]; % 3:numel(nodes); % scan_params_sensit;
 % setdiff(1:numel(nodes),find(sum(cell2mat(arrayfun(@(x) strcmp(nodes,x), {'cc','KRAS','CDC25B'},'un',0)'))));
 % sel_vars=[]; % if left empty, all nodes/states are analyzed
-sample_size=[]; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
+sample_size=100; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
 % PLOT SETTINGS: [fontsize_plot,fontsize_axes,fontsize_title, min_color(optional), max_color(opt), progress_calcul_every_x_% (opt)];
 plot_settings=[20 30 30 NaN NaN 10];
 var_types={'node','state'}; % analysis for states or nodes
@@ -531,12 +532,12 @@ sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{1},...
                       stg_table,transition_rates_table,x0,nodes,sel_nodes,plot_settings);
 
 % if already calculated <sobol_sensit_index> and only want to plot results, provide <sobol_sensit_index> as FIRST argument 
-fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{1},[],[],[],[],...
-                       sequential_indices_lhs,scan_params_filtered,scan_params_up_down_filtered,[],[],[],nodes,sel_nodes,plot_settings);
+% fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{1},[],[],[],[],...
+%                        sequential_indices_lhs,scan_params_filtered,scan_params_up_down_filtered,[],[],[],nodes,sel_nodes,plot_settings);
 
 % SAVE
 % magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0,'ScreenPixelsPerInch')));
-resolution_dpi='-r350'; fcn_save_fig('sobol_sensitivity_index',plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
+% resolution_dpi='-r350'; fcn_save_fig('sobol_sensitivity_index',plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
 
 %% PARAMETER FITTING
 

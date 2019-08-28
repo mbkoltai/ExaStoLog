@@ -135,7 +135,7 @@ for k=1:size(scan_variable_sensit_parts,3)
 
 end
 
-h_supt=suptitle('stationary value of variables'); set(h_supt,'Fontsize',1.5*fontsize_axes)
+% h_supt=suptitle('stationary value of variables'); set(h_supt,'Fontsize',1.5*fontsize_axes)
 
 %%%%%%%%%%%%%%%% 
 %%% HEATMAP, VARIABLE VALUE
@@ -195,7 +195,7 @@ end
 
 end % end of for loop
 
-h_supt=suptitle('stationary value of variables'); set(h_supt,'Fontsize',1.5*fontsize_axes)
+% h_supt=suptitle('stationary value of variables'); set(h_supt,'Fontsize',1.5*fontsize_axes)
     
 end
 
@@ -251,7 +251,7 @@ end
 
 end
 
-h_supt=suptitle('response coefficients'); set(h_supt,'Fontsize',1.5*fontsize_axes)
+% h_supt=suptitle('response coefficients'); set(h_supt,'Fontsize',1.5*fontsize_axes)
 
 %%%%%%%%%%%%    
 % RESP COEFF, HEATMAP
@@ -314,7 +314,7 @@ heatmap(var_to_plot,xlabs,yticks_str,[],'TickAngle',90,'Colormap','redblue',...
 
 end
 
-h_supt=suptitle('response coefficients'); set(h_supt,'Fontsize',1.5*fontsize_axes)
+% h_supt=suptitle('response coefficients'); set(h_supt,'Fontsize',1.5*fontsize_axes)
 
 end % end of IF gate for response coefficient plots
 

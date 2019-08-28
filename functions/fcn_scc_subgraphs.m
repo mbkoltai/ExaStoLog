@@ -28,14 +28,6 @@ for k=nonempty_subgraphs
     % if entire graph is one connected component, no reordering needed
     if numel(unique(scc_submat_cell{k}))==1
         sorted_vertices_cell{counter}=find(subnetws==k);
-%         K_sp_sub_reord = (A_sparse_sub' - speye(dim_matr,dim_matr))*sum(transition_rates_table(:));
-%         kernel_col=((-1)^(dim_matr-1))*fcn_adjug_matrix(K_sp_sub_reord,'col');
-%         % normalization
-%         r0_blocks=kernel_col'/sum(kernel_col); l0_blocks=fcn_left_kernel(K_sp_sub_reord,r0_blocks,dim_matr);
-%         % stat sol
-%         stat_sol_submatr_blocks=r0_blocks*l0_blocks*x0(submatrix_inds);
-%         stat_sol_blocks(submatrix_inds)=stat_sol_submatr_blocks;
-%         term_verts_cell{counter}=submatrix_inds;
     else
         [vert_topol_sort,term_cycles_ind,~,~,term_cycle_bounds]=fcn_metagraph_scc(A_sparse_sub);
         disp(strcat('cycle size',num2str(numel(vert_topol_sort))))

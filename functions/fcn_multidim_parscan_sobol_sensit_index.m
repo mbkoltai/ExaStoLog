@@ -87,6 +87,7 @@ if length(plot_settings)>=5 && ~isnan(plot_settings(4)) && ~isnan(plot_settings(
 else
     min_col_val=0; maxval_color=1; % 1.05*max(tau_i(:))
 end
+
 heatmap(tau_i,x_ax_string,predictor_names,'%0.2f','TickAngle',0,'Colormap','redblue',...
     'MinColorValue',min_col_val,'MaxColorValue',maxval_color,'GridLines','-',...
     'FontSize',num_size_plot,'ShowAllTicks',true,'colorbar',true,'NaNColor',[0 0 0])
