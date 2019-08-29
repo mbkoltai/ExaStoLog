@@ -307,7 +307,7 @@ scan_params_up_down=arrayfun(@(x) par_inds_table(par_inds_table(:,1)==x,2)', sca
 % scan_params_up_down=arrayfun(@(x) par_inds_table( top_freq_trans_rates(par_inds_table(top_freq_trans_rates,1)==x),2)', scan_params,'un',0); 
 
 % min and max of range of values; resolution of the scan; linear or logarithmic sampling
-parscan_min_max = [1e-2 1e2]; n_steps=10; sampling_types={'log','linear'}; 
+parscan_min_max = [1e-2 1e2]; n_steps=2; sampling_types={'log','linear'}; 
 
 % FUNCTION for generating matrix of ordered values for the parameters to scan in
 % [scan_par_table,scan_par_inds,~]= fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,transition_rates_table);

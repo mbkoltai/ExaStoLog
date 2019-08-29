@@ -65,7 +65,7 @@ disp(strcat('dimension of parameter scan:',{' '},num2str(size(all_par_vals_lhs,1
 cell_counter=0;
 for k=1:lhs_scan_dim
 
-transition_rates_table_mod(trans_rate_scan_inds) = all_par_vals_lhs(k,:);
+transition_rates_table_mod(trans_rate_scan_inds)=all_par_vals_lhs(k,:);
 [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table_mod,'');
 [stat_sol,~,~]=split_calc_inverse(A_sparse,stg_sorting_cell,transition_rates_table_mod,x0);
 [stationary_node_vals,~]=fcn_calc_init_stat_nodevals(x0,stat_sol,'');
