@@ -22,13 +22,15 @@ stationary_state_vals_onedimscan=zeros( numel(scan_par_inds),size(parscan_matrix
 stationary_state_inds_scan = cell(numel(scan_par_inds),size(parscan_matrix,1));
 % stationary_state_inds_scan{k,val_counter}=find(stat_sol>0);
 
-for k=1:scan_size
-    i_row=stg_table(trans_matr_inds{k},1); j_col=stg_table(trans_matr_inds{k},2); seq_inds{k}=i_row+(j_col-1)*A_dim;
-end
 
+n_resol = numel(parscan_matrix(:,1));
+
+% can be parallelized by <parfor>
 for k=1:scan_size
     disp(strcat(num2str(round(100*k/scan_size)),'% done'))
-    for val_counter=1:numel(parscan_matrix(:,k))
+    i_row=stg_table(trans_matr_inds{k},1); j_col=stg_table(trans_matr_inds{k},2); seq_inds=i_row+(j_col-1)*A_dim;
+    
+    for val_counter=1:n_resol
         
         transition_rates_table_mod=transition_rates_table; 
         transition_rates_table_mod(scan_par_inds(k))=parscan_matrix(val_counter,k);
@@ -40,7 +42,7 @@ for k=1:scan_size
         A_sparse_mod(1:(A_dim+1):numel(A_sparse_mod))=0;
         % i_row=stg_table(trans_matr_inds{k},1); j_col=stg_table(trans_matr_inds{k},2); seq_inds=i_row+(j_col-1)*A_dim;
         % reassign relevant trans rates
-        A_sparse_mod(seq_inds{k})=trans_rate_normalized; % 0.05-0.1 sec for 20 nodes
+        A_sparse_mod(seq_inds)=trans_rate_normalized; % 0.05-0.1 sec for 20 nodes
         % diagonal has to be recalculated
         A_sparse_mod = A_sparse_mod + speye(size(A_sparse_mod)) - diag(sum(A_sparse_mod,2)); % 0.33sec
         [stat_sol,~,~]=split_calc_inverse(A_sparse_mod,stg_sorting_cell,transition_rates_table_mod,x0);

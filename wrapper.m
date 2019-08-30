@@ -375,7 +375,8 @@ figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel
 % <resp_coeffs> dimensions: (parameters, values,nodes), so eg. resp_coeffs(:,:,7)=resp. coeff values across param ranges for the 7th node
 
 % SAVE figure
-% resolution_dpi='-r350'; fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
+% resolution_dpi='-r350'; 
+% fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 
 %% multidimensional parameter scan: LATIN HYPERCUBE SAMPLING (random multidimensional sampling within given parameter ranges)
 
@@ -397,7 +398,7 @@ lhs_scan_dim=500;
 % for 'lognorm' and 'logunif' provide the LOG10 value of desired mean/min and stdev/max!!, ie. -2 means a mean of 0.01
 par_min_mean=-2; % repmat(1.5,1,numel(cell2mat(scan_params_up_down(:)))); par_min_mean(4)=3; 
 max_stdev=2; % repmat(0.5,1,numel(cell2mat(scan_params_up_down(:))));
-[all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan,stat_sol_states_lhs_parscan_cell]=... % outputs
+[all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan]=... % outputs
     fcn_multidim_parscan_latinhypcube(par_min_mean,max_stdev,sampling_type,lhs_scan_dim, ...
                                             scan_params_sensit,scan_params_up_down_sensit, ... % transition rates
                                             transition_rates_table,stg_table,x0,nodes);
@@ -417,7 +418,7 @@ for var_ind=[4:8 scan_params_sensit]
 % find(strcmp(nodes,'CHEK1')); % which STATE or NODE to plot
 % <all_par_vals_lhs>: parameter sets
 % [number_bins_for_mean,trendline_width,axes_fontsize,index nonzero states]
-param_settings = [50 6 24 size(stat_sol_states_lhs_parscan_cell)]; 
+param_settings = [50 6 24 size(stat_sol_states_lhs_parscan)];
 % STATES or NODES? <scan_values>: values to be plotted
 scan_values=stat_sol_nodes_lhs_parscan; % stat_sol_states_lhs_parscan
 % PLOT
@@ -429,6 +430,7 @@ fcn_multidim_parscan_scatterplot(var_ind,all_par_vals_lhs,scan_values,...
 end
 
 resolution_dpi='-r350'; fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
+% fcn_save_fig('LHS_parscan_trend_AKT2',plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
 
 %% calculating & plotting (heatmap) correlations between variables 
 
@@ -438,8 +440,8 @@ resolution_dpi='-r350'; fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_
 % sel_nodes: name of selected nodes (pls provide in ascending order)
 % fontsize: ~ for labels and titles (displaying correlation)
 % HEATMAPS of correlations between selected variables
-sel_nodes=setdiff(3:numel(nodes),[9 11 12 16]); % scan_params_sensit
-plot_settings=[20 18 22]; % [fontsize on plot, fontsize on axes/labels]
+sel_nodes=[3 7 8 13:15 17:20]; % setdiff(3:numel(nodes),[9 11 12 16]); % scan_params_sensit
+plot_settings=[NaN 26 32]; % [fontsize on plot, fontsize on axes/labels]
 plot_type_flag={'var_var','heatmap'}; % this is plotting the heatmap of correlations between variables
 figure('name',strjoin(plot_type_flag))
 [varvar_corr_matr,p_matrix_vars]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_nodes_lhs_parscan,...
@@ -450,7 +452,7 @@ fig_prefix=strcat(strjoin(plot_type_flag,'_'),'_corrs');
                    
 %% scatterplots of selected variables [i,j]: var_i VS var_j
 
-sel_nodes=[13 14 15 17 18 19 20]; % [3 4 5 6 7 8 10]; % scan_params_sensit;
+% sel_nodes=[13 14 15 17 18 19 20]; % [3 4 5 6 7 8 10]; % scan_params_sensit;
 plot_settings=[16 16 16]; % [fontsize_axes, fontsize_titles]
 plot_type_flag={'var_var','scatter'}; % this is plotting the scatterplots of variables with correlation values
 figure('name',strjoin(plot_type_flag))
@@ -463,9 +465,9 @@ resolution_dpi='-r350';
 %% linear or lin-log regression of VARIABLES as fcn of PARAMETERS: VARIABLE=f(PARAMETER), the function plots R squared
 
 plot_type_flag={'par_var','heatmap','r_sq'}; % {'par_var','heatmap'/'lineplot','r_sq'/'slope'}
-sel_nodes=setdiff(3:numel(nodes),[3 5 6 7 9 11 12 16]); % 3:numel(nodes); % scan_params_sensit;
+sel_nodes=setdiff(3:numel(nodes),[4:6 10:12 16]); %setdiff(3:numel(nodes),[3 5 6 7 9 11 12 16]); % 3:numel(nodes); % scan_params_sensit;
 % plot_settings=[fontsize,maximum value for heatmap colors], if plot_settings(3)=NaN, then max color automatically selected
-plot_settings=[30 21 0.25]; 
+plot_settings=[20 21 0.29]; 
 % if regression type is 'linlog', then the fit is y = a + b*log10(x)
 regr_types={'log','linear'}; % linlog recommended if parameter values log-uniformly distributed in sampling
 figure('name',strjoin(plot_type_flag))
@@ -518,7 +520,7 @@ scan_params_up_down_filtered=arrayfun(@(x) par_ind_table_filtered(par_ind_table_
 sel_nodes=[]; % 3:numel(nodes); % scan_params_sensit;
 % setdiff(1:numel(nodes),find(sum(cell2mat(arrayfun(@(x) strcmp(nodes,x), {'cc','KRAS','CDC25B'},'un',0)'))));
 % sel_vars=[]; % if left empty, all nodes/states are analyzed
-sample_size=100; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
+sample_size=[]; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
 % how often should be progress displayed?
 disp_freq=10;
 plot_settings=[];
@@ -536,7 +538,7 @@ sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{1},...
 % PLOT SETTINGS: [fontsize_plot,fontsize_axes,fontsize_title, min_color(optional), max_color(opt)];
 plot_settings=[20 30 30 NaN];
 % fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{1},[],[],[],[],...
-%                        sequential_indices_lhs,scan_params_filtered,scan_params_up_down_filtered,[],[],[],nodes,sel_nodes,plot_settings);
+%                        sequential_indices_lhs,scan_params_filtered,scan_params_up_down_filtered,[],[],[],nodes,sel_nodes,plot_settings,[]);
 
 % SAVE
 % magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0,'ScreenPixelsPerInch')));
@@ -548,60 +550,99 @@ plot_settings=[20 30 30 NaN];
 % sensitive parameters identified by 1-dimensional param scan: scan_params_sensit,scan_params_up_down_sensit
 [~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes); 
 % define data vector (generate some data OR load from elsewhere)
-sel_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
-transition_rates_table=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,sel_param_vals);
-y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table,''),stg_sorting_cell,...
-                                   transition_rates_table,x0),'x0');
+data_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
+transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
+y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
+                                   transition_rates_table_optim,x0),'x0');
 
 % create functions that calculate sum of squared deviations & values of
-% variables (composed of different fcns) - RERUN THIS if you want to fit to new data or new non-fitted transition rates!!
+% variables (composed of different fcns) 
+% RERUN THIS if you want to fit to new data or new non-fitted transition rates!!
 [fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_simul_anneal(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
 
 % FITTING by simulated annealing (look at arguments in anneal/anneal.m)
 % initial guess for parameters
-init_vals=lognrnd(0,2,size(predictor_names)); init_error=fcn_statsol_sum_sq_dev(init_vals);
+init_par_vals=data_param_vals.*abs(normrnd(1,1,size(predictor_names))); init_error=fcn_statsol_sum_sq_dev(init_par_vals);
 % initial value of model nodes
 y_init=fcn_calc_init_stat_nodevals(x0,...
-    split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,init_vals),''),stg_sorting_cell,...
-    transition_rates_table,x0),'');
+    split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,init_par_vals),''),...
+    stg_sorting_cell,transition_rates_table_optim,x0),'');
 
 % simulated annealing with existing algorithm anneal/anneal.m, with modifications in script: 
 % 1) defined counter=0 before while loop
 % 2) inserted <T_loss(counter,:)=[T oldenergy];> at line 175, defined <T_loss> as 3rd output
 % arguments for algorithm need to be provided as a structure: 
 % struct('Verbosity',2, 'StopVal', 0.01, 'StopTemp',1e-8) % stopping error value, stopping temperature parameter
-fitting_arguments=struct('Verbosity',2, 'StopVal', 0.002);
-tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_vals,fitting_arguments); toc 
+fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10);
+tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); toc 
 % 20-40 mins for 15var KRAS model
 
 % output with fitted parameters
 y_optim_param=fcn_calc_init_stat_nodevals(x0,...
-    split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,optim_par_vals),''),stg_sorting_cell,...
-    transition_rates_table,x0),'');
+  split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,optim_par_vals),''),...
+  stg_sorting_cell,transition_rates_table,x0),'');
 % plot data, initial values, optimized values
-data_init_optim=[y_data; y_init; y_optim_param]; min_val=min(min(data_init_optim(:,3:end))); max_val=max(max(data_init_optim(:,3:end)));
+data_init_optim=[y_init; y_data; y_optim_param]; min_val=min(min(data_init_optim(:,3:end))); max_val=max(max(data_init_optim(:,3:end)));
+param_sets=[init_par_vals;data_param_vals;optim_par_vals];
 
-figure('name','param fitting'); sel_nodes=3:numel(nodes);
+figure('name','param fitting'); sel_nodes=find(sum(data_init_optim)>0 & sum(data_init_optim)<3); % 3:numel(nodes);
 % PLOT fitting process
 thres_ind=size(T_loss,1); % thres_ind=find(T_loss(:,2)<1e-2,1); 
 vars_show=2; % 1=temperature, 2=error
-% figure('name','simul anneal')
-fig_subpl1=subplot(1,2,1);
-plot(1:thres_ind, T_loss(1:thres_ind,vars_show),'LineWidth',4); xlim([0 thres_ind]); if init_error/best_error>30; set(gca,'yscale','log'); end
-label_ticks_fontsize=24; label_fontsize=30; set(gca,'FontSize',label_ticks_fontsize);
-legend_strs={'temperature', 'sum of squared error'}; ylabel(legend_strs{vars_show},'FontSize',label_fontsize); grid on; 
-xlabel('number of iterations','FontSize',label_fontsize); % title('Parameter fitting by simulated annealing','FontSize',22)
-% 
-fig_subpl2=subplot(1,2,2); 
-barplot_gca=barh(data_init_optim(:,sel_nodes)'); set(fig_subpl2,'ytick',1:numel(sel_nodes)); 
-legend({'data','initial guess','optimized'},'FontSize',label_fontsize)
-set(gca,'FontSize',label_ticks_fontsize); 
-xticklabels=get(gca,'xtick'); set(fig_subpl2,'xticklabel',xticklabels,'FontSize',label_ticks_fontsize);
-xlabel('stationary probabilities','FontSize',label_fontsize); 
-set(fig_subpl2,'yticklabel','');  % strrep(nodes(sel_nodes),'_','\_'),'FontSize',label_fontsize
+plot_settings=[24 30];
+figure('name','simul anneal')
+fcn_plot_simul_anneal(data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plot_settings)
 
 resolution_dpi='-r350';
-fcn_save_fig(strcat('simulated_annealing_',num2str(numel(predictor_names)),'fittingpars'),plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
+fcn_save_fig(strcat('simulated_annealing_',num2str(numel(predictor_names)),'fittingpars'),...
+    plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
 
 % mean absolute error: mean(abs(y_data - fcn_statsol_values(optim_par_vals)))
 % distance of fitted params from true values: abs(optim_par_vals - sel_param_vals)./sel_param_vals
+
+%% fitting by calculating numerical gradient
+
+[~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes); 
+% define data vector (generate some data OR load from elsewhere)
+data_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
+transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
+y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
+                                   transition_rates_table_optim,x0),'x0');
+[~,fcn_statsol_values]=fcn_simul_anneal(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
+                               
+% initial values for parameters and error
+init_par_vals=data_param_vals.*lognrnd(0,2,size(predictor_names)); % abs(normrnd(1,2,size(predictor_names))); 
+init_vals=fcn_statsol_values(init_par_vals); init_error=sum((y_data-init_vals).^2); 
+
+% change in error moving from initial guess
+% input_cell = {y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names};
+error_thresh=0.01; % what % of initial error to stop?
+step_thresh=[]; % what step # to stop?
+% init_error_table: changes to initial error when increasing or decreasing parameter values
+init_error_table=[]; % if we have it from previous fitting than feed it to fcn
+% incr_resol_init: initial % change from the initial param values to calculate the gradient for the descent
+% incr_resol: % change in param values during gradient descent
+incr_resol_init=0.15; incr_resol=0.03;
+[init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(init_error_table,...
+                                        {y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
+                                        init_par_vals,incr_resol,incr_resol_init,error_thresh,[]);
+% parameters before and after optim
+% [optim_pars_conv([1 end],:); data_param_vals]; 
+
+% PLOT
+figure('name','numer grad_desc')
+data_init_optim=[statsol_parscan([1 end],:); y_data];
+fcn_plot_simul_anneal(data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_settings)
+
+% SAVE
+fig_name=strcat('grad_descent',num2str(numel(predictor_names)),'fittingpars');
+fcn_save_fig(fig_name,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
+
+% <sum((y_data - fcn_statsol_values(par_vals_scan)).^2)> same as <fcn_statsol_sum_sq_dev(init_par_vals)>
+% parscan_vals=logspace(0.5,1.5,10); statsol_parscan=zeros(numel(parscan_vals),numel(nodes)); errors_parscan=zeros(1,numel(parscan_vals));
+% n_optim_par=8;
+% for k=1:numel(parscan_vals)
+%     par_vals_scan=init_par_vals; par_vals_scan(n_optim_par)=parscan_vals(k);
+%     statsol_parscan(k,:)=fcn_statsol_values(par_vals_scan);
+%     errors_parscan(k)=sum((y_data - statsol_parscan(k,:) ).^2);
+% end

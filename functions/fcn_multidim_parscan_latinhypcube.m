@@ -1,7 +1,6 @@
-function [all_par_vals_lhs,stat_sol_lhs_parscan,...
-    stat_sol_states_lhs_parscan,stat_sol_states_lhs_parscan_cell]=fcn_multidim_parscan_latinhypcube(min_mean_val,max_stdev_val,sampling_type,...
-                                                    lhs_scan_dim,scan_params,scan_params_up_down,...
-                                                    transition_rates_table,stg_table,x0,nodes)
+function [all_par_vals_lhs,stat_sol_lhs_parscan,stat_sol_states_lhs_parscan]=fcn_multidim_parscan_latinhypcube(min_mean_val,max_stdev_val,sampling_type,...
+                                            lhs_scan_dim,scan_params,scan_params_up_down,...
+                                            transition_rates_table,stg_table,x0,nodes)
 
 % lhs_scan_dim=3e3; 
 
@@ -55,16 +54,21 @@ stat_sol_lhs_parscan=zeros(size(all_par_vals_lhs,1),numel(nodes));
 [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table_mod,'');
 stg_sorting_cell=fcn_scc_subgraphs(A_sparse,x0);
 [stat_sol,~,~]=split_calc_inverse(A_sparse,stg_sorting_cell,transition_rates_table_mod,x0);
-nonzero_states_inds=find(stat_sol>0);
+% nonzero_states_inds=find(stat_sol>0);
 stat_sol_states_lhs_parscan=zeros(size(all_par_vals_lhs,1),sum(stat_sol>0));
-stat_sol_states_lhs_parscan_cell=cell(size(all_par_vals_lhs,1),2);
+% stat_sol_states_lhs_parscan_cell=cell(size(all_par_vals_lhs,1),2);
 
 disp(strcat('dimension of parameter scan:',{' '},num2str(size(all_par_vals_lhs,1)),...
     {' '},'parameter sets of', {' '},num2str(size(all_par_vals_lhs,2)),{' '},'parameters.'))
 
-cell_counter=0;
+
+%%%%%%%%%%%%%%
+%%%% START LOOP
+% cell_counter=0;
+% can be parallelized by <parfor>
 for k=1:lhs_scan_dim
 
+transition_rates_table_mod = transition_rates_table;
 transition_rates_table_mod(trans_rate_scan_inds)=all_par_vals_lhs(k,:);
 [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table_mod,'');
 [stat_sol,~,~]=split_calc_inverse(A_sparse,stg_sorting_cell,transition_rates_table_mod,x0);
@@ -72,11 +76,11 @@ transition_rates_table_mod(trans_rate_scan_inds)=all_par_vals_lhs(k,:);
 stat_sol_lhs_parscan(k,:)=stationary_node_vals;
 nonzero_states=stat_sol(stat_sol>0);
 stat_sol_states_lhs_parscan(k,:)=nonzero_states;
-if ~isequal(nonzero_states_inds,find(stat_sol>0))
-    cell_counter=cell_counter+1;
-    stat_sol_states_lhs_parscan_cell{k,1}=nonzero_states; 
-    stat_sol_states_lhs_parscan_cell{k,2}=find(stat_sol>0);
-end
+% if ~isequal(nonzero_states_inds,find(stat_sol>0))
+%     cell_counter=cell_counter+1;
+%     stat_sol_states_lhs_parscan_cell{k,1}=nonzero_states; 
+%     stat_sol_states_lhs_parscan_cell{k,2}=find(stat_sol>0);
+% end
 
 if rem(100*k/lhs_scan_dim,1)==0
     disp(strcat(num2str(round(100*k/lhs_scan_dim)),'% done'))
@@ -84,6 +88,6 @@ end
 
 end
 
-if cell_counter==0
-    stat_sol_states_lhs_parscan_cell=nonzero_states_inds';
-end
+% if cell_counter==0
+%     stat_sol_states_lhs_parscan_cell=nonzero_states_inds';
+% end
