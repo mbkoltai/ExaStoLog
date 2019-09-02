@@ -133,11 +133,11 @@ tic; x0=fcn_define_initial_states(initial_fixed_nodes,initial_fixed_nodes_vals,d
 % get the subnetworks of the STG and topologically sort them
 tic; stg_sorting_cell=fcn_scc_subgraphs(A_sparse,x0); toc
 % <stg_sorting_cell> contains
-% {subnetws: which subgraph each state belongs to,
-% scc_submat_cell: states in the subgraphs,
-% nonempty_subgraphs: which subgraphs are populated by the initial condition,
-% sorted_vertices_cell: states (vertices) topologically sorted in each nonempty subgraph,
-% cyclic_sorted_subgraphs_cell: sorted states within cycles}
+% {subnetws: which subgraph each state belongs to, #1
+% scc_submat_cell: states in the subgraphs, #2
+% nonempty_subgraphs: which subgraphs are populated by the initial condition, #3
+% sorted_vertices_cell: states (vertices) topologically sorted in each nonempty subgraph, #4
+% cyclic_sorted_subgraphs_cell: sorted states within cycles} #5
 
 % calculated stationary solution
 tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_sorting_cell,transition_rates_table,x0); toc
@@ -179,9 +179,9 @@ sel_nodes=[];  % 3:numel(nodes)
 min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[20 24]; % fontsize_hm,fontsize_stat_sol
 plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.03;
 % WARNING!!! if more than 12 nodes, generating the figure for A/K can be time-consuming
-matrix_input=A_sparse; % leave this variable empty to have only 2 subplots, without transition matrix
+% leave first variable empty to have plot without matrix
 figure('name','A_K_stat_sol')
-fcn_plot_A_K_stat_sol(matrix_input,nodes,sel_nodes,stat_sol,x0,plot_settings,prob_thresh)
+fcn_plot_A_K_stat_sol(A_sparse,nodes,sel_nodes,stat_sol,x0,plot_settings,prob_thresh)
 
 % SAVE
 % enter any string for the last argument to overwrite existing plot!!
@@ -558,7 +558,7 @@ y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(st
 % create functions that calculate sum of squared deviations & values of
 % variables (composed of different fcns) 
 % RERUN THIS if you want to fit to new data or new non-fitted transition rates!!
-[fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_simul_anneal(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
+[fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
 
 % FITTING by simulated annealing (look at arguments in anneal/anneal.m)
 % initial guess for parameters
@@ -608,7 +608,7 @@ data_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,num
 transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
 y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
                                    transition_rates_table_optim,x0),'x0');
-[~,fcn_statsol_values]=fcn_simul_anneal(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
+[~,fcn_statsol_values]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
                                
 % initial values for parameters and error
 init_par_vals=data_param_vals.*lognrnd(0,2,size(predictor_names)); % abs(normrnd(1,2,size(predictor_names))); 
@@ -633,6 +633,7 @@ incr_resol_init=0.15; incr_resol=0.03;
 figure('name','numer grad_desc')
 data_init_optim=[statsol_parscan([1 end],:); y_data];
 fcn_plot_simul_anneal(data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_settings)
+% xticklabels=get(gca,'xtick'); set(gca,'xticklabel',xticklabels,'FontSize',30);
 
 % SAVE
 fig_name=strcat('grad_descent',num2str(numel(predictor_names)),'fittingpars');

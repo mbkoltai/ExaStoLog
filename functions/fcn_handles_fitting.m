@@ -1,4 +1,4 @@
-function [fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_simul_anneal(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names)
+function [fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names)
 
 % create function that calculates sum of squared deviations, composed of different fcns
 fcn_statsol_sum_sq_dev=@(x)sum((y_data - fcn_calc_init_stat_nodevals(x0,...

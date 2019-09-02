@@ -16,7 +16,7 @@ if up_down_counter==1; init_par_vals_mod(k)=init_par_vals_mod(k)*(1+incr_resol_i
 else; init_par_vals_mod(k)=init_par_vals_mod(k)*(1-incr_resol_init);  end
 % disp(init_par_vals_mod-init_par_vals)
 % error wrt original guess, if positive, error is growing
-init_error_table(k,up_down_counter)=sum((y_data - fcn_statsol_values(init_par_vals_mod) ).^2) - init_error;
+    init_error_table(k,up_down_counter)=sum((y_data - fcn_statsol_values(init_par_vals_mod) ).^2) - init_error;
 end
 end
 end
@@ -33,7 +33,7 @@ end
 up_down_inds=cell2mat(direction_row);
 % incr_resol=0.02;
 incr_vector = repmat(1+incr_resol, size(up_down_inds)); incr_vector(up_down_inds==2)=1-incr_resol;
-k=0; error_val=init_error;
+k=0; error_val=init_error; 
 step_truth_val=k<step_thresh; if isempty(step_truth_val); step_truth_val=1; end 
 
 while error_val>init_error*error_thresh && step_truth_val

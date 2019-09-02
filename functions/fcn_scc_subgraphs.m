@@ -29,11 +29,11 @@ for k=nonempty_subgraphs
     if numel(unique(scc_submat_cell{k}))==1
         sorted_vertices_cell{counter}=find(subnetws==k);
     else
-        [vert_topol_sort,term_cycles_ind,~,~,term_cycle_bounds]=fcn_metagraph_scc(A_sparse_sub);
-        disp(strcat('cycle size',num2str(numel(vert_topol_sort))))
+        [vert_topol_sort,term_cycles_ind,~,scc_cell,term_cycle_bounds]=fcn_metagraph_scc(A_sparse_sub);
+        cycle_lengths=cellfun(@(x) numel(x),scc_cell); [a,~]=histc(cycle_lengths,1:max(cycle_lengths));
+        disp(strcat('cycles of length: ', num2str(unique(cycle_lengths)),' (', num2str(a(a>0)),  ' times)' ))
         cyclic_sorted_subgraphs_cell{counter}={vert_topol_sort,term_cycles_ind,term_cycle_bounds};
     end
-        
     end
 end
 
