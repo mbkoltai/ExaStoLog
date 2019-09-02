@@ -2,7 +2,6 @@ function [stat_sol_lhs_parscan,stat_sol_states_lhs_parscan]=fcn_calc_paramsample
                                                                 scan_params,scan_params_up_down,...
                                                                 transition_rates_table,stg_table,x0,disp_var)
 
-                                                            
 par_ind_table=[repelem(scan_params, cellfun(@(x) numel(x),scan_params_up_down))', horzcat(scan_params_up_down{:})'];
 trans_rate_scan_inds=(par_ind_table(:,1)-1)*2 + par_ind_table(:,2);
 transition_rates_table_mod=transition_rates_table;

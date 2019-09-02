@@ -107,7 +107,7 @@ initial_fixed_nodes_vals_list = {[0 0 0 1 1 1 1 1], ... % mammalian_cc
     [1 1 1 0], ... % krasmodel15vars: [1 1] is cell cycle ON, KRAS mutation ON
     [0 1 0 zeros(1,2)],...  % breast_cancer_zanudo2017
     [],...  % Rodriguez
-    [0 1 zeros(1,5)]}; % EMT-Cohen model: [0/1 0/1 zeros(1,5)]
+    [1 1 zeros(1,5)]}; % EMT-Cohen model: [0/1 0/1 zeros(1,5)]
 initial_fixed_nodes=initial_fixed_nodes_list{model_index}; initial_fixed_nodes_vals=initial_fixed_nodes_vals_list{model_index};
 
 % what is the probability of this state, (eg. dom_prob=0.8, ie. 80% probability)
@@ -146,9 +146,6 @@ tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_s
 % term_verts_cell: index of nonzero states. If the STG is disconnected the nonzero states corresp to these disconn subgraphs are in separate cells
 % cell_subgraphs: indices of states belonging to disconnected subgraphs (if any)
 
-% nonzero states displayed:
-stat_sol(stat_sol>0)' % probability values of nonzero states
-
 % sum the probabilities of nonzero states by nodes, both for the initial condition and the stationary solution
 % ARGUMENTS
 % initial conditions: x0
@@ -156,7 +153,7 @@ stat_sol(stat_sol>0)' % probability values of nonzero states
 % nodes: list of nodes
 [stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol,'x0');
 
-% Checked with MaBoSS simuls, results are identical (up to 1% dev.).
+% Checked with MaBoSS simuls, results are identical (up to 1% deviation).
 % Comparing with simulation of mammalian cell cycle model with 12 nodes: 
 % look in folder 'doc/sample_plots/maboss'
 
@@ -326,7 +323,7 @@ tic;
     fcn_onedim_parscan_calc(stg_table,transition_rates_table,x0,nodes,parscan_matrix,scan_params,scan_params_up_down);
 toc;
 
-%% PLOT RESULTS of 1-by-1 parameter scan on heatmap/lineplot BY PARAMETERS
+%% PLOT RESULTS of 1-dimensional parameter scan on heatmap/lineplot BY PARAMETERS
 
 %%% FIRST PLOT TYPE: each subplot is a lineplot of node or state values as a function of a parameter's value, with a defined minimal variation
 
@@ -377,6 +374,32 @@ figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel
 % SAVE figure
 % resolution_dpi='-r350'; 
 % fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
+
+%% Multidimensional param sampling at uniform distances (2-dimensions)
+
+% # of cols in <all_par_vals_lhs> has to be same as # of elements in <scan_params_up_down>
+% example: 2-dimensional uniform scan in u_Notch_pthw and u_p53
+n_scanvals=10; scanvals=[0 logspace(-2,2,n_scanvals-1)]; 
+meshgrid_scanvals=meshgrid(scanvals,scanvals);
+
+paramsample_table=[repelem(scanvals,n_scanvals)' reshape(reshape(repelem(scanvals,n_scanvals),n_scanvals,n_scanvals)',n_scanvals^2,1)]; 
+multiscan_pars=[11 13]; multiscan_pars_up_down={1 1};
+
+[stat_sol_paramsample_table,stat_sol_states_paramsample_table]=fcn_calc_paramsample_table(paramsample_table,multiscan_pars,...
+                                                                multiscan_pars_up_down,transition_rates_table,stg_table,x0,10);
+                                                            
+up_down_str={'u_','d_'}; label_str=strcat(up_down_str(cell2mat(multiscan_pars_up_down)), nodes(multiscan_pars));
+axis_str=arrayfun(@(x) strcat('1e',num2str(x)), round(log10(scanvals),2),'un',0);
+counter=0; var_nodes=[4 8 13 15]; % find(max(stat_sol_paramsample_table)-min(stat_sol_paramsample_table)>0.05);
+for k=var_nodes
+counter=counter+1;
+subplot(ceil(sqrt(numel(var_nodes))),ceil(sqrt(numel(var_nodes))),counter); 
+    % y axis is 2nd column of paramsample_table
+    heatmap(flipud(reshape(stat_sol_paramsample_table(:,k),size(meshgrid_scanvals))),...
+            axis_str,fliplr(axis_str),'%0.2f', ...
+            'Colormap','redblue','MinColorValue',0,'MaxColorValue',1,'ShowAllTicks',true,'GridLines','-');
+        title(nodes(k),'Interpreter','none'); xlabel(label_str{1},'Interpreter','none'); ylabel(label_str{2},'Interpreter','none'); 
+end
 
 %% multidimensional parameter scan: LATIN HYPERCUBE SAMPLING (random multidimensional sampling within given parameter ranges)
 
@@ -544,7 +567,47 @@ plot_settings=[20 30 30 NaN];
 % magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0,'ScreenPixelsPerInch')));
 % resolution_dpi='-r350'; fcn_save_fig('sobol_sensitivity_index',plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
 
-%% PARAMETER FITTING
+
+%% PARAMETER FITTING: calculating numerical gradient
+
+[~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes); 
+% define data vector (generate some data OR load from elsewhere)
+data_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
+transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
+y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
+                                   transition_rates_table_optim,x0),'x0');
+[~,fcn_statsol_values]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
+
+% initial values for parameters and error
+init_par_vals=data_param_vals.*lognrnd(0,2,size(predictor_names)); % abs(normrnd(1,2,size(predictor_names))); 
+init_vals=fcn_statsol_values(init_par_vals); init_error=sum((y_data-init_vals).^2); 
+
+% change in error moving from initial guess
+% input_cell = {y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names};
+error_thresh=0.01; % what % of initial error to stop?
+step_thresh=[]; % what step # to stop?
+% init_error_table: changes to initial error when increasing or decreasing parameter values
+init_error_table=[]; % if we have it from previous fitting than feed it to fcn
+% incr_resol_init: initial % change from the initial param values to calculate the numerical gradient (change in error) for the descent
+% incr_resol: change in param values during gradient descent
+incr_resol_init=0.15; incr_resol=0.03;
+[init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(init_error_table,...
+                                        {y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
+                                        init_par_vals,incr_resol,incr_resol_init,error_thresh,[]);
+
+% parameters before and after optim: [optim_pars_conv([1 end],:); data_param_vals]; 
+
+% PLOT
+figure('name','numer grad_desc')
+data_init_optim=[statsol_parscan([1 end],:); y_data];
+fcn_plot_simul_anneal(data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_settings)
+% xticklabels=get(gca,'xtick'); set(gca,'xticklabel',xticklabels,'FontSize',30);
+
+% SAVE
+fig_name=strcat('grad_descent',num2str(numel(predictor_names)),'fittingpars');
+fcn_save_fig(fig_name,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
+
+%% PARAMETER FITTING: SIMULATED ANNEALING
 
 % define parameters to vary (predictor_names)
 % sensitive parameters identified by 1-dimensional param scan: scan_params_sensit,scan_params_up_down_sensit
@@ -558,7 +621,7 @@ y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(st
 % create functions that calculate sum of squared deviations & values of
 % variables (composed of different fcns) 
 % RERUN THIS if you want to fit to new data or new non-fitted transition rates!!
-[fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
+[fcn_statsol_sum_sq_dev,~]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
 
 % FITTING by simulated annealing (look at arguments in anneal/anneal.m)
 % initial guess for parameters
@@ -599,51 +662,3 @@ fcn_save_fig(strcat('simulated_annealing_',num2str(numel(predictor_names)),'fitt
 
 % mean absolute error: mean(abs(y_data - fcn_statsol_values(optim_par_vals)))
 % distance of fitted params from true values: abs(optim_par_vals - sel_param_vals)./sel_param_vals
-
-%% fitting by calculating numerical gradient
-
-[~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes); 
-% define data vector (generate some data OR load from elsewhere)
-data_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
-transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
-y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
-                                   transition_rates_table_optim,x0),'x0');
-[~,fcn_statsol_values]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
-                               
-% initial values for parameters and error
-init_par_vals=data_param_vals.*lognrnd(0,2,size(predictor_names)); % abs(normrnd(1,2,size(predictor_names))); 
-init_vals=fcn_statsol_values(init_par_vals); init_error=sum((y_data-init_vals).^2); 
-
-% change in error moving from initial guess
-% input_cell = {y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names};
-error_thresh=0.01; % what % of initial error to stop?
-step_thresh=[]; % what step # to stop?
-% init_error_table: changes to initial error when increasing or decreasing parameter values
-init_error_table=[]; % if we have it from previous fitting than feed it to fcn
-% incr_resol_init: initial % change from the initial param values to calculate the gradient for the descent
-% incr_resol: % change in param values during gradient descent
-incr_resol_init=0.15; incr_resol=0.03;
-[init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(init_error_table,...
-                                        {y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
-                                        init_par_vals,incr_resol,incr_resol_init,error_thresh,[]);
-% parameters before and after optim
-% [optim_pars_conv([1 end],:); data_param_vals]; 
-
-% PLOT
-figure('name','numer grad_desc')
-data_init_optim=[statsol_parscan([1 end],:); y_data];
-fcn_plot_simul_anneal(data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_settings)
-% xticklabels=get(gca,'xtick'); set(gca,'xticklabel',xticklabels,'FontSize',30);
-
-% SAVE
-fig_name=strcat('grad_descent',num2str(numel(predictor_names)),'fittingpars');
-fcn_save_fig(fig_name,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
-
-% <sum((y_data - fcn_statsol_values(par_vals_scan)).^2)> same as <fcn_statsol_sum_sq_dev(init_par_vals)>
-% parscan_vals=logspace(0.5,1.5,10); statsol_parscan=zeros(numel(parscan_vals),numel(nodes)); errors_parscan=zeros(1,numel(parscan_vals));
-% n_optim_par=8;
-% for k=1:numel(parscan_vals)
-%     par_vals_scan=init_par_vals; par_vals_scan(n_optim_par)=parscan_vals(k);
-%     statsol_parscan(k,:)=fcn_statsol_values(par_vals_scan);
-%     errors_parscan(k)=sum((y_data - statsol_parscan(k,:) ).^2);
-% end
