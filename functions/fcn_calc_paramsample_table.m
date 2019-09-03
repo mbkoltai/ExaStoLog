@@ -39,13 +39,12 @@ A_sparse_mod(1:(A_dim+1):numel(A_sparse_mod))=0;
 for cell_cntr=1:numel(seq_inds)
     A_sparse_mod(seq_inds{cell_cntr}) = trans_rate_normalized(cell_cntr);
 end
-
 % diagonal has to be recalculated
-A_sparse_mod = A_sparse_mod + speye(size(A_sparse_mod)) - diag(sum(A_sparse_mod,2)); % 0.33sec
+A_sparse_mod=A_sparse_mod + speye(size(A_sparse_mod)) - diag(sum(A_sparse_mod,2)); % 0.33sec
 
-% [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table_mod,'');
-
+% calculate solution
 [stat_sol,~,~]=split_calc_inverse(A_sparse_mod,stg_sorting_cell,transition_rates_table_mod,x0);
+% disp(k)
 [stationary_node_vals,~]=fcn_calc_init_stat_nodevals(x0,stat_sol,'');
 stat_sol_lhs_parscan(k,:) = stationary_node_vals;
 stat_sol_states_lhs_parscan{k} = stat_sol(stat_sol>0);

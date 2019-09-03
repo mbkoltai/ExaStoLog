@@ -76,7 +76,7 @@ tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,''); toc
 
 %% define initial condition
 
-n_nodes=numel(nodes); 
+n_nodes=numel(nodes);
 % truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2);
 
 % define some nodes with a fixed value and a probability <dom_prob>: 
@@ -140,6 +140,7 @@ tic; stg_sorting_cell=fcn_scc_subgraphs(A_sparse,x0); toc
 
 % calculated stationary solution
 tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_sorting_cell,transition_rates_table,x0); toc
+
 % OUTPUTS
 % stat_sol: stationary solution for all the states
 % term_verts_cell: index of nonzero states. If the STG is disconnected the nonzero states corresp to these disconn subgraphs are in separate cells
@@ -375,26 +376,28 @@ figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel
 % resolution_dpi='-r350'; 
 % fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 
-%% Multidimensional param sampling at uniform distances (2-dimensions)
+%% Multidimensional param sampling at uniform distances (2-dimensions in example below)
 
 % # of cols in <all_par_vals_lhs> has to be same as # of elements in <scan_params_up_down>
 % example: 2-dimensional uniform scan in u_Notch_pthw and u_p53
-n_scanvals=10; scanvals=[0 logspace(-2,2,n_scanvals-1)]; 
+n_scanvals=10; scanvals=[1e-9 logspace(-2,2,n_scanvals-1)]; 
 meshgrid_scanvals=meshgrid(scanvals,scanvals);
 
 paramsample_table=[repelem(scanvals,n_scanvals)' reshape(reshape(repelem(scanvals,n_scanvals),n_scanvals,n_scanvals)',n_scanvals^2,1)]; 
 multiscan_pars=[11 13]; multiscan_pars_up_down={1 1};
 
 [stat_sol_paramsample_table,stat_sol_states_paramsample_table]=fcn_calc_paramsample_table(paramsample_table,multiscan_pars,...
-                                                                multiscan_pars_up_down,transition_rates_table,stg_table,x0,10);
+                                                                multiscan_pars_up_down,transition_rates_table,stg_table,x0,5);
                                                             
 up_down_str={'u_','d_'}; label_str=strcat(up_down_str(cell2mat(multiscan_pars_up_down)), nodes(multiscan_pars));
 axis_str=arrayfun(@(x) strcat('1e',num2str(x)), round(log10(scanvals),2),'un',0);
-counter=0; var_nodes=[4 8 13 15]; % find(max(stat_sol_paramsample_table)-min(stat_sol_paramsample_table)>0.05);
+var_nodes=[4 8 13 15]; % find(max(stat_sol_paramsample_table)-min(stat_sol_paramsample_table)>0.05);
+n_row_subplot=ceil(sqrt(numel(var_nodes)));
 
 for k=var_nodes
+    if k==var_nodes(1); counter=0; end
 counter=counter+1;
-subplot(ceil(sqrt(numel(var_nodes))),ceil(sqrt(numel(var_nodes))),counter); 
+subplot(n_row_subplot,n_row_subplot,counter); 
     % y axis is 2nd column of paramsample_table
     heatmap(flipud(reshape(stat_sol_paramsample_table(:,k),size(meshgrid_scanvals))),...
             axis_str,fliplr(axis_str),'%0.2f', ...

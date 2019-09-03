@@ -1,4 +1,4 @@
-function [stat_sol_blocks,term_verts_cell,cell_subgraphs]=split_calc_inverse_store_A(A_sparse,stg_sorting_cell,transition_rates_table,x0)
+function [stat_sol_blocks,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_sorting_cell,transition_rates_table,x0)
 
 subnetws=stg_sorting_cell{1}; scc_submat_cell=stg_sorting_cell{2}; nonempty_subgraphs=stg_sorting_cell{3}; 
 sorted_vertices_cell=stg_sorting_cell{4}; cyclic_sorted_subgraphs_cell=stg_sorting_cell{end};
@@ -15,9 +15,10 @@ if num_subnets>1
 end
 
 counter_subgraphs=0;
+
 for counter=nonempty_subgraphs
-counter_subgraphs=counter_subgraphs+1;
-submatrix_inds=find(subnetws==counter); cell_subgraphs{counter}=submatrix_inds;
+
+counter_subgraphs=counter_subgraphs+1; submatrix_inds=find(subnetws==counter); cell_subgraphs{counter}=submatrix_inds;
 
 if num_subnets>1
     disp( strcat('calculating subgraph #', num2str(counter), ' of ', num2str(num_subnets)))
