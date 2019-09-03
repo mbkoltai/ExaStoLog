@@ -2,9 +2,9 @@
 % stationary solution of stoch logical models, plot results and perform parametric analysis
 
 % go to the folder of the file
-editor_service = com.mathworks.mlservices.MLEditorServices; editor_app = editor_service.getEditorApplication;
-active_editor = editor_app.getActiveEditor; storage_location = active_editor.getStorageLocation;
-file = char(storage_location.getFile); path_to_toolbox = fileparts(file); cd(path_to_toolbox);
+editor_service=com.mathworks.mlservices.MLEditorServices; editor_app = editor_service.getEditorApplication;
+active_editor=editor_app.getActiveEditor; storage_location = active_editor.getStorageLocation;
+file=char(storage_location.getFile); path_to_toolbox = fileparts(file); cd(path_to_toolbox);
 
 % ADD FUNCTIONS to PATH
 add_functions
@@ -70,7 +70,6 @@ transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,
 tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,''); toc
 % if we want the kinetic matrix too, this is the 2nd output of the function
 % tic; [A_sparse,K_sparse]=fcn_build_trans_matr(stg_table,transition_rates_table,'kinetic'); toc
-%
 
 % VISUALIZE transition matrix
 % spy(A_sparse); xlabel('model states'); ylabel('model states'); set(gca,'FontSize',24)
@@ -126,11 +125,11 @@ tic; x0=fcn_define_initial_states(initial_fixed_nodes,initial_fixed_nodes_vals,d
 
 %% CALCULATE STATIONARY STATE
 
+% get the subnetworks of the STG and topologically sort them
 % ARGUMENTS:
 % transition matrix: A
 % table of transition rates: transition_rates_table
 % initial conditions: x0
-% get the subnetworks of the STG and topologically sort them
 tic; stg_sorting_cell=fcn_scc_subgraphs(A_sparse,x0); toc
 % <stg_sorting_cell> contains
 % {subnetws: which subgraph each state belongs to, #1
@@ -215,6 +214,7 @@ tight_subplot_flag='yes'; ranking_flag='yes';
 figure('name','statsol_binary_heatmap')
 statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,...
                         term_verts_cell, nodes,sel_nodes,plot_param_settings,tight_subplot_flag,ranking_flag);
+
 % SAVE
 % if <overwrite_flag> non-empty then existing file with same name is overwritten. 
 overwrite_flag='yes'; 
@@ -391,6 +391,7 @@ multiscan_pars=[11 13]; multiscan_pars_up_down={1 1};
 up_down_str={'u_','d_'}; label_str=strcat(up_down_str(cell2mat(multiscan_pars_up_down)), nodes(multiscan_pars));
 axis_str=arrayfun(@(x) strcat('1e',num2str(x)), round(log10(scanvals),2),'un',0);
 counter=0; var_nodes=[4 8 13 15]; % find(max(stat_sol_paramsample_table)-min(stat_sol_paramsample_table)>0.05);
+
 for k=var_nodes
 counter=counter+1;
 subplot(ceil(sqrt(numel(var_nodes))),ceil(sqrt(numel(var_nodes))),counter); 

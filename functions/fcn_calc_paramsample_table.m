@@ -1,38 +1,45 @@
-function [stat_sol_lhs_parscan,stat_sol_states_lhs_parscan]=fcn_calc_paramsample_table(all_par_vals_lhs,...
-                                                                scan_params,scan_params_up_down,...
+function [stat_sol_lhs_parscan,stat_sol_states_lhs_parscan]=fcn_calc_paramsample_table(paramsample_table,...
+                                                                multiscan_pars,multiscan_pars_up_down,...
                                                                 transition_rates_table,stg_table,x0,disp_var)
 
-par_ind_table=[repelem(scan_params, cellfun(@(x) numel(x),scan_params_up_down))', horzcat(scan_params_up_down{:})'];
+par_ind_table=[repelem(multiscan_pars, cellfun(@(x) numel(x),multiscan_pars_up_down))', horzcat(multiscan_pars_up_down{:})'];
 trans_rate_scan_inds=(par_ind_table(:,1)-1)*2 + par_ind_table(:,2);
 transition_rates_table_mod=transition_rates_table;
 
 A_dim=2^size(transition_rates_table,2);
 % states corresponding to the transition rates
-trans_matr_inds=cell2mat(arrayfun(@(x) find(ismember(2*(stg_table(:,3)-1)+stg_table(:,4),x)),trans_rate_scan_inds,'un',0)); % 0.8 sec
-trans_matr_inds_length=cell2mat(arrayfun(@(x) sum(ismember(2*(stg_table(:,3)-1)+stg_table(:,4),x)),trans_rate_scan_inds,'un',0)); % 0.8 sec
-n_par=numel(trans_rate_scan_inds);
+% trans_matr_inds=cell2mat(arrayfun(@(x) find(ismember(2*(stg_table(:,3)-1)+stg_table(:,4),x)),trans_rate_scan_inds,'un',0)); % 0.8 sec
+trans_matr_inds_cell=arrayfun(@(x) find(ismember(2*(stg_table(:,3)-1)+stg_table(:,4),x)),trans_rate_scan_inds,'un',0);
+% trans_matr_inds_length=cell2mat(arrayfun(@(x) sum(ismember(2*(stg_table(:,3)-1)+stg_table(:,4),x)),trans_rate_scan_inds,'un',0)); % 0.8 sec
+% i_row=cellfun(@(x) stg_table(x,1), trans_matr_inds_cell,'un',0); j_col=cellfun(@(x) stg_table(x,2), trans_matr_inds_cell,'un',0);
+seq_inds=cellfun(@(x) stg_table(x,1) + (stg_table(x,2)-1)*A_dim, trans_matr_inds_cell,'un',0); % i_row+(j_col-1)*A_dim;
+
+% n_par=numel(trans_rate_scan_inds);
 [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,'');
 stg_sorting_cell=fcn_scc_subgraphs(A_sparse,x0);
 
-stat_sol_states_lhs_parscan=cell(size(all_par_vals_lhs,1),1); % zeros(size(all_par_vals_lhs,1),sum(stat_sol>0));
-stat_sol_lhs_parscan=zeros(size(all_par_vals_lhs,1),size(transition_rates_table,2));
-disp(strcat('dimension of parameter scan:',{' '},num2str(size(all_par_vals_lhs,1)),...
-    {' '},'parameter sets of', {' '},num2str(size(all_par_vals_lhs,2)),{' '},'parameters.'))
+stat_sol_states_lhs_parscan=cell(size(paramsample_table,1),1); % zeros(size(all_par_vals_lhs,1),sum(stat_sol>0));
+stat_sol_lhs_parscan=zeros(size(paramsample_table,1),size(transition_rates_table,2));
+disp(strcat('dimension of parameter scan:',{' '},num2str(size(paramsample_table,1)),...
+    {' '},'parameter sets of', {' '},num2str(size(paramsample_table,2)),{' '},'parameters.'))
 
-lhs_scan_dim=size(all_par_vals_lhs,1);
+lhs_scan_dim=size(paramsample_table,1);
 
 for k=1:lhs_scan_dim
 
-transition_rates_table_mod(trans_rate_scan_inds) = all_par_vals_lhs(k,:);
+transition_rates_table_mod(trans_rate_scan_inds) = paramsample_table(k,:);
 trans_rate_normalized=transition_rates_table_mod(trans_rate_scan_inds)/sum(transition_rates_table_mod(:));
 norm_factor = sum(transition_rates_table_mod(:))/sum(transition_rates_table(:));
 A_sparse_mod=A_sparse/norm_factor; 
 % diagonal to 0, it'll be recalculated
 A_sparse_mod(1:(A_dim+1):numel(A_sparse_mod))=0;
-i_row=stg_table(trans_matr_inds,1); j_col=stg_table(trans_matr_inds,2); 
-seq_inds=i_row+(j_col-1)*A_dim;
+
 % reassign relevant trans rates
-A_sparse_mod(seq_inds)=cell2mat(arrayfun(@(x) repmat(trans_rate_normalized(x),trans_matr_inds_length(x),1), 1:n_par,'un',0)'); 
+% A_sparse_mod(seq_inds)=cell2mat(arrayfun(@(x) repmat(trans_rate_normalized(x),trans_matr_inds_length(x),1), 1:n_par,'un',0)'); 
+for cell_cntr=1:numel(seq_inds)
+    A_sparse_mod(seq_inds{cell_cntr}) = trans_rate_normalized(cell_cntr);
+end
+
 % diagonal has to be recalculated
 A_sparse_mod = A_sparse_mod + speye(size(A_sparse_mod)) - diag(sum(A_sparse_mod,2)); % 0.33sec
 
