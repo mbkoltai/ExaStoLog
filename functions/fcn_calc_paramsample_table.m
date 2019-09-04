@@ -44,7 +44,8 @@ A_sparse_mod=A_sparse_mod + speye(size(A_sparse_mod)) - diag(sum(A_sparse_mod,2)
 
 % calculate solution
 [stat_sol,~,~]=split_calc_inverse(A_sparse_mod,stg_sorting_cell,transition_rates_table_mod,x0);
-% disp(k)
+disp(k)
+
 [stationary_node_vals,~]=fcn_calc_init_stat_nodevals(x0,stat_sol,'');
 stat_sol_lhs_parscan(k,:) = stationary_node_vals;
 stat_sol_states_lhs_parscan{k} = stat_sol(stat_sol>0);

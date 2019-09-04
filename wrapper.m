@@ -146,6 +146,9 @@ tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_s
 % term_verts_cell: index of nonzero states. If the STG is disconnected the nonzero states corresp to these disconn subgraphs are in separate cells
 % cell_subgraphs: indices of states belonging to disconnected subgraphs (if any)
 
+% query size of objects larger than x (in Mbytes)
+objects_mem=whos; size_limit_mb=1; fcn_objects_memory_size(objects_mem,size_limit_mb)
+
 % sum the probabilities of nonzero states by nodes, both for the initial condition and the stationary solution
 % ARGUMENTS
 % initial conditions: x0
@@ -176,7 +179,7 @@ sel_nodes=[];  % 3:numel(nodes)
 min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[20 24]; % fontsize_hm,fontsize_stat_sol
 plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.03;
 % WARNING!!! if more than 12 nodes, generating the figure for A/K can be time-consuming
-% leave first variable empty to have plot without matrix
+% leave first variable (A_sparse) empty ([]) to have plot without matrix
 figure('name','A_K_stat_sol')
 fcn_plot_A_K_stat_sol(A_sparse,nodes,sel_nodes,stat_sol,x0,plot_settings,prob_thresh)
 
@@ -191,9 +194,9 @@ overwrite_flag='yes';
 resolution_dpi='-r350'; % magnification=0.8;  strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
 fcn_save_fig(strcat('single_solution_states_nodes_stat_sol',matrix_input_str),plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi);
 
-%% PLOT binary heatmap of nonzero stationary states by NODES
+%% PLOT binary heatmap of nonzero stationary states with their probability
 
-% ARGUMENTS pof function:
+% ARGUMENTS of function:
 % fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,term_verts_inds_cell,nodes,sel_nodes,plot_param_settings,tight_subplot_flag,ranking_flag)
 % stat_sol: vector of stationary solutions
 % probability threshold for states to show (if left empty, all states shown)
@@ -374,21 +377,24 @@ figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel
 
 % SAVE figure
 % resolution_dpi='-r350'; 
-% fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
+% fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),...
+% plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 
-%% Multidimensional param sampling at uniform distances (2-dimensions in example below)
+%% Multidimensional param sampling at UNIFORM distances (2-dimensions in example below)
 
 % # of cols in <all_par_vals_lhs> has to be same as # of elements in <scan_params_up_down>
 % example: 2-dimensional uniform scan in u_Notch_pthw and u_p53
-n_scanvals=10; scanvals=[1e-9 logspace(-2,2,n_scanvals-1)]; 
+n_scanvals=10; scanvals=[0 logspace(-2,2,n_scanvals-1)];  % 1e-9
 meshgrid_scanvals=meshgrid(scanvals,scanvals);
 
 paramsample_table=[repelem(scanvals,n_scanvals)' reshape(reshape(repelem(scanvals,n_scanvals),n_scanvals,n_scanvals)',n_scanvals^2,1)]; 
 multiscan_pars=[11 13]; multiscan_pars_up_down={1 1};
 
-[stat_sol_paramsample_table,stat_sol_states_paramsample_table]=fcn_calc_paramsample_table(paramsample_table,multiscan_pars,...
-                                                                multiscan_pars_up_down,transition_rates_table,stg_table,x0,5);
-                                                            
+disp_var=5; % show at every n% the progress
+[stat_sol_paramsample_table,stat_sol_states_paramsample_table]=fcn_calc_paramsample_table(paramsample_table(1,:),multiscan_pars,...
+                                                                multiscan_pars_up_down,transition_rates_table,stg_table,x0,disp_var);
+
+% PLOT
 up_down_str={'u_','d_'}; label_str=strcat(up_down_str(cell2mat(multiscan_pars_up_down)), nodes(multiscan_pars));
 axis_str=arrayfun(@(x) strcat('1e',num2str(x)), round(log10(scanvals),2),'un',0);
 var_nodes=[4 8 13 15]; % find(max(stat_sol_paramsample_table)-min(stat_sol_paramsample_table)>0.05);
@@ -404,6 +410,7 @@ subplot(n_row_subplot,n_row_subplot,counter);
             'Colormap','redblue','MinColorValue',0,'MaxColorValue',1,'ShowAllTicks',true,'GridLines','-');
         title(nodes(k),'Interpreter','none'); xlabel(label_str{1},'Interpreter','none'); ylabel(label_str{2},'Interpreter','none'); 
 end
+
 
 %% multidimensional parameter scan: LATIN HYPERCUBE SAMPLING (random multidimensional sampling within given parameter ranges)
 
@@ -429,15 +436,7 @@ max_stdev=2; % repmat(0.5,1,numel(cell2mat(scan_params_up_down(:))));
     fcn_multidim_parscan_latinhypcube(par_min_mean,max_stdev,sampling_type,lhs_scan_dim, ...
                                             scan_params_sensit,scan_params_up_down_sensit, ... % transition rates
                                             transition_rates_table,stg_table,x0,nodes);
-
-% OUTPUTS:
-% <all_par_vals_lhs>: table of parameter sets
-% <stat_sol_nodes_lhs_parscan>: stationary values of nodes
-% <stat_sol_states_lhs_parscan>: stationary values of states
-% <stat_sol_states_lhs_parscan_cell>: indices of non-zero states, if they are always the same the variable is a 1-row array, 
-% otherwise a cell with the non-empty elements stat_sol_states_lhs_parscan_cell{k,1} contain values of nonzero
-% states, elements stat_sol_states_lhs_parscan_cell{k,2} their indices 
-
+                    
 %% SCATTERPLOTS of STATE or NODE values as a function of the selected parameters, with the trendline shown (average value per parameter bin)
 
 % sel_nodes=[6 10 11 12 13 14 15];
