@@ -6,7 +6,7 @@ editor_service=com.mathworks.mlservices.MLEditorServices; editor_app = editor_se
 active_editor=editor_app.getActiveEditor; storage_location = active_editor.getStorageLocation;
 file=char(storage_location.getFile); path_to_toolbox = fileparts(file); cd(path_to_toolbox);
 
-% ADD FUNCTIONS to PATH
+% ADD FUNCTIONS to PATH: required toolboxes are in <toolboxes.zip>
 add_functions
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
