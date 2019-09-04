@@ -3,11 +3,10 @@
 altmany-export_fig-acfd348/
 heatmaps/
 old_functions_materials/
+anneal/
+distinguishable_colors/
 redblue/
 tight_subplot/
-distinguishable_colors/
-anneal/
-model_files/
 doc/manual/
 doc/manuscript/
 doc/sample_plots/
@@ -19,11 +18,8 @@ exact_stochlog_toolbox.zip
 *m~
 *md~
 *dat
-wrapper_suppl.m
 launch_calc.m
 fitting_script.m
-run_sobol.m
-examples.m
 fcn_truthtable.m
 # wrapper.mlx
 doc/README.html
