@@ -147,7 +147,7 @@ tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_s
 % cell_subgraphs: indices of states belonging to disconnected subgraphs (if any)
 
 % query size of objects larger than x (in Mbytes)
-objects_mem=whos; size_limit_mb=1; fcn_objects_memory_size(objects_mem,size_limit_mb)
+size_limit_mb=1; fcn_objects_memory_size(whos,size_limit_mb)
 
 % sum the probabilities of nonzero states by nodes, both for the initial condition and the stationary solution
 % ARGUMENTS

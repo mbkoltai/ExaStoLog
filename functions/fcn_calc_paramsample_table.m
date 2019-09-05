@@ -27,15 +27,14 @@ lhs_scan_dim=size(paramsample_table,1);
 
 for k=1:lhs_scan_dim
 
-transition_rates_table_mod(trans_rate_scan_inds) = paramsample_table(k,:);
+transition_rates_table_mod(trans_rate_scan_inds)=paramsample_table(k,:);
 trans_rate_normalized=transition_rates_table_mod(trans_rate_scan_inds)/sum(transition_rates_table_mod(:));
-norm_factor = sum(transition_rates_table_mod(:))/sum(transition_rates_table(:));
+norm_factor=sum(transition_rates_table_mod(:))/sum(transition_rates_table(:));
 A_sparse_mod=A_sparse/norm_factor; 
 % diagonal to 0, it'll be recalculated
 A_sparse_mod(1:(A_dim+1):numel(A_sparse_mod))=0;
 
 % reassign relevant trans rates
-% A_sparse_mod(seq_inds)=cell2mat(arrayfun(@(x) repmat(trans_rate_normalized(x),trans_matr_inds_length(x),1), 1:n_par,'un',0)'); 
 for cell_cntr=1:numel(seq_inds)
     A_sparse_mod(seq_inds{cell_cntr}) = trans_rate_normalized(cell_cntr);
 end

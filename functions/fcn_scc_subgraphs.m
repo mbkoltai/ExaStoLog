@@ -18,8 +18,7 @@ cyclic_sorted_subgraphs_cell=cell(numel(nonempty_subgraphs),1);
 counter=0;
 disp('Sorting nonempty subgraphs')
 for k=nonempty_subgraphs
-    counter=counter+1;
-    A_sparse_sub=A_sparse(subnetws==k,subnetws==k); 
+    counter=counter+1; A_sparse_sub=A_sparse(subnetws==k,subnetws==k); 
     % if all SCCs single vertex
     if numel( unique(scc_submat_cell{k}) )==size(A_sparse_sub,1)
         sorted_vertices_cell{counter}=toposort(digraph(A_sparse_sub,'omitselfloops'));
