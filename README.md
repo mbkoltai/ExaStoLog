@@ -1,4 +1,4 @@
-# Exact-stoch-log-mod
+# ExaStoLog
 
 A MATLAB toolbox for the exact calculation of stationary states + parameter sensitivity analysis & fitting of stochastic logical models.  
 Author: Mihály Koltai, [Computational Systems Biology of Cancer at Institut Curie](https://github.com/sysbio-curie)
