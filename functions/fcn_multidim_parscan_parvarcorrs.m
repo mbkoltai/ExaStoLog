@@ -90,7 +90,13 @@ if strcmp(plot_type_flag(2),'heatmap')
     num_size_plot=plot_settings(2);
 
 % HEATMAP
-heatmap(val_to_plot',nodes(sel_nodes),predictor_names,'%0.2f','TickAngle',90,'Colormap','redblue',...
+if size(scan_values,2)==numel(nodes)
+    xlabel_str=nodes(sel_nodes);
+else
+    xlabel_str=arrayfun(@(x) strcat('state',num2str(x)),1:size(scan_values,2),'un',0);
+end
+
+heatmap(val_to_plot',xlabel_str,predictor_names,'%0.2f','TickAngle',90,'Colormap','redblue',...
     'MinColorValue',min_col_val,'MaxColorValue',maxval_color,'GridLines','-',...
     'FontSize',num_size_plot,'ShowAllTicks',true,'colorbar',true,'NaNColor',[0 0 0])
 set(gca,'FontSize',plot_settings(1)); 

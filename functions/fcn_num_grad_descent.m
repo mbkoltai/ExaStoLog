@@ -4,7 +4,7 @@ function [init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_g
 % input_cell = {y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names};
 y_data=input_cell{1}; x0=input_cell{2}; stg_table=input_cell{3}; stg_sorting_cell=input_cell{4}; nodes=input_cell{5};
 predictor_names=input_cell{6};
-[~,fcn_statsol_values]=fcn_simul_anneal(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
+[~,fcn_statsol_values]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
                                                                         
 init_error=sum((y_data - fcn_statsol_values(init_par_vals) ).^2); % fcn_statsol_sum_sq_dev(init_par_vals);
 if isempty(init_error_table)

@@ -99,14 +99,14 @@ initial_fixed_nodes_list={ {'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1'
                              {'cc','KRAS','DSB','cell_death'}, ...                              % krasmodel15vars
                               {'Alpelisib', 'Everolimus','PIM','Proliferation','Apoptosis'},...  % breast_cancer_zanudo2017 % ,'PIM'
                           {''},... % Rodriguez
-                          {'ECMicroenv','DNAdamage','Metastasis','Migration','Invasion','EMT','Apoptosis'}}; % 
+                          {'ECMicroenv','DNAdamage','Metastasis','Migration','Invasion','EMT','Apoptosis','Notch_pthw','p53'}}; %
                           % {'Alpelisib', 'Everolimus', 'PI3K', 'PIM', 'PDK1', 'Proliferation', 'Apoptosis'}
 
 initial_fixed_nodes_vals_list = {[0 0 0 1 1 1 1 1], ... % mammalian_cc
     [1 1 1 0], ... % krasmodel15vars: [1 1] is cell cycle ON, KRAS mutation ON
     [0 1 0 zeros(1,2)],...  % breast_cancer_zanudo2017
     [],...  % Rodriguez
-    [1 1 zeros(1,5)]}; % EMT-Cohen model: [0/1 0/1 zeros(1,5)]
+    [1 1 zeros(1,5) 1 0]}; % EMT-Cohen model: [0/1 0/1 zeros(1,5)]
 initial_fixed_nodes=initial_fixed_nodes_list{model_index}; initial_fixed_nodes_vals=initial_fixed_nodes_vals_list{model_index};
 
 % what is the probability of this state, (eg. dom_prob=0.8, ie. 80% probability)
@@ -365,7 +365,7 @@ plot_param_settings={30,30,{height_width_gap bott_top_marg left_right_marg},mode
 % select type of plot
 plot_types={{'lineplot','heatmap'} {'nodes','states'} {'values','sensitivity'}};
 % if want to loop through all plot types: all_opts_perm=[[1 1 1]; unique([perms([1 1 2]); perms([2 2 1])],'rows'); [2 2 2]];
-plot_type_options=[1 1 1];
+plot_type_options=[1 2 1];
 figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel(plot_type_options), 'un',0),'_'));
 [resp_coeff,scan_params_sensit,scan_params_up_down_sensit,fig_filename]=fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
                                                    stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
@@ -391,26 +391,19 @@ paramsample_table=[repelem(scanvals,n_scanvals)' reshape(reshape(repelem(scanval
 multiscan_pars=[11 13]; multiscan_pars_up_down={1 1};
 
 disp_var=5; % show at every n% the progress
-[stat_sol_paramsample_table,stat_sol_states_paramsample_table]=fcn_calc_paramsample_table(paramsample_table(1,:),multiscan_pars,...
+[stat_sol_paramsample_table,stat_sol_states_paramsample_table]=fcn_calc_paramsample_table(paramsample_table,multiscan_pars,...
                                                                 multiscan_pars_up_down,transition_rates_table,stg_table,x0,disp_var);
 
-% PLOT
-up_down_str={'u_','d_'}; label_str=strcat(up_down_str(cell2mat(multiscan_pars_up_down)), nodes(multiscan_pars));
-axis_str=arrayfun(@(x) strcat('1e',num2str(x)), round(log10(scanvals),2),'un',0);
-var_nodes=[4 8 13 15]; % find(max(stat_sol_paramsample_table)-min(stat_sol_paramsample_table)>0.05);
-n_row_subplot=ceil(sqrt(numel(var_nodes)));
+% PLOT heatmap of selected variables 
+sel_nodes=[4]; % [4 8 13 15];
+% plot_settings: [fontsize on plot&axes, fontsize on axes, fontsize of subplot titles, axes tick fontsize]
+plot_settings=[22 34 40]; 
+fcn_plot_twodim_parscan(stat_sol_paramsample_table,scanvals,multiscan_pars,multiscan_pars_up_down,nodes,sel_nodes,plot_settings)
 
-for k=var_nodes
-    if k==var_nodes(1); counter=0; end
-counter=counter+1;
-subplot(n_row_subplot,n_row_subplot,counter); 
-    % y axis is 2nd column of paramsample_table
-    heatmap(flipud(reshape(stat_sol_paramsample_table(:,k),size(meshgrid_scanvals))),...
-            axis_str,fliplr(axis_str),'%0.2f', ...
-            'Colormap','redblue','MinColorValue',0,'MaxColorValue',1,'ShowAllTicks',true,'GridLines','-');
-        title(nodes(k),'Interpreter','none'); xlabel(label_str{1},'Interpreter','none'); ylabel(label_str{2},'Interpreter','none'); 
-end
-
+% SAVE
+% twodim_parscan_Apoptosis_Metastasis
+resolution_dpi='-r350'; file_name_prefix=strcat('twodim_parscan_',strjoin(nodes(sel_nodes),'_'));
+fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 
 %% multidimensional parameter scan: LATIN HYPERCUBE SAMPLING (random multidimensional sampling within given parameter ranges)
 
@@ -420,10 +413,9 @@ end
 % scan_params_up_down_sensit=arrayfun(@(x) scan_params_up_down_sensit{x}', 1:numel(scan_params_up_down_sensit),'un',0)
 
 % PERFORM Latin Hypercube sampling (LHS) SAMPLING
-sampling_types={'lognorm','linear','logunif'};
-sampling_type=sampling_types{3};
+sampling_types={'lognorm','linear','logunif'}; sampling_type=sampling_types{3};
 % <lhs_scan_dim>: number of param sets
-lhs_scan_dim=500;
+lhs_scan_dim=1000;
 % par_min_mean: minimum or in case of lognormal the mean of distribution. Can be a scalar or a vector, 
 % if we want different values for different parameters
 % max_stdev: maximum or in case of lognormal the mean of distribution. 
@@ -440,20 +432,22 @@ max_stdev=2; % repmat(0.5,1,numel(cell2mat(scan_params_up_down(:))));
 %% SCATTERPLOTS of STATE or NODE values as a function of the selected parameters, with the trendline shown (average value per parameter bin)
 
 % sel_nodes=[6 10 11 12 13 14 15];
-for var_ind=[4:8 scan_params_sensit]
+for var_ind=1:numel(stat_sol_states_lhs_parscan) % [4:8 scan_params_sensit]
 % find(strcmp(nodes,'CHEK1')); % which STATE or NODE to plot
 % <all_par_vals_lhs>: parameter sets
 % [number_bins_for_mean,trendline_width,axes_fontsize,index nonzero states]
 param_settings = [50 6 24 size(stat_sol_states_lhs_parscan)];
 % STATES or NODES? <scan_values>: values to be plotted
-scan_values=stat_sol_nodes_lhs_parscan; % stat_sol_states_lhs_parscan
+scan_values=stat_sol_states_lhs_parscan; % stat_sol_nodes_lhs_parscan stat_sol_states_lhs_parscan
 % PLOT
 sampling_type=sampling_types{3}; % sampling_types={'lognorm','linear','logunif'};
-file_name_prefix=strcat('LHS_parscan_trend_',nodes{var_ind}); 
-figure('name',nodes{var_ind})
+% file_name_prefix=strcat('LHS_parscan_scatterplot_trend_',nodes{var_ind}); 
+file_name_prefix=strcat('LHS_parscan_scatterplot_trend_state',num2str(var_ind));
+figure('name',num2str(var_ind))
 fcn_multidim_parscan_scatterplot(var_ind,all_par_vals_lhs,scan_values,...
         scan_params_sensit,scan_params_up_down_sensit,nodes,sampling_type,param_settings)
 end
+
 
 resolution_dpi='-r350'; fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 % fcn_save_fig('LHS_parscan_trend_AKT2',plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
@@ -466,7 +460,7 @@ resolution_dpi='-r350'; fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_
 % sel_nodes: name of selected nodes (pls provide in ascending order)
 % fontsize: ~ for labels and titles (displaying correlation)
 % HEATMAPS of correlations between selected variables
-sel_nodes=[3 7 8 13:15 17:20]; % setdiff(3:numel(nodes),[9 11 12 16]); % scan_params_sensit
+sel_nodes=[3 7 8 10 11 13:15 17:20]; % setdiff(3:numel(nodes),[9 11 12 16]); % scan_params_sensit
 plot_settings=[NaN 26 32]; % [fontsize on plot, fontsize on axes/labels]
 plot_type_flag={'var_var','heatmap'}; % this is plotting the heatmap of correlations between variables
 figure('name',strjoin(plot_type_flag))
@@ -497,12 +491,14 @@ plot_settings=[20 21 0.29];
 % if regression type is 'linlog', then the fit is y = a + b*log10(x)
 regr_types={'log','linear'}; % linlog recommended if parameter values log-uniformly distributed in sampling
 figure('name',strjoin(plot_type_flag))
-[r_squared,slope_intercept]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_nodes_lhs_parscan,...
+scan_values=stat_sol_states_lhs_parscan; % stat_sol_nodes_lhs_parscan
+[r_squared,slope_intercept]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,scan_values,...
                                  nodes,sel_nodes,... % which nodes
                                  scan_params_sensit,scan_params_up_down_sensit, ... % parameters (CAREFUL that they are same as in LHS!)
                                  regr_types{1},plot_settings);
 
-% fig_prefix=strjoin(plot_type_flag,'_'); resolution_dpi='-r350'; fcn_save_fig(fig_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
+% fig_prefix=strjoin(plot_type_flag,'_'); resolution_dpi='-r350'; 
+% fcn_save_fig(fig_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
 
 %% Quantify importance of parameters from LHS by a regression tree
 
@@ -553,7 +549,7 @@ plot_settings=[];
 var_types={'node','state'}; % analysis for states or nodes
 % to calculate Sobol total sensitivity we need <sample_size*numel(scan_params_up_down)> evaluations of the model
 figure('name','sobol sensitivity index')
-sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{1},...
+sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{2},...
                       all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan,...
                       sample_size,... % # of calculations per parameter
                       sequential_indices_lhs,... % this is indices of transition rates in the original LHS
@@ -561,10 +557,11 @@ sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{1},...
                       stg_table,transition_rates_table,x0,nodes,sel_nodes,plot_settings,disp_freq);
 
 % if already calculated <sobol_sensit_index> and only want to plot results, provide <sobol_sensit_index> as FIRST argument 
-% PLOT SETTINGS: [fontsize_plot,fontsize_axes,fontsize_title, min_color(optional), max_color(opt)];
-plot_settings=[20 30 30 NaN];
-% fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{1},[],[],[],[],...
-%                        sequential_indices_lhs,scan_params_filtered,scan_params_up_down_filtered,[],[],[],nodes,sel_nodes,plot_settings,[]);
+% PLOT SETTINGS: [fontsize_plot,fontsize_axes,fontsize_title, min_color(optional), max_color(opt), angle of x-axis labels];
+plot_settings=[30 30 40 0 0.5 90];
+fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{2},all_par_vals_lhs,[],[],[],...
+                       sequential_indices_lhs,scan_params_filtered,scan_params_up_down_filtered,[],[],[],nodes,sel_nodes,plot_settings,[]);
+xticklabels({'Metastasis','Apoptosis (p53)','Apoptosis (p63_73)'})
 
 % SAVE
 % magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0,'ScreenPixelsPerInch')));

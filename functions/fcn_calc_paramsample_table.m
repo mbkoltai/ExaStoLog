@@ -24,6 +24,8 @@ disp(strcat('dimension of parameter scan:',{' '},num2str(size(paramsample_table,
     {' '},'parameter sets of', {' '},num2str(size(paramsample_table,2)),{' '},'parameters.'))
 
 lhs_scan_dim=size(paramsample_table,1);
+rows_with_zero=unique(paramsample_table>0,'rows'); rows_with_zero=rows_with_zero(sum(rows_with_zero,2)<size(paramsample_table,2),:);
+stg_sorting_cell_zeros=cell(1,size(rows_with_zero,1));
 
 for k=1:lhs_scan_dim
 
@@ -42,7 +44,16 @@ end
 A_sparse_mod=A_sparse_mod + speye(size(A_sparse_mod)) - diag(sum(A_sparse_mod,2)); % 0.33sec
 
 % calculate solution
-[stat_sol,~,~]=split_calc_inverse(A_sparse_mod,stg_sorting_cell,transition_rates_table_mod,x0);
+if sum(paramsample_table(k,:)==0)>0
+    [~,row_match]=ismember(paramsample_table(k,:)>0, rows_with_zero);
+    which_zero_ind=row_match(1);
+    if isempty(stg_sorting_cell_zeros{which_zero_ind}) 
+        stg_sorting_cell_zeros{which_zero_ind}=fcn_scc_subgraphs(A_sparse_mod,x0);
+    end
+    [stat_sol,~,~]=split_calc_inverse(A_sparse_mod,stg_sorting_cell_zeros{which_zero_ind},transition_rates_table_mod,x0);
+else
+    [stat_sol,~,~]=split_calc_inverse(A_sparse_mod,stg_sorting_cell,transition_rates_table_mod,x0);
+end
 disp(k)
 
 [stationary_node_vals,~]=fcn_calc_init_stat_nodevals(x0,stat_sol,'');

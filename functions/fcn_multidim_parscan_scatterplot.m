@@ -55,8 +55,8 @@ end
 if size(scan_values,2)==numel(nodes)
         h_supt=suptitle( strcat(nodes{var_ind},' stationary value') ); set(h_supt,'FontSize',label_fontsize*1.5,'FontWeight','normal','Interpreter','none')
 elseif size(scan_values,2)~=numel(nodes)
-    n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2);
+    n_nodes=numel(nodes); % truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2);
     state_names=param_settings(4:end);
-    suptitle(strcat('state #',num2str(state_names(var_ind)),', ','p([',num2str( truth_table_inputs(state_names(var_ind),:) ),'])') );
+    suptitle(strcat('state #',num2str(var_ind)) ); % 
 end
 
