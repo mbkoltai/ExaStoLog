@@ -2,9 +2,9 @@
 % stationary solution of stoch logical models, plot results and perform parametric analysis
 
 % go to the folder of the file
-editor_service=com.mathworks.mlservices.MLEditorServices; editor_app = editor_service.getEditorApplication;
-active_editor=editor_app.getActiveEditor; storage_location = active_editor.getStorageLocation;
-file=char(storage_location.getFile); path_to_toolbox = fileparts(file); cd(path_to_toolbox);
+editor_service=com.mathworks.mlservices.MLEditorServices; editor_app=editor_service.getEditorApplication;
+active_editor=editor_app.getActiveEditor; storage_location=active_editor.getStorageLocation;
+file=char(storage_location.getFile); path_to_toolbox=fileparts(file); cd(path_to_toolbox);
 
 % ADD FUNCTIONS to PATH: required toolboxes are in <toolboxes.zip>
 add_functions
@@ -24,9 +24,10 @@ model_name_list = {'mammalian_cc', ...
 'krasmodel15vars', ...
 'breast_cancer_zanudo2017'....
 'dnarepair_rodriguez_15nodes',...
-'EMT_cohen_ModNet'}; % 
+'EMT_cohen_ModNet',...
+'sahin_breast_cancer_refined'}; % 
 % name of the model
-model_index=5;
+model_index=6;
 model_name=model_name_list{model_index};
 
 % where to save figures
@@ -42,7 +43,7 @@ fcn_nodes_rules_cmp(nodes,rules)
 truth_table_filename='fcn_truthtable.m'; fcn_write_logicrules(nodes,rules,truth_table_filename)
 
 % from the model we generate the STG table, that is independent of values of transition rates
-% this takes 20-30 seconds for 20 node model
+% this takes ~10 seconds for 20 node model (but need to do it only once)
 tic; stg_table=fcn_build_stg_table(truth_table_filename,nodes); toc
 
 % density of transition matrix
@@ -55,9 +56,9 @@ size(stg_table,1)/(2^(2*numel(nodes)))
 
 % to define transition rates, we can select given rates to have different values than 1, or from randomly chosen
 % name of rates: 'u_nodename' or 'd_nodename'
-% for KRAS model, state of KRAS defines whether its mutant or not: chosen_rates={'d_KRAS','d_cc'}; chosen_rates_vals=[0 0]; 
+% chosen_rates={'u_ERBB1','u_ERBB2','u_ERBB3'}; chosen_rates_vals=zeros(size(chosen_rates));
+% OR leave them empty: 
 chosen_rates=[]; chosen_rates_vals=[];
-% OR leave them empty: chosen_rates=[]; chosen_rates_vals=[];
 
 % then we generate the table of transition rates: first row is the 'up'rates, second row 'down' rates, in the order of 'nodes'
 % ARGUMENTS
@@ -73,6 +74,9 @@ tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,''); toc
 
 % VISUALIZE transition matrix
 % spy(A_sparse); xlabel('model states'); ylabel('model states'); set(gca,'FontSize',24)
+% fcn_save_fig('A_sparse',plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi);
+
+size_limit_mb=1; fcn_objects_memory_size(whos,size_limit_mb)
 
 %% define initial condition
 
@@ -99,14 +103,16 @@ initial_fixed_nodes_list={ {'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1'
                              {'cc','KRAS','DSB','cell_death'}, ...                              % krasmodel15vars
                               {'Alpelisib', 'Everolimus','PIM','Proliferation','Apoptosis'},...  % breast_cancer_zanudo2017 % ,'PIM'
                           {''},... % Rodriguez
-                          {'ECMicroenv','DNAdamage','Metastasis','Migration','Invasion','EMT','Apoptosis','Notch_pthw','p53'}}; %
-                          % {'Alpelisib', 'Everolimus', 'PI3K', 'PIM', 'PDK1', 'Proliferation', 'Apoptosis'}
+                          {'ECMicroenv','DNAdamage','Metastasis','Migration','Invasion','EMT','Apoptosis','Notch_pthw','p53'}, ...
+                          {'EGF','ERBB1','ERBB2','ERBB3','p21','p27'}}; % 'CDK4'
+                      % 'EGF','ERBB1','ERBB2','ERBB3','ERBB_12','ERBB_13','ERBB_23','CDK6','p21','p27'
 
 initial_fixed_nodes_vals_list = {[0 0 0 1 1 1 1 1], ... % mammalian_cc
     [1 1 1 0], ... % krasmodel15vars: [1 1] is cell cycle ON, KRAS mutation ON
     [0 1 0 zeros(1,2)],...  % breast_cancer_zanudo2017
     [],...  % Rodriguez
-    [1 1 zeros(1,5) 1 0]}; % EMT-Cohen model: [0/1 0/1 zeros(1,5)]
+    [1 1 zeros(1,5) 1 0],... % EMT-Cohen model: [0/1 0/1 zeros(1,5)]
+    [1 0 0 0 1 1]}; % 1 zeros(1,numel(initial_fixed_nodes_list{model_index})-3) 1 1
 initial_fixed_nodes=initial_fixed_nodes_list{model_index}; initial_fixed_nodes_vals=initial_fixed_nodes_vals_list{model_index};
 
 % what is the probability of this state, (eg. dom_prob=0.8, ie. 80% probability)
@@ -119,7 +125,7 @@ plot_flag='';
 tic; x0=fcn_define_initial_states(initial_fixed_nodes,initial_fixed_nodes_vals,dom_prob,nodes,distrib_types{1},plot_flag); toc
 
 % completely random initial condition:
-% x0=zeros(2^n_nodes,1); x0=rand(size(truth_table_inputs,1),1); x0=x0/sum(x0);
+% x0=zeros(2^n_nodes,1); x0=rand(2^numel(nodes),1); x0=x0/sum(x0);
 % completely uniform initial condition
 % x0=ones(2^numel(nodes),1)/(2^numel(nodes));
 
@@ -147,7 +153,7 @@ tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_s
 % cell_subgraphs: indices of states belonging to disconnected subgraphs (if any)
 
 % query size of objects larger than x (in Mbytes)
-size_limit_mb=1; fcn_objects_memory_size(whos,size_limit_mb)
+size of STG
 
 % sum the probabilities of nonzero states by nodes, both for the initial condition and the stationary solution
 % ARGUMENTS
@@ -187,12 +193,11 @@ fcn_plot_A_K_stat_sol(A_sparse,nodes,sel_nodes,stat_sol,x0,plot_settings,prob_th
 % enter any string for the last argument to overwrite existing plot!!
 if exist(plot_save_folder,'dir')==0; mkdir(plot_save_folder); end
 fig_file_type={'.png','.eps','.pdf','.jpg','.tif'}; 
-if ~isempty(matrix_input);  matrix_input_str='_with_matrix'; else; matrix_input_str=''; end
 % if <overwrite_flag> non-empty then existing file with same name is overwritten. 
 overwrite_flag='yes'; 
 % for <resolution> you can enter dpi value manually
 resolution_dpi='-r350'; % magnification=0.8;  strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-fcn_save_fig(strcat('single_solution_states_nodes_stat_sol',matrix_input_str),plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi);
+fcn_save_fig('single_solution_states_nodes_stat_sol',plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi);
 
 %% PLOT binary heatmap of nonzero stationary states with their probability
 
@@ -200,7 +205,7 @@ fcn_save_fig(strcat('single_solution_states_nodes_stat_sol',matrix_input_str),pl
 % fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,term_verts_inds_cell,nodes,sel_nodes,plot_param_settings,tight_subplot_flag,ranking_flag)
 % stat_sol: vector of stationary solutions
 % probability threshold for states to show (if left empty, all states shown)
-prob_thresh=0.01;  % []; % 0.05;
+prob_thresh=0;  % []; % 0.05;
 % term_verts_cell: which subgraph to plot if there are disconnected ~
 % nodes: name of nodes
 % nodes to show. if none selected, then all nodes shown
@@ -209,7 +214,7 @@ sel_nodes=[]; % setdiff(2:numel(nodes)-1,[find(strcmp(nodes,{'Rb_b2'})) find(str
 % plot_param_settings
 % num_size_plot: font size of 0/1s on the heatmap
 % hor_gap: horizontal gap between terminal SCCs, bottom_marg: bottom margin, left_marg: left margin
-numsize_plot=22; fontsize=30; hor_gap=0.02; bottom_marg=0.31; left_marg=0.16; 
+numsize_plot=30; fontsize=40; hor_gap=0.02; bottom_marg=0.31; left_marg=0.16; 
 plot_param_settings=[numsize_plot fontsize hor_gap bottom_marg left_marg];
 % want to use tight subplot? | order states by probability?
 tight_subplot_flag='yes'; ranking_flag='yes';
@@ -224,7 +229,7 @@ statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,...
 overwrite_flag='yes'; 
 % for <resolution> you can enter dpi value manually
 % magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
-resolution_dpi='-r350'; fcn_save_fig('binary_heatmap_states',plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi);
+resolution_dpi='-r350'; fcn_save_fig('binary_heatmap_states_tripleKO_ERBB',plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% STGs on subplots, with given parameter highlighted on each
@@ -397,7 +402,7 @@ disp_var=5; % show at every n% the progress
 % PLOT heatmap of selected variables 
 sel_nodes=[4]; % [4 8 13 15];
 % plot_settings: [fontsize on plot&axes, fontsize on axes, fontsize of subplot titles, axes tick fontsize]
-plot_settings=[22 34 40]; 
+plot_settings=[28 30 40]; 
 fcn_plot_twodim_parscan(stat_sol_paramsample_table,scanvals,multiscan_pars,multiscan_pars_up_down,nodes,sel_nodes,plot_settings)
 
 % SAVE
@@ -487,7 +492,7 @@ resolution_dpi='-r350';
 plot_type_flag={'par_var','heatmap','r_sq'}; % {'par_var','heatmap'/'lineplot','r_sq'/'slope'}
 sel_nodes=setdiff(3:numel(nodes),[4:6 10:12 16]); %setdiff(3:numel(nodes),[3 5 6 7 9 11 12 16]); % 3:numel(nodes); % scan_params_sensit;
 % plot_settings=[fontsize,maximum value for heatmap colors], if plot_settings(3)=NaN, then max color automatically selected
-plot_settings=[20 21 0.29]; 
+plot_settings=[30 30 0.29]; 
 % if regression type is 'linlog', then the fit is y = a + b*log10(x)
 regr_types={'log','linear'}; % linlog recommended if parameter values log-uniformly distributed in sampling
 figure('name',strjoin(plot_type_flag))
@@ -497,6 +502,7 @@ scan_values=stat_sol_states_lhs_parscan; % stat_sol_nodes_lhs_parscan
                                  scan_params_sensit,scan_params_up_down_sensit, ... % parameters (CAREFUL that they are same as in LHS!)
                                  regr_types{1},plot_settings);
 
+% savefig(strcat(plot_save_folder,fig_prefix))                           
 % fig_prefix=strjoin(plot_type_flag,'_'); resolution_dpi='-r350'; 
 % fcn_save_fig(fig_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
 

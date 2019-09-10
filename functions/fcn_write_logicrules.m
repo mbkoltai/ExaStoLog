@@ -9,10 +9,6 @@ if sum(ismember(nodes_in_rules,nodes))~=numel(nodes_in_rules)
 end
 
 for k=1:numel(rules)
-% replace non-special chars
-% regexprep('g2_m&A2|NODEB','\w*','truth')
-% capStartIndex = regexp('g2_m&A2|NODEB','\w*');
-% rule = 'g2_m&(~A2|NODEB)';
 
 % replace exclamation marks (negation in BoolNet) with '~' (negation in MATLAB)
 if ~isempty(strfind(rules{k},'!'))

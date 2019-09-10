@@ -12,7 +12,8 @@ doc/manuscript/
 doc/sample_plots/
 # zip of existing files
 exact_stochlog_toolbox.zip
-
+model_files/EMT_cohen
+model_files/other
 
 # files to ignore M~ files
 *m~
