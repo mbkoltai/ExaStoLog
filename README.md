@@ -27,4 +27,4 @@ Read the tutorial [here](https://github.com/mbkoltai/exact-stoch-log-mod/tree/ma
 
 #### - add the folders to the path by typing 'add_functions'
 
-For the detailed examples of calculations read the [here](https://github.com/mbkoltai/exact-stoch-log-mod/tree/master/doc) (**under construction**).
+For the detailed examples of calculations read the [tutorial here](https://github.com/mbkoltai/exact-stoch-log-mod/tree/master/doc) (**under construction**).
