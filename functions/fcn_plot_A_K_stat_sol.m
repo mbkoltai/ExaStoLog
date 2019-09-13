@@ -1,7 +1,7 @@
 % function that plots A (trans matrix), K (kinetic matrix) and solutions
 function fcn_plot_A_K_stat_sol(A, nodes, sel_nodes, stat_sol, x0, plot_settings,nonzero_flag)
 
-fontsize=plot_settings(1:2); barwidth_states_val=plot_settings(3);
+fontsize=plot_settings(1:3); barwidth_states_val=plot_settings(4);
 
 [stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol,'x0');
 n=numel(nodes); 
@@ -15,22 +15,22 @@ y_position=0.11;
 
 if ~isempty(A)
 
-min_max_col=plot_settings(4:5); min_col=min_max_col(1); max_col=min_max_col(2);
+min_max_col=plot_settings(5:6); min_col=min_max_col(1); max_col=min_max_col(2);
 fontsize_hm=fontsize(1); fontsize_stat_sol=fontsize(2);
 
 % transition matrix
 fig_subpl1=subplot(1,3,1); set(fig_subpl1,'Position',[0.032 y_position 0.3 0.82]); % [0.032 0.11 0.32 0.82]
 if issparse(A)
-    spy(A)
+    spy(A); set(gca,'FontSize',fontsize_hm)
 else
     heatmap(A,1:2^length(nodes),1:2^length(nodes),'%0.2f','TickAngle',90,'MinColorValue',min_col,'MaxColorValue',max_col,'Colormap','redblue',... 
         'GridLines', '-', 'FontSize', fontsize_hm, 'ShowAllTicks', true); 
 end
 % title 
 if full(min(A(:)))==0
-    title('A (transition matrix)', 'FontSize', 20, 'FontWeight','normal');
+    title('A (transition matrix)', 'FontSize', fontsize_stat_sol, 'FontWeight','normal');
 else
-    title('K (kinetic matrix)', 'FontSize', 20, 'FontWeight','normal');
+    title('K (kinetic matrix)', 'FontSize', fontsize_stat_sol, 'FontWeight','normal');
 end
 
 %%%%%
@@ -42,7 +42,7 @@ if ~isempty(nonzero_flag)
     set(fig_subpl2,'ytick',1:numel(nnz_vals)); set(fig_subpl2,'yticklabel',nnz_vals,'FontSize',fontsize(1)); xlim([0 1.5*max(state_vals)])
     set(fig_subpl2,'Position',[0.39 y_position 0.27 0.82])
     binary_states_cell=arrayfun(@(x) sprintf('%d', truth_table_inputs(nnz_vals(x),:)), 1:numel(nnz_vals),'un',0);
-    arrayfun(@(k) text(barplot_object.YData(k)+max(state_vals)/50,barplot_object.XData(k),binary_states_cell{k}), ...
+    arrayfun(@(k) text(barplot_object.YData(k)+max(state_vals)/50,barplot_object.XData(k),binary_states_cell{k}, 'FontSize',fontsize(3)),...
         1:numel(binary_states_cell), 'un',0)
 else
     set(fig_subpl2,'ytick','') 
@@ -53,10 +53,12 @@ title('states','FontWeight','normal','FontSize', fontsize(2)); xlabel('stationar
 % 3rd subplot with nodes
 fig_subpl3=subplot(1,3,3); 
 fig_subpl3_vals=flipud([init_node_vals(sel_nodes); stationary_node_vals(sel_nodes)]');
-bar_subpl3=barh(fig_subpl3_vals, 'grouped'); grid on;  xlabel('stationary probability', 'FontSize', fontsize_stat_sol);
+bar_subpl3=barh(fig_subpl3_vals, 'grouped','BarWidth',barwidth_states_val*1.5); grid on; set(gca,'FontSize',fontsize_hm);
+xlabel('stationary probability', 'FontSize', fontsize_hm);
 title('nodes','FontSize',fontsize_stat_sol,'FontWeight','normal'); 
 set(fig_subpl3,'Position',[0.72 y_position 0.27 0.815]);
-set(gca,'ytick',1:numel(sel_nodes)); set(gca,'YtickLabel',strrep(fliplr(nodes(sel_nodes)),'_',' ')); shift=0.4; ylim([1-shift numel(sel_nodes)+shift])
+set(gca,'ytick',1:numel(sel_nodes)); set(gca,'YtickLabel',strrep(fliplr(nodes(sel_nodes)),'_',' ')); shift=0.4; 
+ylim([1-shift numel(sel_nodes)+shift])
 set(bar_subpl3(2),'FaceColor',[1 0 0],'EdgeColor',[1 0 0]);
 [~,min_ind]=min(max(fig_subpl3_vals,[],2));
 leg=legend(bar_subpl3,{'x_0', 'steady state'},'FontSize',fontsize_stat_sol/1.2,'Location','SouthEast'); % 'Location','SouthEast',
@@ -87,13 +89,16 @@ if ~isempty(nonzero_flag)
     binary_states_cell=arrayfun(@(x) sprintf('%d', truth_table_inputs(nnz_vals(x),:)), 1:numel(nnz_vals),'un',0);
     set(fig_subpl1,'yticklabel',nnz_vals,'FontSize',fontsize(1));
     % bars labeled with states
-    arrayfun(@(k) text(barplot_object.YData(k)+max(state_vals)/50,barplot_object.XData(k),binary_states_cell{k}), 1:numel(binary_states_cell), 'un',0)
+    arrayfun(@(k) text(barplot_object.YData(k)+max(state_vals)/50,barplot_object.XData(k),binary_states_cell{k}), ...
+        1:numel(binary_states_cell), 'un',0)
     % num2cell(nnz_vals)
 else
-    set(fig_subpl1,'ytick','') % ylim([find(state_vals>disp_lim,1,'first')-0.05*numel(state_vals) find(state_vals>disp_lim,1,'last')+0.05*numel(state_vals)]); 
+    set(fig_subpl1,'ytick','') 
+    % ylim([find(state_vals>disp_lim,1,'first')-0.05*numel(state_vals) find(state_vals>disp_lim,1,'last')+0.05*numel(state_vals)]); 
 end
 
-title('states','FontWeight','normal','FontSize', fontsize(2)); xlabel('stationary probability', 'FontSize', fontsize(2)); % set(gca, 'FontSize', fontsize)
+title('states','FontWeight','normal','FontSize', fontsize(2)); xlabel('stationary probability', 'FontSize', fontsize(2)); 
+% set(gca, 'FontSize', fontsize)
 fig_subpl1.XGrid = 'on'; 
 
 fig_subpl2=subplot(1,2,2); 

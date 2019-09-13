@@ -52,11 +52,11 @@ if iscell(inds); inds=cell2mat(term_verts_inds_cell_thresh{k}); end
     else
         ranking=1:numel(inds);
     end
-
+n_prec=2;
     if numel(term_verts_inds_cell_thresh{k})>1
         for inner_c=1:numel(term_verts_inds_cell_thresh{k})
             subplot_counter=subplot_counter+1;
-                if subplot_counter==n_states; x_ax_leg=nodes(sel_nodes); else x_ax_leg=[]; end; y_ax_leg=round(stat_sol(inds(ranking)),3); 
+                if subplot_counter==n_states; x_ax_leg=nodes(sel_nodes); else x_ax_leg=[]; end; y_ax_leg=round(stat_sol(inds(ranking)),n_prec); 
                 if ~isempty(tight_subplot_flag); axes(ha(subplot_counter)); else; subplot(n_states,1,subplot_counter); end
           binary_heatmap=heatmap(truth_table_inputs(inds(ranking(inner_c)),sel_nodes),...
               x_ax_leg,strcat(num2str(y_ax_leg(inner_c)), ' (#', num2str(nonempty_subgraphs(k)),')'),... % y_ax_leg(inner_c)
@@ -66,7 +66,7 @@ if iscell(inds); inds=cell2mat(term_verts_inds_cell_thresh{k}); end
         end
     else
         subplot_counter=subplot_counter+1;
-        if k==n_cells; x_ax_leg=nodes(sel_nodes); else x_ax_leg=[]; end; y_ax_leg=round(stat_sol(inds(ranking)),3); 
+        if k==n_cells; x_ax_leg=nodes(sel_nodes); else x_ax_leg=[]; end; y_ax_leg=round(stat_sol(inds(ranking)),n_prec); 
         if ~isempty(tight_subplot_flag); axes(ha(subplot_counter)); else; subplot(n_states,1,subplot_counter); end
         binary_heatmap=heatmap(truth_table_inputs(inds(ranking),sel_nodes),x_ax_leg,...
             strcat(num2str(y_ax_leg(ranking)), ' (#', num2str(nonempty_subgraphs(k)),')'), ... % y_ax_leg(ranking)
