@@ -149,11 +149,20 @@ To do this we select the nodes we want to have defined values and the total (sum
 For the analyyzed models we provide a number of initial conditions that are biologically interesting:
 
 ```MATLAB
+% selected nodes for inital conditions
 initial_fixed_nodes_list={ {'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}, ... % mammalian_cc
-        {'cc','KRAS','DSB','cell_death'}, ...                              % krasmodel15vars
-        {'Alpelisib', 'Everolimus','PIM','Proliferation','Apoptosis'},...  % breast_cancer_zanudo2017
-        {'ECMicroenv','DNAdamage','Metastasis','Migration','Invasion','EMT','Apoptosis','Notch_pthw','p53'}, ... % EMT_cohen_ModNet
-        {'EGF','ERBB1','ERBB2','ERBB3','p21','p27'}}; % sahin_breast_cancer_refined
+ {'cc','KRAS','DSB','cell_death'}, ... % krasmodel15vars
+ {'Alpelisib', 'Everolimus','PIM','Proliferation','Apoptosis'},...  % breast_cancer_zanudo2017
+ {'ECMicroenv','DNAdamage','Metastasis','Migration','Invasion','EMT','Apoptosis','Notch_pthw','p53'}, ... % EMT_cohen_ModNet
+ {'EGF','ERBB1','ERBB2','ERBB3','p21','p27'}}; % sahin_breast_cancer_refined
+
+% values for selected nodes
+initial_fixed_nodes_vals_list = {[0 0 0 1 1 1 1 1], ... % mammalian_cc
+            [1 1 1 0], ... % krasmodel15vars: [1 1] is cell cycle ON, KRAS mutation ON
+            [0 1 0 zeros(1,2)],...  % breast_cancer_zanudo2017
+            [1 1 zeros(1,5) 1 0],... % EMT-Cohen model: [0/1 0/1 zeros(1,5)]
+            [1 0 0 0 1 1]}; % 1 zeros(1,numel(initial_fixed_nodes_list{model_index})-3) 1 1
+
 
 % select the initial condition for the model we are working on
 initial_fixed_nodes=initial_fixed_nodes_list{model_index}; initial_fixed_nodes_vals=initial_fixed_nodes_vals_list{model_index};
@@ -181,25 +190,27 @@ x0=ones(2^numel(nodes),1)/(2^numel(nodes));
 
 ### 3. Calculation of stationary solution
 
-With the transition matrix, table of transition rates and the initial condition defined we can now calculate the stationary solution of the model (it is informative to time this calculation for larger calculations later on when it will be repeated):
+Topological sorting of the STG is a parameter-independent step that we need to perform only once for a model (except if we set transition rates to 0, or change the initial condition), so we do it before the calculation of the solution:
+```MATLAB
+stg_sorting_cell=fcn_scc_subgraphs(A_sparse,x0);
+```
+This function outputs its progress and shows how many cycles the STG contains, in the case of the EMT model the calculation is 9 seconds and we get the message:
+*cycles of length:1   64  208  224  256 (256640      16       8       8       4 times)*
+
+This is informative because the existence of cycles is the main limiting factor in the staionary solutions's calculation, and cycles larger than 1000 vertices might make the calculation unfeasible.
+
+With the transition matrix, table of transition rates and the initial condition defined we can now calculate the stationary solution of the model, that takes around 2-3 seconds for the EMT model:
 
 ```MATLAB
-tic; stg_sorting_cell=fcn_scc_subgraphs(A_sparse,x0); toc
 tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_sorting_cell,transition_rates_table,x0); toc
 ```
 
 The outputs of the calculation are:  
-**stat_sol**: stationary solution for all the states  
-**term_verts_cell**: index of nonzero states. If the STG is disconnected, then the nonzero states corresp to these disconn subgraphs are in separate cells  
-**cell_subgraphs**: indices of states belonging to disconnected subgraphs (if any)
+**stat_sol**: stationary solution for all the states (sparse variable)  
+**term_verts_cell**: index of nonzero states. If the STG is disconnected, this variable is a cell of cells, where the nonzeros states in different subgraphs are in separate cells  
+**cell_subgraphs**: indices of (all) states belonging to the STG's different subgraphs
 
-The nonzero states can be quickly queried by:
-```MATLAB
-stat_sol(stat_sol>0)' % probability values of nonzero states
-truth_table_inputs(stat_sol>0,:) % logical states that are nonzero
-```
-
-To have the stationary solution (and also the initial states) in terms of the probabilities of the model's _nodes_ having a value of 1, call the function:
+To have the stationary solution (and also the initial states) in terms of the probabilities of the (activation of the) model's _variables_, call the function:
 ```MATLAB
 [stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol);
 ```
@@ -208,7 +219,7 @@ To have the stationary solution (and also the initial states) in terms of the pr
 
 #### Visualize stationary probability values for states and nodes
 
-We can now visualize the stationary solution, along with the transition (or kinetic) matrix of the model. Visualization of the full transition matrix can take very long, it is not recommended for models larger than 12 nodes.
+We can now visualize the stationary solution, along with the transition (or kinetic) matrix of the model.
 
 The following arguments need to be defined for the visualization:
 ```MATLAB
@@ -218,33 +229,22 @@ The following arguments need to be defined for the visualization:
 % fontsize: [font size on the heatmap, title font size for stationary solutions]
 % barwidth_states_val: width of the bars for bar plot of stationary solutions of states
 % sel_nodes: nodes to show. If left empty, all nodes are shown
-% fontsize_hm: fonsize on heatmap,
-% fontsize_stat_sol: fontsize on barplots for stationary solution
-% nonzero_flag: minimal value for probability to display - if this is non-empty, only plot nonzero states, useful for visibility if there are many states
+% prob_thresh: minimal value for probability to display (useful for visibility if there are many attractor states or large cyclic attractor(s))
 ```
 
-Call the function with matrix visualization:
+Call the function by:
 ```MATLAB
-sel_nodes=[]; min_max_col=[0 1]; barwidth_states_val=0.8; fontsize_hm=10; fontsize_stat_sol=20;
-fontsize=[fontsize_hm fontsize_stat_sol]; matrix_input=A_sparse; plot_settings = [fontsize barwidth_states_val min_max_col]; nonzero_flag=0.01;    
+sel_nodes=[];
+min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[24 40 20]; % [fontsize of plot, fontsize of titles, fontsize of binary states]
+plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.03;
 
-fcn_plot_A_K_stat_sol(matrix_input, nodes, sel_nodes, stat_sol, x0, plot_settings ,nonzero_flag)
+figure('name','A_K_stat_sol')
+fcn_plot_A_K_stat_sol(A_sparse,nodes,sel_nodes,stat_sol,x0,plot_settings,prob_thresh)
 ```
 
-![kras10vars_K_statsol](./sample_plots/kras15vars/single_solution_states_nodes_stat_sol_with_matrix.png)
+![single_solution_states_nodes_stat_sol_with_matrix](./readmeplots/single_solution_states_nodes_stat_sol_with_matrix.pdf)
 
-Or, without the transition matrix, with only the stationary solutions:
-
-```MATLAB
-sel_nodes=[]; nonzero_flag=0.01; barwidth_states_val=0.8; % for 3 nonzero states ~0.8 is a good value
-fontsize=[9 20]; % [fontsize_y_axis_states,fontsize_x_axes_and_titles]
-plot_settings=[fontsize barwidth_states_val]; matrix_input=[];
-fcn_plot_A_K_stat_sol(matrix_input, nodes, sel_nodes, stat_sol, x0, plot_settings,nonzero_flag)
-```
-
-![kras15vars_statsol](./sample_plots/kras15vars/single_solution_states_nodes_stat_sol.png)
-
-Save the plot by running (**export_fig** toolbox needed):
+Save the plot by running (**export_fig** toolbox needed!):
 ```MATLAB
 if exist(strcat(save_folder,model_name),'dir')==0; mkdir(strcat(save_folder,model_name)); end
 fig_file_type={'.png','.eps'}; if ~isempty(matrix_input); matrix_input_str='_with_matrix'; else matrix_input_str=''; end

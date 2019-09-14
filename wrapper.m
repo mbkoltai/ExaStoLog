@@ -151,7 +151,7 @@ tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_s
 % cell_subgraphs: indices of states belonging to disconnected subgraphs (if any)
 
 % query size of objects larger than x (in Mbytes)
-objects_mem=whos; size_limit_mb=1; fcn_objects_memory_size(objects_mem,size_limit_mb)
+% objects_mem=whos; size_limit_mb=1; fcn_objects_memory_size(objects_mem,size_limit_mb)
 
 % sum the probabilities of nonzero states by nodes, both for the initial condition and the stationary solution
 % ARGUMENTS
@@ -179,7 +179,7 @@ objects_mem=whos; size_limit_mb=1; fcn_objects_memory_size(objects_mem,size_limi
 % barwidth_states_val: width of the bars for bar plot of stationary solutions of states
 % sel_nodes: nodes to show. If left empty, all nodes are shown
 % prob_thresh: minimal value for probability to display (if non-empty, only plot nonzero states, useful for visibility if many states)
-sel_nodes=[];  % 3:numel(nodes)
+sel_nodes=[];
 min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[24 40 20]; % [fontsize of plot, fontsize of titles, fontsize of binary states]
 plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.03;
 % WARNING!!! if more than 12 nodes, generating the figure for A/K can be time-consuming
