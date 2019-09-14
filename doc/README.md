@@ -242,7 +242,7 @@ figure('name','A_K_stat_sol')
 fcn_plot_A_K_stat_sol(A_sparse,nodes,sel_nodes,stat_sol,x0,plot_settings,prob_thresh)
 ```
 
-![single_solution_states_nodes_stat_sol_with_matrix](./readmeplots/single_solution_states_nodes_stat_sol_with_matrix.pdf)
+![single_solution_states_nodes_stat_sol_with_matrix](./readmeplots/single_solution_states_nodes_stat_sol_with_matrix.png)
 
 Save the plot by running (**export_fig** toolbox needed!):
 ```MATLAB

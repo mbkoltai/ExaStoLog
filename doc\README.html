@@ -188,7 +188,7 @@ plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.03;
 
 figure(&apos;name&apos;,&apos;A_K_stat_sol&apos;)
 fcn_plot_A_K_stat_sol(A_sparse,nodes,sel_nodes,stat_sol,x0,plot_settings,prob_thresh)</code></pre>
-<p><img src="./readmeplots/single_solution_states_nodes_stat_sol_with_matrix.pdf" alt="single_solution_states_nodes_stat_sol_with_matrix"></p>
+<p><img src="./readmeplots/single_solution_states_nodes_stat_sol_with_matrix.png" alt="single_solution_states_nodes_stat_sol_with_matrix"></p>
 <p>Save the plot by running (<strong>export_fig</strong> toolbox needed!):</p>
 <pre><code class="language-MATLAB">if exist(strcat(save_folder,model_name),&apos;dir&apos;)==0; mkdir(strcat(save_folder,model_name)); end
 fig_file_type={&apos;.png&apos;,&apos;.eps&apos;}; if ~isempty(matrix_input); matrix_input_str=&apos;_with_matrix&apos;; else matrix_input_str=&apos;&apos;; end
