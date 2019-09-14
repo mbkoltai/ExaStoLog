@@ -6,7 +6,7 @@ Exact calculation of stationary states + parameter analysis & fitting of stochas
 
 1. [Requirements](#1-requirements)
 1. [Model creation](#2-model-creation)
-      1. [Defining nodes and logical rules](#defining-nodes-and-logical-rules)
+      1. [Defining variables and logical rules](#defining-nodes-and-logical-rules)
       1. [Creating the state transition graph](#creating-the-state-transition-graph)
       1. [Defining transition rates](#defining-transition-rates)
       1. [Creating the transition matrix](#creating-the-transition-matrix)
@@ -19,7 +19,7 @@ Exact calculation of stationary states + parameter analysis & fitting of stochas
 1. [One-dimensional parameter sensitivity analysis](#6-one-dimensional-parameter-sensitivity-analysis)
 1. [Multi-dimensional parameter sensitivity analysis](#7-multi-dimensional-parameter-sensitivity-analysis)
       1. [Visualize multi-dimensional parameter scans by scatter plots](#visualize-multi-dimensional-parameter-scans-by-scatter-plots)
-      1. [Correlations between variables and between variables and transition rates](#correlations-between-variables-and-between-variables-and-transition-rates)
+      1. [Correlations between variables](#correlations-between-variables-and-between-variables-and-transition-rates)
       1. [Linear regression of variables by transition rates](#linear-regression-of-variables-by-transition-rates)
       1. [Importance of transition rates by regression tree](#importance-of-transition-rates-by-regression-tree)
       1. [Sobol total sensitivity index](#sobol-total-sensitivity-index)
@@ -31,66 +31,55 @@ The steps below are also available and directly executable in [this MATLAB live 
 
 ##### - MATLAB version 2015b or later. (Tested in MATLAB 2015b, 2018b, 2019a.)
 
-##### - clone the [repository](https://github.com/mbkoltai/exact-stoch-log-mod) and add the folder 'functions' to your path: addpath('functions')
+##### - clone the [repository](https://github.com/mbkoltai/exact-stoch-log-mod) and enter the directory
 
-##### - the following freely available MATLAB toolboxes also need to be downloaded and added to the path:
+##### - unzip the file 'toolboxes.zip' for the external MATLAB libraries used:
 
 - [Customizable heatmaps](https://mathworks.com/matlabcentral/fileexchange/24253-customizable-heat-maps)  
-addpath('heatmaps')
 
 - [Redblue colormap](https://mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap)  
-addpath('redblue');
 
-Optional (for figures with multiple subplots, to save figures and for parameter fitting):  
 - [tight subplots](https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w) (for subplots with smaller gaps)  
-addpath('tight_subplot')
 
-- [export_fig](https://mathworks.com/matlabcentral/fileexchange/23629-export_fig) (export figures as EPS or PDF as they appear)  
-addpath('altmany-export_fig-acfd348')
+- [export_fig](https://mathworks.com/matlabcentral/fileexchange/23629-export_fig) (export figures as EPS or PDF as they appear on screen)  
 
-- [Simulated annealing](https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm) (parameter fitting by simulated annealing)  
-addpath('anneal')  
-To plot the convergence of the fitting process modify the script by 1) defining \<T_loss\> as 3rd output of the function, 2) inserting <counter=0> before the while loop
-and 3) inserting <T_loss(counter,:)=[T oldenergy];> at line 175 within the while loop.
+- [Simulated annealing](https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm) (parameter fitting by simulated annealing; the script was modified by author to output convergence process)  
 
+- [distinguishable_colors](https://www.mathworks.com/matlabcentral/fileexchange/29702-generate-maximally-perceptually-distinct-colors)
+
+##### - add the folders to the path by typing 'add_functions'
 
 ### 2. Model creation
 
 #### Defining nodes and logical rules
 
-Models can be defined by entering the list of nodes and their corresponding rules as a cell of strings, using MATLAB logical notation ('&', '|', '~', '(', ')'), for instance the following is a 10-node model of mitotic entry:  
-```MATLAB
-nodes = {'cc','kras', 'dna_dam', 'chek1', 'mk2', 'atm_atr', 'hr','cdc25b', 'g2m_trans', 'cell_death'};
+Models can be defined by entering the list of nodes and their corresponding rules as a cell of strings, using MATLAB logical notation ('&', '|', '~', '(', ')'), or by providing the path to a BoolNet file.
+We provide below the names of the models we analyzed in the paper and select the EMT model (Cohen et al 2015) to be read in by the function *fcn_bnet_readin*, also specifying a folder to save plots to:
 
-rules={'cc',...  
-'kras',...  
-'(dna_dam | kras) & ~hr',...  
-'atm_atr',...  
-'atm_atr & kras',...  
-'dna_dam',...  
-'(atm_atr  | hr) & ~cell_death',...  
-'(cc|kras) & (~chek1 & ~mk2) & ~cell_death',...  
-'g2m_trans | cdc25b',...  
-'cell_death | (dna_dam & g2m_trans)'};  
-```
-
-Alternatively, models can be read in in boolnet (.bnet) format by defining the model's path and
-reading in the boolnet file by the custom function *fcn_bnet_readin*:  
 
 ```MATLAB
+model_name_list = {'mammalian_cc', ...
+'krasmodel15vars', ...
+'breast_cancer_zanudo2017'....
+'EMT_cohen_ModNet',...
+'sahin_breast_cancer_refined'}; %
 % name of the model
-model_name='mammalian_cc'; % kras15vars
+model_index=4;
+model_name=model_name_list{model_index};
 
-% model read in from an existing BOOLNET file
-[nodes,rules]=fcn_bnet_readin('model_files/traynard2016_mammalian_cellcycle.bnet'); krasmodel10vars.bnet
+% model read in from BOOLNET file
+[nodes,rules]=fcn_bnet_readin(strcat('model_files/',model_name,'.bnet'));
+
+% where to save figures
+plot_save_folder=strcat('doc/sample_plots/',model_name,'/');
 ```
 
-Once we have the list of nodes and their logical rules, we can check if all variables referred to by rules are found in the list of nodes:
+Check if all variables referred to by rules are found in the list of nodes:
 ```MATLAB
 fcn_nodes_rules_cmp(nodes,rules)
 ```
 
-If the BOOLNET file is not consistent in terms of its nodes and rules, this function will display an error message, otherwise prints *Model seems correct: all elements in rules found in nodes list*.
+If the BOOLNET file is not consistent in terms of its nodes and rules, this function displays an error message, otherwise prints *Model seems correct: all elements in rules found in nodes list*.
 
 To create the logical model we need to generate a function file:
 ```MATLAB
@@ -99,34 +88,37 @@ fcn_write_logicrules(nodes,rules,truth_table_filename)
 ```
 #### Creating the state transition graph
 
-From this function file we generate the state transition graph (STG) of the logical model, that is still independent of values of transition rates, it only informs us amongst which states we have possible transitions in the system:
+From this function file we generate the state transition graph (STG) of the logical model. This step (it can take a few seconds) is independent of the values of transition rates, so needs to be done only once for a given model:
 ```MATLAB
-[stg_table,~,~]=fcn_build_stg_table(truth_table_filename,nodes,'','');
+tic; stg_table=fcn_build_stg_table(truth_table_filename,nodes); toc
 ```
-This step does not need to be repeated as the STG does not change with the parameter values, eg. for parameter sensitivity analysis.
 
+We can check the density of the STG by dividing the number of actual transitions by that of all possible transitions, for the EMT model this is 8.4e-06:
+```MATLAB
+size(stg_table,1)/(2^(2*numel(nodes)))
+```
 
 #### Defining transition rates
 
 To calculate the stationary states of a model we need to assign values to the *2xn* (n=number of nodes) transition rates of the model.
 
-We can select a subset of the transition rates to have a specific value by their names, which is always made up of *d_* or *u_* and the name of the respective node, and also define the vector of values we want them to have:
-```MATLAB
-chosen_rates={'u_cdc25b','d_dna_dam'}; chosen_rates_vals=[0.25, 0.15];
-```
-
-Otherwise, if you want all transition rates to have the same value or to be sampled from the same random distribution, leave these variables empty (or don't define them):
+We can select a subset of the transition rates to have a specific value by their names, which is always comprised of *d_* or *u_* and the name of the respective node, and also define the vector of values we want them to have.
+For example we can write: *chosen_rates={'u_p53','d_AKT1'};  chosen_rates_vals=[0.25, 0.15];*
+We can leave both variables empty to have uniform values:
 ```MATLAB
 chosen_rates=[]; chosen_rates_vals=[];
 ```
-Call the function to generate the table of transition rates, selecting if you want to have the rates to have a uniform value or to be sampled from a normal distribution, in this case specify the mean and standard distribution:
+
+Next we call the function to generate the table of transition rates. We need to select if we want to have the rates to have a uniform value or to be sampled from a normal distribution, in the latter case specify the mean and standard distribution:
 ```MATLAB
 % ARGUMENTS
-% <uniform> assigns a value of 1 to all params. other option: <random>
-distr_type={'uniform','random'};
-% if 'random' is chosen, the mean and standard dev of a normal distrib has to be defined
-meanval=[]; sd_val=[];
+distr_type={'uniform','random'}; % <uniform> assigns a value of 1 to all params. <random> samples from a lognormal distribution
+meanval=[]; sd_val=[]; % if 'random' is chosen, the mean and standard dev of a normal distrib has to be defined
 transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,chosen_rates,chosen_rates_vals);
+```
+We can check how big is the object *stg_table* that contains all the transitions of the model:
+```MATLAB
+
 ```
 
 #### Creating the transition matrix
@@ -136,33 +128,56 @@ Now we can build the transition matrix of the model with the specified transitio
 [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,'');
 ```
 
-For the subsequent calculations only the transition matrix *A* is needed (it is converted to the kinetic matrix within functions), if you want to have the kinetic matrix *K* as a variable (*dp(t)/dt=Kp(t)*, as opposed to *p(t+1)=p(t)A*), then run the function as:
+For the subsequent calculations only the transition matrix *A* is needed as a variable (it is converted to the kinetic matrix within functions), if we want to have the kinetic matrix *K* as a variable (*dp(t)/dt=Kp(t)*, as opposed to *p(t+1)=p(t)A*), then run the function as:
 ```MATLAB
 [A_sparse,K_sparse]=fcn_build_trans_matr(stg_table,transition_rates_table,'kinetic');
+```
+We can visualize the transition matrix by:
+```MATLAB
+spy(A_sparse);
+xlabel('model states'); ylabel('model states'); set(gca,'FontSize',24)
+```
+Check the size of the largest objects that we generates:
+```MATLAB
+size_limit_mb=1; fcn_objects_memory_size(whos,size_limit_mb)
 ```
 
 #### Defining initial conditions
 
-We can define an initial condition by specifying a given state we want to have a larger than random (there are 2^n states in total) probability. To do this select the nodes you want to have a value of 1 at the initial state by their names and the probability value of this state:
+We define an initial condition by specifying a given state we want to have a larger than random (there are 2^n states in total) probability.
+To do this we select the nodes we want to have defined values and the total (summed) probability of the states which satisfy the defined condition.
+For the analyyzed models we provide a number of initial conditions that are biologically interesting:
+
 ```MATLAB
-initial_on_nodes = {'CycD','Rb_b1','Rb_b2','Cdh1','p27_b1','p27_b2','Skp2'};
-% what is the probability of this state, (eg. dom_prob=0.8, ie. 80% probability)
-dom_prob=0.8;
+initial_fixed_nodes_list={ {'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}, ... % mammalian_cc
+        {'cc','KRAS','DSB','cell_death'}, ...                              % krasmodel15vars
+        {'Alpelisib', 'Everolimus','PIM','Proliferation','Apoptosis'},...  % breast_cancer_zanudo2017
+        {'ECMicroenv','DNAdamage','Metastasis','Migration','Invasion','EMT','Apoptosis','Notch_pthw','p53'}, ... % EMT_cohen_ModNet
+        {'EGF','ERBB1','ERBB2','ERBB3','p21','p27'}}; % sahin_breast_cancer_refined
+
+% select the initial condition for the model we are working on
+initial_fixed_nodes=initial_fixed_nodes_list{model_index}; initial_fixed_nodes_vals=initial_fixed_nodes_vals_list{model_index};
 ```
 
-Then with the function *fcn_define_initial_states* we assing the remaining *dom_prob* probability either among all other states (*distrib_types='broad'*) or all states where the selected nodes have a value of 1 (*distrib_types='restrict'*):
+Then with the function *fcn_define_initial_states* we assign the probability *dom_prob* among the selected states, and the remainging *1-dom_prob* probability is either uniformly or randomly distributed among the other possible states
 ```MATLAB
-distrib_types={'restrict','broad'}; plot_flag=[]; % if plot_flag non-empty, we get a bar plot of initial values
-x0=fcn_define_initial_states(initial_on_nodes,dom_prob,nodes,distrib_types{1},plot_flag);
+dom_prob=1;
+% if <random> the probability is randomly distributed among states, if <uniform> uniformly
+distrib_types={'random','uniform'};
+% if plot_flag non-empty, we get a bar plot of initial values
+plot_flag='';
+% function assigns a probability of <dom_prob> to the states with the fixed nodes having the defined values
+x0=fcn_define_initial_states(initial_fixed_nodes,initial_fixed_nodes_vals,dom_prob,nodes,distrib_types{1},plot_flag);
 ```
 If \<plot_flag> is non-empty we also get a bar plot of the initial states.
 
-You can also define a completely random probability distribution of initial states:
+We can also define a completely random or uniform probability distribution of initial states:
 ```MATLAB
-n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2);
-x0=zeros(1,2^n_nodes)'; x0=rand(1,size(truth_table_inputs,1))'; x0=x0/sum(x0);
+% random
+x0=zeros(2^n_nodes,1); x0=rand(2^numel(nodes),1); x0=x0/sum(x0);
+% uniform
+x0=ones(2^numel(nodes),1)/(2^numel(nodes));
 ```
-
 
 ### 3. Calculation of stationary solution
 
