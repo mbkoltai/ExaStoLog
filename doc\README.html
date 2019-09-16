@@ -229,26 +229,64 @@ In the case of cyclic attractors containing multiple states these rows would hav
 <p>Save the figure by</p>
 <pre><code class="language-MATLAB">resolution_dpi=&apos;-r350&apos;;
 fcn_save_fig(&apos;binary_heatmap_states&apos;,plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi);</code></pre>
-<h3 id="6-one-dimensional-parameter-sensitivity-analysis">6. One-dimensional parameter sensitivity analysis</h3>
+<h3 id="5-one-dimensional-parameter-sensitivity-analysis">5. One-dimensional parameter sensitivity analysis</h3>
 <p>To investigate the effect of the transition rates we can first perform one dimensional parameter scans. This means changing the value of parameters one by one and looking at the effect on stationary solutions.</p>
-<p>First we need to select the nodes whose transition rates we want to scan in. We can for instance select all that have actual transitions in the STG:</p>
-<pre><code class="language-MATLAB">par_inds_table=unique(stg_table(:,[3 4]),&apos;rows&apos;);
-scan_params=unique(par_inds_table(:,1))&apos;;</code></pre>
+<p>First we need to select the nodes whose transition rates we want to scan in.
+We can for instance select all rates that have actual transitions in the subgraph of the STG:</p>
+<pre><code class="language-MATLAB">popul_subgraphs=cellfun(@(x) sum(ismember(find(x0&gt;0), x)), cell_subgraphs)&gt;0;
+subgraph_states=cell2mat(cell_subgraphs(popul_subgraphs)&apos;);
+par_inds_table=unique(stg_table(ismember(stg_table(:,1), subgraph_states) | ismember(stg_table(:,2), subgraph_states),3:4),&apos;rows&apos;);</code></pre>
+<p>Now <em>par\</em>inds_table_ contains these transition rates, the first column showing the corresponding node of the rates and the second whether it is for 1-&gt;0 (1) or the 0-&gt;1 (2) transition.  </p>
+<p>We can also quantify the number of occurrences by transition rate and take the <em>n</em> most common ones:</p>
+<pre><code class="language-MATLAB">% most common transitions
+for k=1:size(par_inds_table,1)
+    param_freq(k) = sum(stg_table(:,3)==par_inds_table(k,1) &amp; stg_table(:,4)==par_inds_table(k,2));
+end
+% top n most frequent transitions
+[~,top_freq_trans_rates]=maxk(param_freq,6);</code></pre>
+<p>We can now select which transition rates we want to scan in.
+This is defined by two variables <em>scan\</em>params_ contains the index of the corresponding nodes of the rates and <em>scan\</em>params_up_down_ containing their {1,2} indices (up or down rate).</p>
+<p>To select all rates that have transitions we write:</p>
+<pre><code class="language-MATLAB">scan_params=unique(par_inds_table(:,1))&apos;;</code></pre>
+<p>To select the most frequent <em>n</em> rates:</p>
+<pre><code class="language-MATLAB">scan_params=par_inds_table(top_freq_trans_rates,1)&apos;;</code></pre>
 <p>We can also select nodes by their name:</p>
-<pre><code class="language-MATLAB">scan_params=find(ismember(nodes,{&apos;cdc25b&apos;,&apos;atm_atr&apos;}));</code></pre>
-<p>Then we select for each node if we want to change the up or the down rate or both, as in this example:</p>
+<pre><code class="language-MATLAB">scan_params=find(ismember(nodes,{&apos;Notch_pthw&apos;,&apos;p53&apos;,&apos;EMTreg&apos;,&apos;FOXO3&apos;,&apos;p63_73&apos;}));</code></pre>
+<p>Then we need to choose if we want to scan in the up or the down rate or both. Here we select all indices that have actual transitions:</p>
 <pre><code class="language-MATLAB">scan_params_up_down=arrayfun(@(x) par_inds_table(par_inds_table(:,1)==x,2)&apos;, scan_params,&apos;un&apos;,0);</code></pre>
-<p>Then we need to provide the range of values we want to scan in, the resolution, and whether we want to sample linearly or logarithmically:</p>
+<p>We now need to provide the range of values we want to scan in, the resolution, and whether we want to sample linearly or logarithmically:</p>
 <pre><code class="language-MATLAB">% min and max of range of values; resolution of the scan; linear or logarithmic sampling
 parscan_min_max = [1e-2 1e2]; n_steps=10; sampling_types={&apos;log&apos;,&apos;linear&apos;};</code></pre>
 <p>Now we can build the table with the parameter values and start the scan:</p>
-<pre><code class="language-MATLAB">parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_down,nodes,
-  sampling_types{1},parscan_min_max,n_steps);
+<pre><code class="language-MATLAB">parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_down,nodes,sampling_types{1},parscan_min_max,n_steps);
 
 [stationary_state_vals_onedimscan,stationary_node_vals_onedimscan,stationary_state_inds_scan]=...
-  fcn_onedim_parscan_calc(stg_table,transition_rates_table,...
-    x0,nodes,parscan_matrix,scan_params,scan_params_up_down);</code></pre>
-<p>To plot the results we have multiple options:</p>
+    fcn_onedim_parscan_calc(stg_table,transition_rates_table,x0,nodes,parscan_matrix,scan_params,scan_params_up_down);</code></pre>
+<p>We can first plot the results grouped by the transition rates of the parameter scan.
+On each subplot we plot the stationary value of attractor states or model variables as a function of one of the transition rates.
+We define a threshold for the minimal variation in the value of the variables to be plotted, so variables that do not change as a function of a transition rate are not shown on the plot.</p>
+<p>Let&apos;s provide the arguments for plotting:</p>
+<pre><code class="language-MATLAB">% index of nonzero states
+nonzero_states_inds=find(stat_sol&gt;0);
+% plot parameters: gap between subplots, margins at bottom, top, left and right edges
+height_width_gap=[0.08 0.03]; bott_top_marg =[0.05 0.05]; left_right_marg=[0.04 0.01];
+params_tight_subplots={height_width_gap bott_top_marg left_right_marg};
+% plot_param_settings: [fontsize_axes,fontsize_title,legend_fontsize,linewidth,params_tight_subplots,model_name]
+plot_param_settings={24,34,24,4,{height_width_gap bott_top_marg left_right_marg},model_name};
+% plotting stater or variables (nodes)?
+state_or_node_flags={&apos;nodes&apos;,&apos;states&apos;};
+% cutoff for minimal variation to show a variable
+diff_cutoff=0.15;
+figure(&apos;name&apos;,&apos;onedim parscan by param&apos;)
+[fig_filename,onedim_paramscan_output_cell]=fcn_onedim_parscan_plot_by_params(state_or_node_flags{1},...
+                                      stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
+                                      nonzero_states_inds,parscan_matrix,nodes,...
+                                      scan_params,scan_params_up_down,... % selected parameters
+                                      diff_cutoff,... % minimal variation for variable to be shown on plot
+                                      plot_param_settings);</code></pre>
+<p>We show below the plot for the one-dimensional scan of the rates of the 6 nodes that have the most transitions in the STG. The size/location of subplots and the line styles were manually adjusted for better visibility.</p>
+<p><img src="./readmeplots/onedim_parscan_lineplot_nodes_EMT_cohen_ModNet_by_params_r350.png" alt="onedim_parscan_lineplot_nodes_EMT_cohen_ModNet_by_params_r350"></p>
+<p>multiple options:</p>
 <ul>
 <li>to plot as a heatmap or lineplot</li>
 <li>to plot the values for the model&apos;s nodes or states</li>
@@ -329,11 +367,11 @@ limits=[-4 5;-5 5];
 plot_STG_sel_param(A_sparse,counter,nodes,cell_subgraphs,selected_pars,
   stg_table,plot_pars,highlight_settings,limits,tight_subpl_flag,tight_subplot_pars)
 ```
+![STG_10nodes_highlight](./readmeplots)
+--->
 
-![STG_10nodes_highlight](./readmeplots) --->
 
-
-<h3 id="7-multi-dimensional-parameter-sensitivity-analysis">7. Multi-dimensional parameter sensitivity analysis</h3>
+<h3 id="6-multi-dimensional-parameter-sensitivity-analysis">6. Multi-dimensional parameter sensitivity analysis</h3>
 <p>In multidimensional parameter scans we are changing the values of the selected transition rates at the same time by a Latin Hypercube Sampling (LHS) method to cover the entire parameter space and to investigate if there are non-trivial effects ignored in the one-dimensional parameter scan.</p>
 <p>Again, we first need to select the transition rates to scan in, here we select the sensitive parameters identified in the previous section:</p>
 <pre><code class="language-MATLAB">scan_params=scan_pars_sensit; % scan_params=unique(stg_table(:,3))&apos;;
@@ -455,7 +493,8 @@ scan_params,scan_params_up_down,stg_table,x0,nodes,sel_vars,plot_settings);</cod
 <p>Below is the heatmap of the Sobol total sensitivity indices for the transition rates of the 15-node KRAS model:
 <img src="./readmeplots" alt="kras15vars_sobol_sensitivity_index"></p>
 <p>Typically the results would be similar and consistent with linear regression, but the latter can miss parameters that have a non-monotonic or other complex nonlinear effect.</p>
-<h3 id="8-parameter-fitting-by-simulated-annealing">8. Parameter fitting by simulated annealing</h3>
+<h3 id="7-parameter-fitting">7. Parameter fitting</h3>
+<p>Simulated annealing</p>
 <p>Finally, if we have experimental (or simulated) data for a given model, it is possible to perform parameter fitting on the transition rates.
 Since we do not have the gradient of the stationary solution, a gradient-free method is needed. I use below a simulated annealing script from <a href="https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm">MATLAB Central</a>, with the following modifications to store the convergence process:</p>
 <ul>
@@ -463,7 +502,6 @@ Since we do not have the gradient of the stationary solution, a gradient-free me
 <li>inserting &lt;counter=0&gt; before the while loop</li>
 <li>inserting &lt;T_loss(counter,:)=[T oldenergy];&gt; at line 175 within the while loop.</li>
 </ul>
-<p>The script <em>anneal.m</em> needs to be added to the path as well.</p>
 <p>First we need to provide the parameters we want to fit, which can be the sensitive transition rates identified above, and also provide a vector of values for the model&apos;s nodes that we want to fit the model to:</p>
 <pre><code class="language-MATLAB">[~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_pars_sensit,scan_params_sensit_up_down,nodes); % scan_params,scan_params_up_down
 

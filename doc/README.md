@@ -296,7 +296,7 @@ resolution_dpi='-r350';
 fcn_save_fig('binary_heatmap_states',plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi);
 ```
 
-### 6. One-dimensional parameter sensitivity analysis
+### 5. One-dimensional parameter sensitivity analysis
 
 To investigate the effect of the transition rates we can first perform one dimensional parameter scans. This means changing the value of parameters one by one and looking at the effect on stationary solutions.
 
@@ -320,8 +320,8 @@ end
 [~,top_freq_trans_rates]=maxk(param_freq,6);
 ```
 
-We can now select which transition rates we want to scan in. 
-This is defined by two variables _scan\_params_ contains the index of the corresponding nodes of the rates and _scan\_params\_up\_down_ containing their {1,2} indices (up or down rate). 
+We can now select which transition rates we want to scan in.
+This is defined by two variables _scan\_params_ contains the index of the corresponding nodes of the rates and _scan\_params\_up\_down_ containing their {1,2} indices (up or down rate).
 
 To select all rates that have transitions we write:
 ```MATLAB
@@ -340,13 +340,13 @@ scan_params=find(ismember(nodes,{'Notch_pthw','p53','EMTreg','FOXO3','p63_73'}))
 
 Then we need to choose if we want to scan in the up or the down rate or both. Here we select all indices that have actual transitions:
 ```MATLAB
-scan_params_up_down=arrayfun(@(x) par_inds_table(par_inds_table(:,1)==x,2)', scan_params,'un',0); 
+scan_params_up_down=arrayfun(@(x) par_inds_table(par_inds_table(:,1)==x,2)', scan_params,'un',0);
 ```
 
 We now need to provide the range of values we want to scan in, the resolution, and whether we want to sample linearly or logarithmically:
 ```MATLAB
 % min and max of range of values; resolution of the scan; linear or logarithmic sampling
-parscan_min_max = [1e-2 1e2]; n_steps=10; sampling_types={'log','linear'}; 
+parscan_min_max = [1e-2 1e2]; n_steps=10; sampling_types={'log','linear'};
 ```
 
 Now we can build the table with the parameter values and start the scan:
@@ -357,8 +357,8 @@ parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_dow
     fcn_onedim_parscan_calc(stg_table,transition_rates_table,x0,nodes,parscan_matrix,scan_params,scan_params_up_down);
 ```
 
-We can first plot the results grouped by the transition rates of the parameter scan. 
-On each subplot we plot the stationary value of attractor states or model variables as a function of one of the transition rates. 
+We can first plot the results grouped by the transition rates of the parameter scan.
+On each subplot we plot the stationary value of attractor states or model variables as a function of one of the transition rates.
 We define a threshold for the minimal variation in the value of the variables to be plotted, so variables that do not change as a function of a transition rate are not shown on the plot.
 
 Let's provide the arguments for plotting:
@@ -371,7 +371,7 @@ params_tight_subplots={height_width_gap bott_top_marg left_right_marg};
 % plot_param_settings: [fontsize_axes,fontsize_title,legend_fontsize,linewidth,params_tight_subplots,model_name]
 plot_param_settings={24,34,24,4,{height_width_gap bott_top_marg left_right_marg},model_name};
 % plotting stater or variables (nodes)?
-state_or_node_flags={'nodes','states'}; 
+state_or_node_flags={'nodes','states'};
 % cutoff for minimal variation to show a variable
 diff_cutoff=0.15;
 figure('name','onedim parscan by param')
@@ -383,6 +383,7 @@ figure('name','onedim parscan by param')
                                       plot_param_settings);
 ```
 
+We show below the plot for the one-dimensional scan of the rates of the 6 nodes that have the most transitions in the STG. The size/location of subplots and the line styles were manually adjusted for better visibility.
 
 ![onedim_parscan_lineplot_nodes_EMT_cohen_ModNet_by_params_r350](./readmeplots/onedim_parscan_lineplot_nodes_EMT_cohen_ModNet_by_params_r350.png)
 
@@ -476,11 +477,11 @@ limits=[-4 5;-5 5];
 plot_STG_sel_param(A_sparse,counter,nodes,cell_subgraphs,selected_pars,
   stg_table,plot_pars,highlight_settings,limits,tight_subpl_flag,tight_subplot_pars)
 ```
+![STG_10nodes_highlight](./readmeplots)
+--->
 
-![STG_10nodes_highlight](./readmeplots) --->
 
-
-### 7. Multi-dimensional parameter sensitivity analysis
+### 6. Multi-dimensional parameter sensitivity analysis
 
 In multidimensional parameter scans we are changing the values of the selected transition rates at the same time by a Latin Hypercube Sampling (LHS) method to cover the entire parameter space and to investigate if there are non-trivial effects ignored in the one-dimensional parameter scan.
 
@@ -648,15 +649,15 @@ Below is the heatmap of the Sobol total sensitivity indices for the transition r
 
 Typically the results would be similar and consistent with linear regression, but the latter can miss parameters that have a non-monotonic or other complex nonlinear effect.
 
-### 8. Parameter fitting by simulated annealing
+### 7. Parameter fitting
+
+Simulated annealing
 
 Finally, if we have experimental (or simulated) data for a given model, it is possible to perform parameter fitting on the transition rates.
 Since we do not have the gradient of the stationary solution, a gradient-free method is needed. I use below a simulated annealing script from [MATLAB Central](https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm), with the following modifications to store the convergence process:
 - defining \<T_loss\> as 3rd output of the function,
 - inserting <counter=0> before the while loop
 - inserting <T_loss(counter,:)=[T oldenergy];> at line 175 within the while loop.
-
-The script *anneal.m* needs to be added to the path as well.
 
 First we need to provide the parameters we want to fit, which can be the sensitive transition rates identified above, and also provide a vector of values for the model's nodes that we want to fit the model to:
 ```MATLAB
