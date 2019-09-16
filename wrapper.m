@@ -202,21 +202,19 @@ fcn_save_fig('single_solution_states_nodes_stat_sol',plot_save_folder,fig_file_t
 %% PLOT binary heatmap of nonzero stationary states with their probability
 
 % ARGUMENTS of function:
-% fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,term_verts_inds_cell,nodes,sel_nodes,plot_param_settings,tight_subplot_flag,ranking_flag)
 % stat_sol: vector of stationary solutions
-% probability threshold for states to show (if left empty, all states shown)
+% prob_thresh: probability threshold for states to show (if left empty, all states shown)
 prob_thresh=0.01;  % []; % 0.05;
-% term_verts_cell: which subgraph to plot if there are disconnected ~
+% term_verts_cell: index of subgraphs for stable states
 % nodes: name of nodes
-% nodes to show. if none selected, then all nodes shown
+% sel_nodes: nodes to show. if none selected, then all nodes shown
 sel_nodes=[]; % setdiff(2:numel(nodes)-1,[find(strcmp(nodes,{'Rb_b2'})) find(strcmp(nodes,{'p27_b2'}))]);
-%
 % plot_param_settings
 % num_size_plot: font size of 0/1s on the heatmap
 % hor_gap: horizontal gap between terminal SCCs, bottom_marg: bottom margin, left_marg: left margin
 numsize_plot=26; fontsize=36; hor_gap=0.02; bottom_marg=0.31; left_marg=0.22; 
 plot_param_settings=[numsize_plot fontsize hor_gap bottom_marg left_marg];
-% want to use tight subplot? | order states by probability?
+% tight_subplot_flag: want to use tight subplot? | ranking_flag: order states by probability?
 tight_subplot_flag='yes'; ranking_flag='yes';
 
 % PLOT
@@ -266,10 +264,10 @@ scan_params_up_down=arrayfun(@(x) par_inds_table(par_inds_table(:,1)==x,2)', sca
 
 % top frequency trans rates:
 % scan_params=par_inds_table(top_freq_trans_rates,1)'; 
-% scan_params_up_down=arrayfun(@(x) par_inds_table( top_freq_trans_rates(par_inds_table(top_freq_trans_rates,1)==x),2)', scan_params,'un',0); 
+% scan_params_up_down=arrayfun(@(x) par_inds_table(top_freq_trans_rates(par_inds_table(top_freq_trans_rates,1)==x),2)',scan_params,'un',0);
 
 % min and max of range of values; resolution of the scan; linear or logarithmic sampling
-parscan_min_max = [1e-2 1e2]; n_steps=2; sampling_types={'log','linear'}; 
+parscan_min_max = [1e-2 1e2]; n_steps=10; sampling_types={'log','linear'}; 
 
 % FUNCTION for generating matrix of ordered values for the parameters to scan in
 % [scan_par_table,scan_par_inds,~]= fcn_get_trans_rates_tbl_inds(scan_params,scan_params_up_down,transition_rates_table);
@@ -290,14 +288,17 @@ toc;
 
 %% PLOT RESULTS of 1-dimensional parameter scan on heatmap/lineplot BY PARAMETERS
 
-%%% FIRST PLOT TYPE: each subplot is a lineplot of node or state values as a function of a parameter's value, with a defined minimal variation
+%%% FIRST PLOT TYPE: each subplot is a lineplot of node or state values as a function of a parameter's value, 
+%%% with a defined minimal variation
 
+% index of nonzero states
 nonzero_states_inds=find(stat_sol>0);
 % plot parameters
 % [0.06 0.03],[0.03 0.03],[0.02 0.01]
 height_width_gap=[0.08 0.03]; bott_top_marg =[0.05 0.05]; left_right_marg=[0.04 0.01];
+params_tight_subplots={height_width_gap bott_top_marg left_right_marg};
 % [fontsize_axes,fontsize_title,legend_fontsize,linewidth,params_tight_subplots(leave empty if not installed),model_name]
-plot_param_settings={20,20,20,4,{height_width_gap bott_top_marg left_right_marg},model_name}; % plot_param_settings={12,14,[],model_name}; 
+plot_param_settings={24,34,24,4,params_tight_subplots,model_name};
 state_or_node_flags={'nodes','states'}; 
 % cutoff for minimal variation to show a variable
 diff_cutoff=0.15;
@@ -309,7 +310,7 @@ figure('name','onedim parscan by param')
                                       diff_cutoff,... % minimal variation for variable to be shown on plot
                                       plot_param_settings);
 % SAVE figure
-resolution_dpi='-r350'; fcn_save_fig(strcat(fig_filename,'_r350'),plot_save_folder,fig_file_type{2},'overwrite',resolution_dpi);
+% resolution_dpi='-r350'; fcn_save_fig(strcat(fig_filename,'_r350'),plot_save_folder,fig_file_type{2},'overwrite',resolution_dpi);
 
 %% PLOT RESULTS of 1-by-1 parameter scan on heatmap/lineplot BY VARIABLES
 

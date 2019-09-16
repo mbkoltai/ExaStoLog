@@ -263,65 +263,132 @@ fcn_save_fig('single_solution_states_nodes_stat_sol',plot_save_folder,fig_file_t
 To visualize what are the model variables that are activated in the case of the stable states of the model on a heatmap, we need to provide the following arguments and call the plotting function _fcn_plot_statsol_bin_hmap_:
 
 ```MATLAB
-% term_verts_cell: which subgraph to plot if there are disconnected ~
+
+% stat_sol: vector of stationary solutions
+% prob_thresh: probability threshold for states to show (if left empty, all states shown)
+prob_thresh=0.01;  % []; % 0.05;
+% term_verts_cell: index of subgraphs for stable states
+% nodes: name of nodes
+% sel_nodes: nodes to show. if none selected, then all nodes shown
+sel_nodes=[]; % setdiff(2:numel(nodes)-1,[find(strcmp(nodes,{'Rb_b2'})) find(strcmp(nodes,{'p27_b2'}))]);
+% plot_param_settings
 % num_size_plot: font size of 0/1s on the heatmap
 % hor_gap: horizontal gap between terminal SCCs, bottom_marg: bottom margin, left_marg: left margin
-numsize_plot=12; fontsize=12; hor_gap=0.02; bottom_marg=0.1; left_marg=0.04;
-param_settings=[numsize_plot fontsize hor_gap bottom_marg left_marg];
-% index of nonempty subgraph, check by <term_verts_cell>
-nonempty_subgraph=2;
-% want to use tight subplot? | order states by probability?
+numsize_plot=26; fontsize=36; hor_gap=0.02; bottom_marg=0.31; left_marg=0.22;
+plot_param_settings=[numsize_plot fontsize hor_gap bottom_marg left_marg];
+% tight_subplot_flag: want to use tight subplot? | ranking_flag: order states by probability?
 tight_subplot_flag='yes'; ranking_flag='yes';
-% nodes to show. if none selected, then all nodes shown
-sel_nodes=2:numel(nodes)-1;
-% probability threshold for states to show (if left empty, all states shown)
-prob_thresh=0.01;  % []; % 0.05;
 
 % PLOT
-statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,term_verts_cell{nonempty_subgraph},...
-nodes,sel_nodes,param_settings,tight_subplot_flag,ranking_flag);
+figure('name','statsol_binary_heatmap')
+statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,...
+term_verts_cell,nodes,sel_nodes,plot_param_settings,tight_subplot_flag,ranking_flag);
 ```
 
-![binary_statsol_heatmap_15vars](./readmeplots)
+![binary_statsol_heatmap_15vars](./readmeplots/EMT_11_binary_heatmap_states.png)
 
-On the y-axis we can see the probabilities of the particular states, on the x-axis the nodes of the model, and the heatmap shows their status (0 or 1).
+On the y-axis we see the probabilities of the stable states (index of the subgraph where they are located in parenthesis), on the x-axis the variables of the model with the heatmap showing their value (0 or 1).
+In the case of cyclic attractors containing multiple states these rows would have no gapes in between them (see figure for mammalian cell cycle model in our article).
+
+Save the figure by
+```MATLAB
+resolution_dpi='-r350';
+fcn_save_fig('binary_heatmap_states',plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi);
+```
 
 ### 6. One-dimensional parameter sensitivity analysis
 
-To investigate the effect of the transition rates we can first perform one dimensional parameter scans: changing the value of parameters one by one and looking at the effect on stationary solutions.
+To investigate the effect of the transition rates we can first perform one dimensional parameter scans. This means changing the value of parameters one by one and looking at the effect on stationary solutions.
 
-First we need to select the nodes whose transition rates we want to scan in. We can for instance select all that have actual transitions in the STG:
+First we need to select the nodes whose transition rates we want to scan in.
+We can for instance select all rates that have actual transitions in the subgraph of the STG:
 ```MATLAB
-par_inds_table=unique(stg_table(:,[3 4]),'rows');
+popul_subgraphs=cellfun(@(x) sum(ismember(find(x0>0), x)), cell_subgraphs)>0;
+subgraph_states=cell2mat(cell_subgraphs(popul_subgraphs)');
+par_inds_table=unique(stg_table(ismember(stg_table(:,1), subgraph_states) | ismember(stg_table(:,2), subgraph_states),3:4),'rows');
+```
+
+Now _par\_inds\_table_ contains these transition rates, the first column showing the corresponding node of the rates and the second whether it is for 1->0 (1) or the 0->1 (2) transition.  
+
+We can also quantify the number of occurrences by transition rate and take the _n_ most common ones:
+```MATLAB
+% most common transitions
+for k=1:size(par_inds_table,1)
+    param_freq(k) = sum(stg_table(:,3)==par_inds_table(k,1) & stg_table(:,4)==par_inds_table(k,2));
+end
+% top n most frequent transitions
+[~,top_freq_trans_rates]=maxk(param_freq,6);
+```
+
+We can now select which transition rates we want to scan in. 
+This is defined by two variables _scan\_params_ contains the index of the corresponding nodes of the rates and _scan\_params\_up\_down_ containing their {1,2} indices (up or down rate). 
+
+To select all rates that have transitions we write:
+```MATLAB
 scan_params=unique(par_inds_table(:,1))';
+```
+
+To select the most frequent _n_ rates:
+```MATLAB
+scan_params=par_inds_table(top_freq_trans_rates,1)';
 ```
 
 We can also select nodes by their name:
 ```MATLAB
-scan_params=find(ismember(nodes,{'cdc25b','atm_atr'}));
+scan_params=find(ismember(nodes,{'Notch_pthw','p53','EMTreg','FOXO3','p63_73'}));
 ```
 
-Then we select for each node if we want to change the up or the down rate or both, as in this example:
+Then we need to choose if we want to scan in the up or the down rate or both. Here we select all indices that have actual transitions:
 ```MATLAB
-scan_params_up_down=arrayfun(@(x) par_inds_table(par_inds_table(:,1)==x,2)', scan_params,'un',0);
+scan_params_up_down=arrayfun(@(x) par_inds_table(par_inds_table(:,1)==x,2)', scan_params,'un',0); 
 ```
-Then we need to provide the range of values we want to scan in, the resolution, and whether we want to sample linearly or logarithmically:
+
+We now need to provide the range of values we want to scan in, the resolution, and whether we want to sample linearly or logarithmically:
 ```MATLAB
 % min and max of range of values; resolution of the scan; linear or logarithmic sampling
-parscan_min_max = [1e-2 1e2]; n_steps=10; sampling_types={'log','linear'};
+parscan_min_max = [1e-2 1e2]; n_steps=10; sampling_types={'log','linear'}; 
 ```
 
 Now we can build the table with the parameter values and start the scan:
 ```MATLAB
-parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_down,nodes,
-  sampling_types{1},parscan_min_max,n_steps);
+parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_down,nodes,sampling_types{1},parscan_min_max,n_steps);
 
 [stationary_state_vals_onedimscan,stationary_node_vals_onedimscan,stationary_state_inds_scan]=...
-  fcn_onedim_parscan_calc(stg_table,transition_rates_table,...
-    x0,nodes,parscan_matrix,scan_params,scan_params_up_down);
+    fcn_onedim_parscan_calc(stg_table,transition_rates_table,x0,nodes,parscan_matrix,scan_params,scan_params_up_down);
 ```
 
-To plot the results we have multiple options:
+We can first plot the results grouped by the transition rates of the parameter scan. 
+On each subplot we plot the stationary value of attractor states or model variables as a function of one of the transition rates. 
+We define a threshold for the minimal variation in the value of the variables to be plotted, so variables that do not change as a function of a transition rate are not shown on the plot.
+
+Let's provide the arguments for plotting:
+```MATLAB
+% index of nonzero states
+nonzero_states_inds=find(stat_sol>0);
+% plot parameters: gap between subplots, margins at bottom, top, left and right edges
+height_width_gap=[0.08 0.03]; bott_top_marg =[0.05 0.05]; left_right_marg=[0.04 0.01];
+params_tight_subplots={height_width_gap bott_top_marg left_right_marg};
+% plot_param_settings: [fontsize_axes,fontsize_title,legend_fontsize,linewidth,params_tight_subplots,model_name]
+plot_param_settings={24,34,24,4,{height_width_gap bott_top_marg left_right_marg},model_name};
+% plotting stater or variables (nodes)?
+state_or_node_flags={'nodes','states'}; 
+% cutoff for minimal variation to show a variable
+diff_cutoff=0.15;
+figure('name','onedim parscan by param')
+[fig_filename,onedim_paramscan_output_cell]=fcn_onedim_parscan_plot_by_params(state_or_node_flags{1},...
+                                      stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
+                                      nonzero_states_inds,parscan_matrix,nodes,...
+                                      scan_params,scan_params_up_down,... % selected parameters
+                                      diff_cutoff,... % minimal variation for variable to be shown on plot
+                                      plot_param_settings);
+```
+
+
+![onedim_parscan_lineplot_nodes_EMT_cohen_ModNet_by_params_r350](./readmeplots/onedim_parscan_lineplot_nodes_EMT_cohen_ModNet_by_params_r350.png)
+
+
+
+multiple options:
 - to plot as a heatmap or lineplot
 - to plot the values for the model's nodes or states
 - to plot the probability values of states/nodes or their local sensitivity across the transition rate values

@@ -203,27 +203,34 @@ resolution_dpi=&apos;-r350&apos;;
 fcn_save_fig(&apos;single_solution_states_nodes_stat_sol&apos;,plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi)</code></pre>
 <h4 id="visualize-binary-heatmap-of-nonzero-stationary-states">Visualize binary heatmap of nonzero stationary states</h4>
 <p>To visualize what are the model variables that are activated in the case of the stable states of the model on a heatmap, we need to provide the following arguments and call the plotting function <em>fcn</em>plot_statsol_bin_hmap_:</p>
-<pre><code class="language-MATLAB">% term_verts_cell: which subgraph to plot if there are disconnected ~
+<pre><code class="language-MATLAB">
+% stat_sol: vector of stationary solutions
+% prob_thresh: probability threshold for states to show (if left empty, all states shown)
+prob_thresh=0.01;  % []; % 0.05;
+% term_verts_cell: index of subgraphs for stable states
+% nodes: name of nodes
+% sel_nodes: nodes to show. if none selected, then all nodes shown
+sel_nodes=[]; % setdiff(2:numel(nodes)-1,[find(strcmp(nodes,{&apos;Rb_b2&apos;})) find(strcmp(nodes,{&apos;p27_b2&apos;}))]);
+% plot_param_settings
 % num_size_plot: font size of 0/1s on the heatmap
 % hor_gap: horizontal gap between terminal SCCs, bottom_marg: bottom margin, left_marg: left margin
-numsize_plot=12; fontsize=12; hor_gap=0.02; bottom_marg=0.1; left_marg=0.04;
-param_settings=[numsize_plot fontsize hor_gap bottom_marg left_marg];
-% index of nonempty subgraph, check by &lt;term_verts_cell&gt;
-nonempty_subgraph=2;
-% want to use tight subplot? | order states by probability?
+numsize_plot=26; fontsize=36; hor_gap=0.02; bottom_marg=0.31; left_marg=0.22;
+plot_param_settings=[numsize_plot fontsize hor_gap bottom_marg left_marg];
+% tight_subplot_flag: want to use tight subplot? | ranking_flag: order states by probability?
 tight_subplot_flag=&apos;yes&apos;; ranking_flag=&apos;yes&apos;;
-% nodes to show. if none selected, then all nodes shown
-sel_nodes=2:numel(nodes)-1;
-% probability threshold for states to show (if left empty, all states shown)
-prob_thresh=0.01;  % []; % 0.05;
 
 % PLOT
-statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,term_verts_cell{nonempty_subgraph},...
-nodes,sel_nodes,param_settings,tight_subplot_flag,ranking_flag);</code></pre>
-<p><img src="./readmeplots" alt="binary_statsol_heatmap_15vars"></p>
-<p>On the y-axis we can see the probabilities of the particular states, on the x-axis the nodes of the model, and the heatmap shows their status (0 or 1).</p>
+figure(&apos;name&apos;,&apos;statsol_binary_heatmap&apos;)
+statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,...
+term_verts_cell,nodes,sel_nodes,plot_param_settings,tight_subplot_flag,ranking_flag);</code></pre>
+<p><img src="./readmeplots/EMT_11_binary_heatmap_states.png" alt="binary_statsol_heatmap_15vars"></p>
+<p>On the y-axis we see the probabilities of the stable states (index of the subgraph where they are located in parenthesis), on the x-axis the variables of the model with the heatmap showing their value (0 or 1).
+In the case of cyclic attractors containing multiple states these rows would have no gapes in between them (see figure for mammalian cell cycle model in our article).</p>
+<p>Save the figure by</p>
+<pre><code class="language-MATLAB">resolution_dpi=&apos;-r350&apos;;
+fcn_save_fig(&apos;binary_heatmap_states&apos;,plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi);</code></pre>
 <h3 id="6-one-dimensional-parameter-sensitivity-analysis">6. One-dimensional parameter sensitivity analysis</h3>
-<p>To investigate the effect of the transition rates we can first perform one dimensional parameter scans: changing the value of parameters one by one and looking at the effect on stationary solutions.</p>
+<p>To investigate the effect of the transition rates we can first perform one dimensional parameter scans. This means changing the value of parameters one by one and looking at the effect on stationary solutions.</p>
 <p>First we need to select the nodes whose transition rates we want to scan in. We can for instance select all that have actual transitions in the STG:</p>
 <pre><code class="language-MATLAB">par_inds_table=unique(stg_table(:,[3 4]),&apos;rows&apos;);
 scan_params=unique(par_inds_table(:,1))&apos;;</code></pre>
