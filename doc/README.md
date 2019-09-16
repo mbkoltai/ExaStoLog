@@ -15,17 +15,17 @@ Exact calculation of stationary states + parameter analysis & fitting of stochas
 1. [Visualizing the stationary solution](#4-visualizing-the-stationary-solution)
       1. [Visualize stationary probability values for states and nodes](#visualize-stationary-probability-values-for-states-and-nodes)
       1. [Visualize binary heatmap of nonzero stationary states](#visualize-binary-heatmap-of-nonzero-stationary-states)
-1. [Visualizing the state transition graph](#5-visualizing-the-state-transition-graph)
-1. [One-dimensional parameter sensitivity analysis](#6-one-dimensional-parameter-sensitivity-analysis)
-1. [Multi-dimensional parameter sensitivity analysis](#7-multi-dimensional-parameter-sensitivity-analysis)
+1. [One-dimensional parameter sensitivity analysis](#5-one-dimensional-parameter-sensitivity-analysis)
+1. [Multi-dimensional parameter sensitivity analysis](#6-multi-dimensional-parameter-sensitivity-analysis)
       1. [Visualize multi-dimensional parameter scans by scatter plots](#visualize-multi-dimensional-parameter-scans-by-scatter-plots)
       1. [Correlations between variables](#correlations-between-variables-and-between-variables-and-transition-rates)
       1. [Linear regression of variables by transition rates](#linear-regression-of-variables-by-transition-rates)
       1. [Importance of transition rates by regression tree](#importance-of-transition-rates-by-regression-tree)
       1. [Sobol total sensitivity index](#sobol-total-sensitivity-index)
-1. [Parameter fitting by simulated annealing](#8-parameter-fitting-by-simulated-annealing)
+1. [Parameter fitting by simulated annealing](#7-parameter-fitting-by-simulated-annealing)
 
-The steps below are also available and directly executable in [this MATLAB live script](./wrapper.mlx).
+<!--- The steps below are also available and directly executable in [this MATLAB live script](./wrapper.mlx).  --->
+
 
 ### 1. Prerequisites
 
@@ -235,7 +235,8 @@ The following arguments need to be defined for the visualization:
 Call the function by:
 ```MATLAB
 sel_nodes=[];
-min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[24 40 20]; % [fontsize of plot, fontsize of titles, fontsize of binary states]
+min_max_col=[0 1]; barwidth_states_val=0.8;
+fontsize=[24 40 20]; % [fontsize of plot, fontsize of titles, fontsize of binary states]
 plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.03;
 
 figure('name','A_K_stat_sol')
@@ -244,16 +245,23 @@ fcn_plot_A_K_stat_sol(A_sparse,nodes,sel_nodes,stat_sol,x0,plot_settings,prob_th
 
 ![single_solution_states_nodes_stat_sol_with_matrix](./readmeplots/single_solution_states_nodes_stat_sol_with_matrix.png)
 
-Save the plot by running (**export_fig** toolbox needed!):
+We create a directory for the figures of the model, specify the file types for figures and save the plot by running (**export_fig** toolbox needed, see requirements at the top of the tutorial) the following commands:
 ```MATLAB
-if exist(strcat(save_folder,model_name),'dir')==0; mkdir(strcat(save_folder,model_name)); end
-fig_file_type={'.png','.eps'}; if ~isempty(matrix_input); matrix_input_str='_with_matrix'; else matrix_input_str=''; end
-export_fig(strcat(save_folder,model_name,'/','single_solution_states_nodes_stat_sol',matrix_input_str,fig_file_type{2}),'-transparent','-nocrop')
+if exist(plot_save_folder,'dir')==0; mkdir(plot_save_folder); end
+fig_file_type={'.png','.eps','.pdf','.jpg','.tif'};
+% if <overwrite_flag> non-empty then existing file with same name is overwritten.
+overwrite_flag='yes';
+
+% resolution of the figures
+resolution_dpi='-r350';
+
+fcn_save_fig('single_solution_states_nodes_stat_sol',plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi)
 ```
 
 #### Visualize binary heatmap of nonzero stationary states
 
-To visualize what are the states that are the fixed points or cyclic attractor of your model on a heatmap, provide the following arguments and call the plotting function:
+To visualize what are the model variables that are activated in the case of the stable states of the model on a heatmap, we need to provide the following arguments and call the plotting function _fcn_plot_statsol_bin_hmap_:
+
 ```MATLAB
 % term_verts_cell: which subgraph to plot if there are disconnected ~
 % num_size_plot: font size of 0/1s on the heatmap
@@ -271,60 +279,12 @@ prob_thresh=0.01;  % []; % 0.05;
 
 % PLOT
 statsol_binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,term_verts_cell{nonempty_subgraph},...
-                            nodes,sel_nodes,param_settings,tight_subplot_flag,ranking_flag);
+nodes,sel_nodes,param_settings,tight_subplot_flag,ranking_flag);
 ```
 
-![binary_statsol_heatmap_15vars](./sample_plots/kras15vars/binary_statsol_heatmap_15vars.png)
+![binary_statsol_heatmap_15vars](./readmeplots)
 
 On the y-axis we can see the probabilities of the particular states, on the x-axis the nodes of the model, and the heatmap shows their status (0 or 1).
-
-### 5. Visualizing the state transition graph
-
-As a next step we can visualize the STG of our model.
-If the model has multiple disconnected subgraphs in its STG, we can visualize both the global STG and the subgraph that we have the fixed points we are interested in.
-```MATLAB
-% show the full STG and a selected (counter) subgraph
-subgraph_index=find(cellfun(@(x) numel(x), term_verts_cell)>0); % select non-empty subgraph
-titles = {'Full state transition graph',strcat('subgraph #',num2str(subgraph_index))};
-% cropping the subplots (optional)
-xlim_vals=[0 21;-5 5]; ylim_vals=[0 23;-5 5];
-% parameters for plot
-default_settings=[20 1 7 5 8]; % fontsize, linewidth_val, arrowsize, default_markersize, highlight_markersize
-% color of source states of STG
-source_color='blue';
-
-plot_STG(A_sparse,subgraph_index,default_settings,xlim_vals,ylim_vals,titles,source_color)
-```
-This is the plot for the STG of the 10-node KRAS model and its 4 subgraph with its source (green) and sink (red) states:
-![STG_10nodes_full_subgraph](./sample_plots/kras10vars/STG_10nodes_full_subgraph.png)
-
-We can also plot the entire STG only (if there are no disconnected subgraphs) or one of the subgraphs:
-```MATLAB
-% cropping (optional)
-xlim_vals=[-4 5]; ylim_vals = [-5 5];
-titles ={strcat('subgraph #',num2str(subgraph_index))};
-A_sub=A_sparse(cell_subgraphs{subgraph_index},cell_subgraphs{subgraph_index});
-default_settings=[20 1 7 5 8]; % fontsize,linewidth_val, arrowsize, default_markersize, highlight_markersize
-
-plot_STG(A_sub,'',default_settings,xlim_vals,ylim_vals,titles,source_color)
-```
-We can also visually investigate the distribution of the individual transition rates across the STG, with the following function:
-```MATLAB
-selected_pars=[1 3 4 5 6 11 9 8]; % parameters to highlight, either 'all', or numeric array [1 2 3]
-plot_pars=[20 0.1 7 3 6]; % plot_pars=[fontsize,linewidth_val, arrowsize, default_markersize, highlight_markersize]
-% parameters for highlighted transitions: color and width of corresp edges
-highlight_settings={'yellow',3};
-% if using tight_subplots toolbox:
-tight_subpl_flag='yes'; tight_subplot_pars=[0.06 0.02; 0.05 0.05; 0.05 0.05];
-% cropping plot (optional, for better visibility)
-limits=[-4 5;-5 5];
-
-plot_STG_sel_param(A_sparse,counter,nodes,cell_subgraphs,selected_pars,
-  stg_table,plot_pars,highlight_settings,limits,tight_subpl_flag,tight_subplot_pars)
-```
-
-![STG_10nodes_highlight](./sample_plots/kras10vars/STG_parameter_highlight.png)
-
 
 ### 6. One-dimensional parameter sensitivity analysis
 
@@ -388,7 +348,7 @@ stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
 ```
 
 Below is the plot for the values of the nodes:
-![onedim_parscan_heatmap_nodes_values_kras15vars](./sample_plots/kras15vars/onedim_parscan_heatmap_nodes_values_kras15vars.png)
+![onedim_parscan_heatmap_nodes_values_kras15vars](./readmeplots)
 
 and their local sensitivities as a heatmap:
 ![onedim_parscan_heatmap_nodes_sensit_kras15vars](./sample_plots/kras15vars/onedim_parscan_heatmap_nodes_sensitivity_kras15vars.png)
@@ -396,13 +356,62 @@ and their local sensitivities as a heatmap:
 
 By selecting the lineplot option for the same model we get:
 
-![onedim_parscan_lineplot_nodes_values_kras15vars](./sample_plots/kras15vars/onedim_parscan_lineplot_nodes_values_kras15vars.png)
+![onedim_parscan_lineplot_nodes_values_kras15vars](./readmeplots)
 
 Based on these plots as well as the outputs of the function:
 - resp_coeff: local sensitivity matrix nodes versus transition rates
 - scan_pars_sensit,scan_params_sensit_up_down: index of transition rates that have a maximal local sensitivity value above a certain threshold (in absolute value)
 
 we can identify which are the transition rates that the model is sensitive to and use only these for multidimensional parameter scanning and/or parameter fitting.
+
+<!---  
+### 5. Visualizing the state transition graph
+
+As a next step we can visualize the STG of our model.
+If the model has multiple disconnected subgraphs in its STG, we can visualize both the global STG and the subgraph that we have the fixed points we are interested in.
+```MATLAB
+% show the full STG and a selected (counter) subgraph
+subgraph_index=find(cellfun(@(x) numel(x), term_verts_cell)>0); % select non-empty subgraph
+titles = {'Full state transition graph',strcat('subgraph #',num2str(subgraph_index))};
+% cropping the subplots (optional)
+xlim_vals=[0 21;-5 5]; ylim_vals=[0 23;-5 5];
+% parameters for plot
+default_settings=[20 1 7 5 8]; % fontsize, linewidth_val, arrowsize, default_markersize, highlight_markersize
+% color of source states of STG
+source_color='blue';
+
+plot_STG(A_sparse,subgraph_index,default_settings,xlim_vals,ylim_vals,titles,source_color)
+```
+This is the plot for the STG of the 10-node KRAS model and its 4 subgraph with its source (green) and sink (red) states:
+![STG_10nodes_full_subgraph](./readmeplots)
+
+We can also plot the entire STG only (if there are no disconnected subgraphs) or one of the subgraphs:
+```MATLAB
+% cropping (optional)
+xlim_vals=[-4 5]; ylim_vals = [-5 5];
+titles ={strcat('subgraph #',num2str(subgraph_index))};
+A_sub=A_sparse(cell_subgraphs{subgraph_index},cell_subgraphs{subgraph_index});
+default_settings=[20 1 7 5 8]; % fontsize,linewidth_val, arrowsize, default_markersize, highlight_markersize
+
+plot_STG(A_sub,'',default_settings,xlim_vals,ylim_vals,titles,source_color)
+```
+We can also visually investigate the distribution of the individual transition rates across the STG, with the following function:
+```MATLAB
+selected_pars=[1 3 4 5 6 11 9 8]; % parameters to highlight, either 'all', or numeric array [1 2 3]
+plot_pars=[20 0.1 7 3 6]; % plot_pars=[fontsize,linewidth_val, arrowsize, default_markersize, highlight_markersize]
+% parameters for highlighted transitions: color and width of corresp edges
+highlight_settings={'yellow',3};
+% if using tight_subplots toolbox:
+tight_subpl_flag='yes'; tight_subplot_pars=[0.06 0.02; 0.05 0.05; 0.05 0.05];
+% cropping plot (optional, for better visibility)
+limits=[-4 5;-5 5];
+
+plot_STG_sel_param(A_sparse,counter,nodes,cell_subgraphs,selected_pars,
+  stg_table,plot_pars,highlight_settings,limits,tight_subpl_flag,tight_subplot_pars)
+```
+
+![STG_10nodes_highlight](./readmeplots) --->
+
 
 ### 7. Multi-dimensional parameter sensitivity analysis
 
@@ -455,7 +464,7 @@ fcn_multidim_parscan_scatterplot(var_ind,all_par_vals_lhs,scan_values,scan_param
 ```
 
 Below are the results for the node *dna_dam* (DNA damage) of the 10-node KRAS model:
-![LHS_multidimparscankras10vars](readmeplots/LHS_multidimparscankras10vars.png)
+![LHS_multidimparscankras10vars](readmeplots)
 
 You can save the plot by
 ```MATLAB
@@ -488,7 +497,7 @@ export_fig(fig_name,'-transparent','-nocrop')
 
 For the 15-node KRAS-model we can see that several nodes always have the same value:
 
-![kras15vars_var_var_heatmap](./sample_plots/kras15vars/kras15vars_var_var_heatmap.png)
+![kras15vars_var_var_heatmap](./readmeplots)
 
 #### Linear regression of variables by transition rates
 
@@ -511,7 +520,7 @@ export_fig(fig_name,'-transparent','-nocrop')
 
 Below is the plot of the regression coefficients for a 15-node version of the KRAS-model:
 
-![kras15_var_regr_par_var](./sample_plots/kras15vars/kras15vars_par_var_heatmap_r_sq.png)
+![kras15_var_regr_par_var](./readmeplots)
 
 In general we should get strong correlations for the sensitive variables, however if the effect of a transition
 rate is non-monotonic this is not necessarily the case.
@@ -536,7 +545,7 @@ export_fig(fig_name,'-transparent','-nocrop')
 
 The plot for the 15-node KRAS model is below:
 
-![kras15vars_regression_tree_pred_import](./sample_plots/kras15vars/kras15vars_regression_tree_pred_import.png)
+![kras15vars_regression_tree_pred_import](./readmeplots)
 
 #### Sobol total sensitivity index
 
@@ -568,7 +577,7 @@ fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{1},[],[],[]
 ```
 
 Below is the heatmap of the Sobol total sensitivity indices for the transition rates of the 15-node KRAS model:
-![kras15vars_sobol_sensitivity_index](./sample_plots/kras15vars/kras15vars_sobol_sensitivity_index.png)
+![kras15vars_sobol_sensitivity_index](./readmeplots)
 
 Typically the results would be similar and consistent with linear regression, but the latter can miss parameters that have a non-monotonic or other complex nonlinear effect.
 
@@ -615,4 +624,4 @@ xlabel('number of iterations','FontSize',16); set(gca,'FontSize',16); title('Par
 export_fig(strcat(save_folder,model_name,'_',num2str(numel(predictor_names)),'fittingpars_simulated_annealing',fig_file_type{2}),'-transparent','-nocrop')
 ```
 
-![kras15vars_6fittingpars_simulated_annealing](./sample_plots/kras15vars/kras15vars_6fittingpars_simulated_annealing.png)
+![kras15vars_6fittingpars_simulated_annealing](./readmeplots)

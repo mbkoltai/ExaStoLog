@@ -47,7 +47,7 @@ if ~isempty(nonzero_flag)
 else
     set(fig_subpl2,'ytick','') 
 end
-title('states','FontWeight','normal','FontSize', fontsize(2)); xlabel('stationary probability', 'FontSize', fontsize(2));
+title('states','FontWeight','normal','FontSize', fontsize(2)); xlabel('stationary probability', 'FontSize', fontsize_hm);
 
 %%%%%
 % 3rd subplot with nodes

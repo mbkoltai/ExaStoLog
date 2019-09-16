@@ -531,7 +531,7 @@ incr_resol_init=0.15; incr_resol=0.03;
 % PLOT
 figure('name','numer grad_desc')
 data_init_optim=[statsol_parscan([1 end],:); y_data];
-fcn_plot_simul_anneal(data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_settings)
+fcn_plot_paramfitting(data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_settings)
 % xticklabels=get(gca,'xtick'); set(gca,'xticklabel',xticklabels,'FontSize',30);
 
 % SAVE
@@ -585,7 +585,7 @@ thres_ind=size(T_loss,1); % thres_ind=find(T_loss(:,2)<1e-2,1);
 vars_show=2; % 1=temperature, 2=error
 plot_settings=[24 30];
 figure('name','simul anneal')
-fcn_plot_simul_anneal(data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plot_settings)
+fcn_plot_paramfitting(data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plot_settings)
 
 resolution_dpi='-r350';
 fcn_save_fig(strcat('simulated_annealing_',num2str(numel(predictor_names)),'fittingpars'),...
