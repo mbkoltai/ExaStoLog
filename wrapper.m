@@ -315,12 +315,12 @@ figure('name','onedim parscan by param')
 %% PLOT RESULTS of 1-by-1 parameter scan on heatmap/lineplot BY VARIABLES
 
 %%% SECOND PLOT TYPE: show stationary value/response coefficient of 1 variable (state or node) on 1 subplot, as a fcn of all relevant parameters
-nonzero_states_inds=find(stat_sol>0);
-sensit_cutoff=0.15; % minimal value for response coefficient (local sensitivity) or for the variation of node/state values
 % nonzero states of the model
 % nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))';
+nonzero_states_inds=find(stat_sol>0);
+sensit_cutoff=0.1; % minimal value for response coefficient (local sensitivity) or for the variation of node/state values
 % select parameters of plot
-height_width_gap=[0.03 0.01]; bott_top_marg=[0.13 0]; left_right_marg=[0.04 0.04];
+height_width_gap=[0.1 0.04]; bott_top_marg=[0.03 0.1]; left_right_marg=[0.07 0.02];
 % [fontsize_axes,fontsize_title,params_tight_subplots(leave empty if not installed),model_name]
 plot_param_settings={30,30,{height_width_gap bott_top_marg left_right_marg},model_name,'colorbar'}; 
 % plot_param_settings={12,14,[],model_name}; 
@@ -339,8 +339,8 @@ figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel
 
 % SAVE figure
 % resolution_dpi='-r350'; 
-% fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),...
-% plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
+fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),...
+plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 
 %% Multidimensional param sampling at UNIFORM distances (2-dimensions in example below)
 

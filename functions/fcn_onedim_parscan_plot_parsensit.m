@@ -122,11 +122,11 @@ for k=1:size(scan_variable_sensit_parts,3)
     if strcmp(var_type_flag,'node') || strcmp(var_type_flag,'nodes')
         title(strrep(nodes(sensit_vars(k)),'_','\_'), 'FontWeight','normal','FontSize',fontsize_title); ylim([0 1]); 
     else
-       title(strcat(num2str(nonzero_states_inds(sensit_vars(k))),', p([',strrep(num2str(nonzero_states(sensit_vars(k),:)),' ',''),'])'), ...
+       title(strcat(num2str(nonzero_states_inds(sensit_vars(k))),', ',strrep(num2str(nonzero_states(sensit_vars(k),:)),' ',''),')'), ...
            'FontWeight','normal','FontSize',fontsize_title); 
     end
     if rem(k,ncol)==1
-        ylabel('stationary val.','Fontsize',fontsize_axes)
+        ylabel('stat. probability','Fontsize',fontsize_axes)
     end
     
 % if k==size(scan_variable_sensit_parts,3)
