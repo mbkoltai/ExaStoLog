@@ -180,9 +180,8 @@ graph_props=get(gca); graph_props.XAxis.FontSize=fontsize_axes;
     if strcmp(var_type_flag,'node') || strcmp(var_type_flag,'nodes')
         title( nodes(sensit_vars(k)),'Interpreter','none', 'FontWeight','normal','FontSize',fontsize_title)
     else
-        title(strcat(num2str(nonzero_states_inds(sensit_vars(k))),', p([',strrep(num2str(nonzero_states(sensit_vars(k),:)),' ',''),'])'), ...
+        title(strcat(num2str(nonzero_states_inds(sensit_vars(k))),', [',strrep(num2str(nonzero_states(sensit_vars(k),:)),' ',''),']'), ...
             'FontWeight','normal','FontSize',fontsize_title);
-        % title(strcat(num2str(nonzero_states_inds(sensit_vars(k))),', p([',strrep(num2str(nonzero_states(sensit_vars(k),:)),' ',''),'])'), 'FontWeight','normal','FontSize',fontsize_title); 
     end
 
 if isempty(param_settings{numel(param_settings)})
@@ -245,7 +244,7 @@ end
 if strcmp(var_type_flag,'node') || strcmp(var_type_flag,'nodes')
         title(nodes(sensit_vars(k)),'Interpreter','none', 'FontWeight','normal','FontSize',fontsize_title)
 else
-        title(strcat(num2str(nonzero_states_inds(sensit_vars(k))),', p([',strrep(num2str(nonzero_states(sensit_vars(k),:)),' ',''),'])'),...
+        title(strcat(num2str(nonzero_states_inds(sensit_vars(k))),', ',strrep(num2str(nonzero_states(sensit_vars(k),:)),' ',''),']'),...
             'FontWeight','normal','FontSize',fontsize_title); 
 end
 
@@ -304,7 +303,7 @@ heatmap(var_to_plot,xlabs,yticks_str,[],'TickAngle',90,'Colormap','redblue',...
     if strcmp(var_type_flag,'node') || strcmp(var_type_flag,'nodes')
         title( nodes(sensit_vars(k)),'Interpreter','none', 'FontWeight','normal','FontSize',fontsize_title)
     else
-        title(strcat(num2str(nonzero_states_inds(sensit_vars(k))),', p([',strrep(num2str(nonzero_states(sensit_vars(k),:)),' ',''),'])'), ...
+        title(strcat(num2str(nonzero_states_inds(sensit_vars(k))),', [',strrep(num2str(nonzero_states(sensit_vars(k),:)),' ',''),']'), ...
             'FontWeight','normal','FontSize',fontsize_title); 
     end
 
