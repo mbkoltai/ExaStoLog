@@ -117,10 +117,6 @@ distr_type={'uniform','random'}; % <uniform> assigns a value of 1 to all params.
 meanval=[]; sd_val=[]; % if 'random' is chosen, the mean and standard dev of a normal distrib has to be defined
 transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,chosen_rates,chosen_rates_vals);
 ```
-We can check how big is the object *stg_table* that contains all the transitions of the model:
-```MATLAB
-
-```
 
 #### Creating the transition matrix
 
@@ -138,7 +134,7 @@ We can visualize the transition matrix by:
 spy(A_sparse);
 xlabel('model states'); ylabel('model states'); set(gca,'FontSize',24)
 ```
-Check the size of the largest objects that we generates:
+Check the size of the largest objects that we've generated:
 ```MATLAB
 size_limit_mb=1; fcn_objects_memory_size(whos,size_limit_mb)
 ```
@@ -568,29 +564,26 @@ Below are the results for the apoptotic state with p63\_73 activation:
 
 #### Correlations between model variables
 
-Plotting correlations within the variables can reveal the model's effective dimensionality is smaller than its total size.
+Plotting correlations within the variables can reveal what are the upstream nodes that the model's output/phenotypic nodes primarily depend on, or reveal that the model's effective dimensionality is smaller than its total size.
 
-To plot the heatmap of correlations between the model's _variables_ we need to run:
+To plot the heatmap of correlations between the model's _variables_ we need to provide the following arguments (we selected some of the nodes based on previous calculations knowing some of them show the same values):
 ```MATLAB
-% ARGUMENTS
-% stat_sol_lhs_parscan: values from parameter sampling
-% nodes: name of ALL nodes
-% sel_nodes: name of selected nodes (pls provide in ascending order)
-% fontsize: ~ for labels and titles (displaying correlation)
-% HEATMAPS of correlations between selected variables
-sel_nodes=3:15; plot_settings=[15 16]; % [fontsize on plot, fontsize on axes/labels]
+% sel_nodes: name of selected nodes (pls provide in ascending order) (if left empty, all shown)
+sel_nodes=[3 7 8 10 11 13:15 17:20]; 
+% plot_settings: [fontsize on plot, fontsize on axes/labels]
+plot_settings=[NaN 26 32]; 
 plot_type_flag={'var_var','heatmap'}; % this is plotting the heatmap of correlations between variables
 
-[varvar_corr_matr,p_matrix_vars]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_lhs_parscan,...
-nodes,sel_nodes,scan_params,scan_params_up_down,[],plot_settings);
+figure('name',strjoin(plot_type_flag))
+[varvar_corr_matr,p_matrix_vars]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_nodes_lhs_parscan,...
+                                            nodes,sel_nodes,[],[],[],plot_settings);
 
-save_folder='sample_plots/'; fig_file_type={'.png','.eps'}; fig_name=strcat(save_folder,model_name,'_',strjoin(plot_type_flag,'_'),fig_file_type{2});
-export_fig(fig_name,'-transparent','-nocrop')
+% SAVE
+resolution_dpi='-r350'; fcn_save_fig(fig_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 ```
 
-For the 15-node KRAS-model we can see that several nodes always have the same value:
-
-![kras15vars_var_var_heatmap](./readmeplots)
+The plot for 
+![var_var_heatmap_corrs](readmeplots/var_var_heatmap_corrs.png)
 
 #### Regression of variables by transition rates
 

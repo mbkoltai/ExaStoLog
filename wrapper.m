@@ -414,13 +414,10 @@ resolution_dpi='-r350'; fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_
 %% calculating & plotting (heatmap) correlations between variables 
 
 % ARGUMENTS
-% stat_sol_nodes_lhs_parscan: values from parameter sampling
-% nodes: name of ALL nodes
-% sel_nodes: name of selected nodes (pls provide in ascending order)
-% fontsize: ~ for labels and titles (displaying correlation)
-% HEATMAPS of correlations between selected variables
-sel_nodes=[3 7 8 10 11 13:15 17:20]; % setdiff(3:numel(nodes),[9 11 12 16]); % scan_params_sensit
-plot_settings=[NaN 26 32]; % [fontsize on plot, fontsize on axes/labels]
+% sel_nodes: name of selected nodes (pls provide in ascending order) (if left empty, all shown)
+sel_nodes=[3 7 8 10 11 13:15 17:20]; 
+% plot_settings: [fontsize on plot, fontsize on axes/labels]
+plot_settings=[NaN 26 32]; 
 plot_type_flag={'var_var','heatmap'}; % this is plotting the heatmap of correlations between variables
 figure('name',strjoin(plot_type_flag))
 [varvar_corr_matr,p_matrix_vars]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_nodes_lhs_parscan,...
