@@ -1,6 +1,4 @@
-# Exact-stoch-log-mod
-
-Exact calculation of stationary states + parameter analysis & fitting of stochastic logical models
+# Tutorial for ExaStoLog: Exact calculation of stationary states + parameter analysis & fitting of stochastic logical models
 
 ## Table of contents
 
@@ -18,13 +16,12 @@ Exact calculation of stationary states + parameter analysis & fitting of stochas
 1. [One-dimensional parameter sensitivity analysis](#5-one-dimensional-parameter-sensitivity-analysis)
 1. [Multi-dimensional parameter sensitivity analysis](#6-multi-dimensional-parameter-sensitivity-analysis)
       1. [Multidimensional parameter scanning with regular grids](#multidimensional-parameter-scanning-with-regular-grids)
-	  1. [Multidimensional parameter scanning with Latin Hypercube Sampling](#multidimensional-parameter-scanning-with-Latin-Hypercube-Sampling)
+	  1. [Multidimensional parameter scanning with Latin Hypercube Sampling](#multidimensional-parameter-scanning-with-latin-hypercube-sampling)
 	  1. [Visualize LHS by scatter plots](#visualize-multi-dimensional-parameter-scans-by-scatter-plots)
       1. [Correlations between model variables](#correlations-between-model-variables)
       1. [Regression of variables by transition rates](#regression-of-variables-by-transition-rates)
-      1. [Importance of transition rates by regression tree](#importance-of-transition-rates-by-regression-tree)
       1. [Sobol total sensitivity index](#sobol-total-sensitivity-index)
-1. [Parameter fitting by simulated annealing](#7-parameter-fitting-by-simulated-annealing)
+1. [Parameter fitting](#7-parameter-fitting)
 
 <!--- The steps below are also available and directly executable in [this MATLAB live script](./wrapper.mlx).  --->
 
@@ -50,6 +47,8 @@ Exact calculation of stationary states + parameter analysis & fitting of stochas
 - [distinguishable_colors](https://www.mathworks.com/matlabcentral/fileexchange/29702-generate-maximally-perceptually-distinct-colors)
 
 ##### - add the folders to the path by typing 'add_functions'
+
+##### The steps below are also contained in the MATLAB file *wrapper.m*, with more options.
 
 ### 2. Model creation
 
@@ -619,28 +618,6 @@ Below is the plot of the regression coefficients for a 15-node version of the KR
 In general we should get strong correlations for the sensitive variables, however if the effect of a transition
 rate is non-monotonic this is not necessarily the case.
 
-#### Importance of transition rates by regression tree
-
-The relative importance of transition rates as predictors of the model's variables can be quantified by a regression tree and the results visualized with the following function:
-```MATLAB
-% for STATES or NODES?
-scan_values=stat_sol_lhs_parscan; % stat_sol_states_lhs_parscan
-sel_nodes=3:numel(nodes); % STATES or NODES to be analyzed
-
-% CALCULATE and PLOT predictor importance
-plot_type_flags={'line','bar'};
-[predictor_names,predictorImportance_vals]=...
-fcn_multidim_parscan_predictorimport(scan_params,scan_params_up_down,...
-all_par_vals_lhs,scan_values,nodes,sel_nodes,plot_type_flags{2});
-
-save_folder='sample_plots/'; fig_file_type={'.png','.eps'}; fig_name=strcat(save_folder,model_name,'_','regression_tree_pred_import',fig_file_type{2});
-export_fig(fig_name,'-transparent','-nocrop')
-```
-
-The plot for the 15-node KRAS model is below:
-
-![kras15vars_regression_tree_pred_import](./readmeplots)
-
 #### Sobol total sensitivity index
 
 The [Sobol total sensitivity index](https://en.wikipedia.org/wiki/Variance-based_sensitivity_analysis) indicates how much of the total variance in a variable is due to variation in a given transition rate.
@@ -773,4 +750,29 @@ plot_STG_sel_param(A_sparse,counter,nodes,cell_subgraphs,selected_pars,
   stg_table,plot_pars,highlight_settings,limits,tight_subpl_flag,tight_subplot_pars)
 ```
 ![STG_10nodes_highlight](./readmeplots)
+--->
+
+<!---
+
+#### Importance of transition rates by regression tree
+
+The relative importance of transition rates as predictors of the model's variables can be quantified by a regression tree and the results visualized with the following function:
+```MATLAB
+% for STATES or NODES?
+scan_values=stat_sol_lhs_parscan; % stat_sol_states_lhs_parscan
+sel_nodes=3:numel(nodes); % STATES or NODES to be analyzed
+
+% CALCULATE and PLOT predictor importance
+plot_type_flags={'line','bar'};
+[predictor_names,predictorImportance_vals]=...
+fcn_multidim_parscan_predictorimport(scan_params,scan_params_up_down,...
+all_par_vals_lhs,scan_values,nodes,sel_nodes,plot_type_flags{2});
+
+save_folder='sample_plots/'; fig_file_type={'.png','.eps'}; fig_name=strcat(save_folder,model_name,'_','regression_tree_pred_import',fig_file_type{2});
+export_fig(fig_name,'-transparent','-nocrop')
+```
+
+The plot for the 15-node KRAS model is below:
+
+![kras15vars_regression_tree_pred_import](./readmeplots)
 --->
