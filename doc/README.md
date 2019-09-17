@@ -646,11 +646,11 @@ sample_size=[]; % if left empty, the sample size is half of the original param s
 disp_freq=10;
 var_types={'node','state'}; % analysis for states or nodes
 sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{2},...
-                      all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan,...
-                      sample_size,... % # of calculations per parameter
-                      sequential_indices_lhs,... % this is indices of transition rates in the original LHS
-                      scan_params_filtered,scan_params_up_down_filtered,...% scan_params_sensit,scan_params_up_down_sensit
-                      stg_table,transition_rates_table,x0,nodes,sel_nodes,plot_settings,disp_freq);
+          all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan,...
+          sample_size,... % # of calculations per parameter
+          sequential_indices_lhs,... % indices of transition rates in the original LHS
+          scan_params_filtered,scan_params_up_down_filtered,... % original from LHS: scan_params_sensit,scan_params_up_down_sensit
+          stg_table,transition_rates_table,x0,nodes,sel_nodes,plot_settings,disp_freq);
 ```
 
 If we have already performed this calculation and just want to plot the results, provide the table **sobol_sensit_index** of results as the function's first argument:
@@ -658,7 +658,8 @@ If we have already performed this calculation and just want to plot the results,
 % PLOT SETTINGS: [fontsize_plot,fontsize_axes,fontsize_title, min_color(optional), max_color(opt), angle of x-axis labels];
 plot_settings=[30 30 40 0 0.5 90];
 fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{2},all_par_vals_lhs,[],[],[],...
-                       sequential_indices_lhs,scan_params_filtered,scan_params_up_down_filtered,[],[],[],nodes,sel_nodes,plot_settings,[]);
+                       sequential_indices_lhs,scan_params_filtered,scan_params_up_down_filtered,[],[],[],...
+					   nodes,sel_nodes,plot_settings,[]);
 xticklabels({'Metastasis','Apoptosis (p53)','Apoptosis (p63_73)'})
 
 % SAVE
