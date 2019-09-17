@@ -619,37 +619,55 @@ rate is non-monotonic this is not necessarily the case.
 
 #### Sobol total sensitivity index
 
-The [Sobol total sensitivity index](https://en.wikipedia.org/wiki/Variance-based_sensitivity_analysis) indicates how much of the total variance in a variable is due to variation in a given transition rate.
-We calculate here the usual numerical approximation of analytical equivalent from Monte Carlo sampling.
-From the LHS sampling above we take the matrices of parameter sets and variable values: [parameter sets, variable values]: [all_par_vals_lhs,stat_sol_lhs_parscan]
-Again, this is an often used metric to identify the key parameters with regard to a model's given variable in complex systems. It is more robust than regression coefficients because it identifies parameters that have a strong but non-monotonic effect.
+The [Sobol total sensitivity index](https://en.wikipedia.org/wiki/Variance-based_sensitivity_analysis) is a global sensitivity index that indicates how much of the total variance in a variable is due to variation in a given parameter.
+As opposed to linear regression this index does not assume monotonicity or linearity of the effects of parameters on variable values.
+We calculate here the usual numerical approximation of the analytical equivalent from LHS, using the results of the LHS, but for the selected transition rates the solutions need to be recalculated to get the Sobol indices, so this can be a time-consuming calculation.
 
-The Sobol sensitivity index is calculated for one node or state at a time, and requires the re-run of the LHS as many times as the number of parameters selected for sensitivity analysis.
-The sample size (number of parameter sets used) can be defined as well to control the length of the calculation.
+From the previous step of linear regression we can (optionally) take only the transition rates that have an R^2 value above a given threshold:
+```MATLAB
+% for indexing, we need the sequential indices of transition rates (eg. 5th node up rate is 9, 6th node down rate is 12)
+[par_ind_table,sequential_indices_lhs,~] = fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes);
+% threshold for R^2
+r_sq_thresh=0.05;
+% select transition rates
+par_ind_table_filtered=par_ind_table(sum(r_squared>r_sq_thresh)>0,:);
+scan_params_filtered=unique(par_ind_table_filtered(:,1))'; % scan_params_unique=unique(par_ind_table(sum(r_squared>0.2)>0,1))'; 
+scan_params_up_down_filtered=arrayfun(@(x) par_ind_table_filtered(par_ind_table_filtered(:,1)==x,2)', scan_params_filtered,'un',0);
+```
+
+The sample size (number of parameter sets used for the re-calculations) can be defined, with higher samples giving better estimates.
+To calculate Sobol total sensitivity we need <sample_size*(number of analyzed transition rates)> recalculations of the model's stationary solution.
 
 Run the analysis with the following commands:
 ```MATLAB
-% selected nodes to display
-sel_vars=setdiff(1:numel(nodes),find(sum(cell2mat(arrayfun(@(x) strcmp(nodes,x), {'cc','KRAS','CDC25B'},'un',0)')))); 
-% sel_vars=[]; % if left empty, all nodes/states are analyzed
-sample_size=500; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
-% [fontsize_plot,fontsize_axes,fontsize_title, min_color(optional), max_color(opt), progress_calcul_every_x_% (opt)];
-plot_settings=[14 14 22 NaN NaN 10]; 
-var_types={'nodes','states'}; % analysis for states or nodes
-
-sobol_sensit_index=...
-fcn_multidim_parscan_sobol_sensit_index([],var_types{1},all_par_vals_lhs,stat_sol_lhs_parscan,stat_sol_states_lhs_parscan,sample_size,...
-scan_params,scan_params_up_down,stg_table,x0,nodes,sel_vars,plot_settings);
+sel_nodes=[]; 	% if left empty, all nodes/states are analyzed
+sample_size=[]; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
+% how often (what %) should the progress of calculation be displayed?
+disp_freq=10;
+var_types={'node','state'}; % analysis for states or nodes
+sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{2},...
+                      all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan,...
+                      sample_size,... % # of calculations per parameter
+                      sequential_indices_lhs,... % this is indices of transition rates in the original LHS
+                      scan_params_filtered,scan_params_up_down_filtered,...% scan_params_sensit,scan_params_up_down_sensit
+                      stg_table,transition_rates_table,x0,nodes,sel_nodes,plot_settings,disp_freq);
 ```
 
-If you have already performed this calculation and just want to plot the results, provide the table **sobol_sensit_index** of results as the function's first argument:
+If we have already performed this calculation and just want to plot the results, provide the table **sobol_sensit_index** of results as the function's first argument:
 ```MATLAB
-fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{1},[],[],[],[],...
-                                scan_params,scan_params_up_down,[],[],nodes,sel_nodes,plot_settings);
+% PLOT SETTINGS: [fontsize_plot,fontsize_axes,fontsize_title, min_color(optional), max_color(opt), angle of x-axis labels];
+plot_settings=[30 30 40 0 0.5 90];
+fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{2},all_par_vals_lhs,[],[],[],...
+                       sequential_indices_lhs,scan_params_filtered,scan_params_up_down_filtered,[],[],[],nodes,sel_nodes,plot_settings,[]);
+xticklabels({'Metastasis','Apoptosis (p53)','Apoptosis (p63_73)'})
+
+% SAVE
+resolution_dpi='-r350'; 
+fcn_save_fig('sobol_sensitivity_index',plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
 ```
 
-Below is the heatmap of the Sobol total sensitivity indices for the transition rates of the 15-node KRAS model:
-![kras15vars_sobol_sensitivity_index](./readmeplots)
+Below is the heatmap of the Sobol total sensitivity indices for the three attractor states of the EMT model:
+![sobol_sensitivity_index](readmeplots/sobol_sensitivity_index.png)
 
 Typically the results would be similar and consistent with linear regression, but the latter can miss parameters that have a non-monotonic or other complex nonlinear effect.
 

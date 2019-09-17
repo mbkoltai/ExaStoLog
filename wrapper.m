@@ -466,8 +466,6 @@ scan_params_up_down_filtered=arrayfun(@(x) par_ind_table_filtered(par_ind_table_
 % Sobol total sensitivity: calculated for one variable at a time
 % selected nodes to display
 sel_nodes=[]; % 3:numel(nodes); % scan_params_sensit;
-% setdiff(1:numel(nodes),find(sum(cell2mat(arrayfun(@(x) strcmp(nodes,x), {'cc','KRAS','CDC25B'},'un',0)'))));
-% sel_vars=[]; % if left empty, all nodes/states are analyzed
 sample_size=[]; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
 % how often should be progress displayed?
 disp_freq=10;
@@ -490,7 +488,6 @@ fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{2},all_par_
 xticklabels({'Metastasis','Apoptosis (p53)','Apoptosis (p63_73)'})
 
 % SAVE
-% magnification=0.8; resolution_dpi=strcat('-r',num2str(magnification*get(0,'ScreenPixelsPerInch')));
 % resolution_dpi='-r350'; fcn_save_fig('sobol_sensitivity_index',plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
 
 
