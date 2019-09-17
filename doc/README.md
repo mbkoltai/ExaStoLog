@@ -670,50 +670,74 @@ fcn_save_fig('sobol_sensitivity_index',plot_save_folder,fig_file_type{3},'overwr
 Below is the heatmap of the Sobol total sensitivity indices for the three attractor states of the EMT model:
 ![sobol_sensitivity_index](readmeplots/sobol_sensitivity_index.png)
 
-Typically the results would be similar and consistent with linear regression, but the latter can miss parameters that have a non-monotonic or other complex nonlinear effect.
+Typically the results are similar to linear regression, but the latter can miss parameters that have a non-monotonic/nonlinear effect.
 
 ### 7. Parameter fitting
 
 #### Simulated annealing
 
 Finally, if we have experimental (or simulated) data for a given model, it is possible to perform parameter fitting on the transition rates.
-Since we do not have the gradient of the stationary solution, a gradient-free method is needed. I use below a simulated annealing script from [MATLAB Central](https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm), with the following modifications to store the convergence process:
+
+Since we do not have the gradient of the stationary solution, a gradient-free method is needed. 
+We use below a [simulated annealing script from MATLAB Central](https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm), with the following modifications to store the convergence process:
 - defining \<T_loss\> as 3rd output of the function,
 - inserting <counter=0> before the while loop
 - inserting <T_loss(counter,:)=[T oldenergy];> at line 175 within the while loop.
 
-First we need to provide the parameters we want to fit, which can be the sensitive transition rates identified above, and also provide a vector of values for the model's nodes that we want to fit the model to:
+(These changes are already written into the script, you do not need to do anything about them.)
+
+First we need to provide the parameters we want to fit, which can be the sensitive transition rates identified above.
+We also need to provide a vector of values for the model's nodes that we want to fit the model to.
 ```MATLAB
-[~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_pars_sensit,scan_params_sensit_up_down,nodes); % scan_params,scan_params_up_down
+% names of selected transition rates
+[~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes); 
 
 % define data vector (generate some data OR load from elsewhere)
-sel_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
-transition_rates_table=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,sel_param_vals);
-y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table,''),stg_sorting_cell,transition_rates_table,x0));
+data_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
+transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
+y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
+                                   transition_rates_table_optim,x0),'x0');
 ```
 
 We also need to define anonymous functions to calculate the squared error from the data (and the stationary solution for a given parameter set):
+These functions need to be regenerated if you change the data for fitting.
 ```MATLAB
-[fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_simul_anneal(y_data,x0,stg_table,nodes,predictor_names);
+[fcn_statsol_sum_sq_dev,~]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
 ```
 
-Then by providing an initial guess for the to-be-fitted parameters we can run the annealing algorithm:
+Then by providing an initial guess for the fitting parameters we can run the annealing algorithm. 
+The hyperparameters of fitting are defined as a structure. 
+<Stopval> is the value of the sum of squared error where we want to stop the fitting process.
 ```MATLAB
-init_vals=rand(size(predictor_names)); init_error=fcn_statsol_sum_sq_dev(init_vals);
-[optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_vals,struct('Verbosity',2));
+% initial guess for parameters
+init_par_vals=data_param_vals.*abs(normrnd(1,1,size(predictor_names))); init_error=fcn_statsol_sum_sq_dev(init_par_vals);
+% initial value of model nodes (with the initial parameter guess)
+y_init=fcn_calc_init_stat_nodevals(x0,...
+    split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,init_par_vals),''),...
+    stg_sorting_cell,transition_rates_table_optim,x0),'');
+
+fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10);
+tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); toc 
 ```
 
-Note that the convergence process can take long (for the 15-node KRAS-model above it took 40 minutes to reach an error below 0.0001) or can fail, you can define the error threshold where the fitting should stop.
+Note that the convergence process can take long or can fail.
 
-Below is the plot of the convergence process for 15-node KRAS-model:
+Below are the commands to plot the convergence process (first subplot) and the true, initial guess and fitted model variable values (second subplot) of the EMT model:
 
 ```MATLAB
-thres=1e-4; semilogy(1:find(T_loss(:,2)<thres,1), T_loss(1:find(T_loss(:,2)<thres,1),:),'LineWidth',4); legend({'temperature', 'sum of squared error'},'FontSize',22);
-xlabel('number of iterations','FontSize',16); set(gca,'FontSize',16); title('Parameter fitting by simulated annealing','FontSize',22)
+figure('name','param fitting'); 
+% which variables to show on the second subplot
+sel_nodes=find(sum(data_init_optim)>0 & sum(data_init_optim)<3); % 3:numel(nodes);
+% PLOT fitting process
+thres_ind=size(T_loss,1); % thres_ind=find(T_loss(:,2)<1e-2,1); 
+vars_show=2; % 1=temperature, 2=error
+plot_settings=[24 30];
 
-% SAVE FIGURE
-export_fig(strcat(save_folder,model_name,'_',num2str(numel(predictor_names)),'fittingpars_simulated_annealing',fig_file_type{2}),'-transparent','-nocrop')
+figure('name','simul anneal')
+fcn_plot_paramfitting(data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plot_settings)
 ```
+
+
 ![kras15vars_6fittingpars_simulated_annealing](./readmeplots)
 
 #### Fitting by taking initial numerical gradient

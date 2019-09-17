@@ -554,11 +554,7 @@ y_init=fcn_calc_init_stat_nodevals(x0,...
     split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,init_par_vals),''),...
     stg_sorting_cell,transition_rates_table_optim,x0),'');
 
-% simulated annealing with existing algorithm anneal/anneal.m, with modifications in script: 
-% 1) defined counter=0 before while loop
-% 2) inserted <T_loss(counter,:)=[T oldenergy];> at line 175, defined <T_loss> as 3rd output
-% arguments for algorithm need to be provided as a structure: 
-% struct('Verbosity',2, 'StopVal', 0.01, 'StopTemp',1e-8) % stopping error value, stopping temperature parameter
+% simulated annealing with existing algorithm anneal/anneal.m (with modifications in script)
 fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10);
 tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); toc 
 % 20-40 mins for 15var KRAS model

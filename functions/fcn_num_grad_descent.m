@@ -1,5 +1,5 @@
-function [init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(init_error_table,input_cell,data_param_vals,init_par_vals,...
-                                                                            incr_resol,incr_resol_init,error_thresh,step_thresh)
+function [init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(init_error_table,input_cell,data_param_vals,...
+                                                                         init_par_vals,incr_resol,incr_resol_init,error_thresh,step_thresh)
 
 % input_cell = {y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names};
 y_data=input_cell{1}; x0=input_cell{2}; stg_table=input_cell{3}; stg_sorting_cell=input_cell{4}; nodes=input_cell{5};
