@@ -345,7 +345,7 @@ fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p'
 
 % # of cols in <all_par_vals_lhs> has to be same as # of elements in <scan_params_up_down>
 % example: 2-dimensional uniform scan in u_Notch_pthw and u_p53
-n_scanvals=10; scanvals=[0 logspace(-2,2,n_scanvals-1)];  % 1e-9
+n_scanvals=10; scanvals=logspace(-2,2,n_scanvals);  % with zero [0 logspace(-2,2,n_scanvals-1)]
 meshgrid_scanvals=meshgrid(scanvals,scanvals);
 
 paramsample_table=[repelem(scanvals,n_scanvals)' reshape(reshape(repelem(scanvals,n_scanvals),n_scanvals,n_scanvals)',n_scanvals^2,1)]; 
@@ -356,9 +356,9 @@ disp_var=5; % show at every n% the progress
                                                                 multiscan_pars_up_down,transition_rates_table,stg_table,x0,disp_var);
 
 % PLOT heatmap of selected variables 
-sel_nodes=[4]; % [4 8 13 15];
+sel_nodes=4; % [4 8 13 15];
 % plot_settings: [fontsize on plot&axes, fontsize on axes, fontsize of subplot titles, axes tick fontsize]
-plot_settings=[28 30 40]; 
+plot_settings=[28 30 40]; figure('name','2D scan')
 fcn_plot_twodim_parscan(stat_sol_paramsample_table,scanvals,multiscan_pars,multiscan_pars_up_down,nodes,sel_nodes,plot_settings)
 
 % SAVE

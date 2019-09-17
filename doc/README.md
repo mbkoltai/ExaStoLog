@@ -17,7 +17,9 @@ Exact calculation of stationary states + parameter analysis & fitting of stochas
       1. [Visualize binary heatmap of nonzero stationary states](#visualize-binary-heatmap-of-nonzero-stationary-states)
 1. [One-dimensional parameter sensitivity analysis](#5-one-dimensional-parameter-sensitivity-analysis)
 1. [Multi-dimensional parameter sensitivity analysis](#6-multi-dimensional-parameter-sensitivity-analysis)
-      1. [Visualize multi-dimensional parameter scans by scatter plots](#visualize-multi-dimensional-parameter-scans-by-scatter-plots)
+      1. [Multidimensional parameter scanning with regular grids](#multidim-regular-grid)
+	  1. [Multidimensional parameter scanning with Latin Hypercube Sampling (LHS)](#LHS-sampling)
+	  1. [Visualize LHS by scatter plots](#visualize-multi-dimensional-parameter-scans-by-scatter-plots)
       1. [Correlations between variables](#correlations-between-variables-and-between-variables-and-transition-rates)
       1. [Linear regression of variables by transition rates](#linear-regression-of-variables-by-transition-rates)
       1. [Importance of transition rates by regression tree](#importance-of-transition-rates-by-regression-tree)
@@ -194,7 +196,7 @@ Topological sorting of the STG is a parameter-independent step that we need to p
 ```MATLAB
 stg_sorting_cell=fcn_scc_subgraphs(A_sparse,x0);
 ```
-This function outputs its progress and shows how many cycles the STG contains, in the case of the EMT model the calculation is 9 seconds and we get the message:
+This function outputs its progress and shows how many cycles the STG contains, in the case of the EMT model the calculation is 9 seconds (on a CENTOS computer with 8 cores (Intel(R) Xeon(R) CPU X5472 \@ 3.00GHz) and we get the message:
 *cycles of length:1   64  208  224  256 (256640      16       8       8       4 times)*
 
 This is informative because the existence of cycles is the main limiting factor in the staionary solutions's calculation, and cycles larger than 1000 vertices might make the calculation unfeasible.
@@ -202,11 +204,13 @@ This is informative because the existence of cycles is the main limiting factor 
 With the transition matrix, table of transition rates and the initial condition defined we can now calculate the stationary solution of the model, that takes around 2-3 seconds for the EMT model:
 
 ```MATLAB
-tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_sorting_cell,transition_rates_table,x0); toc
+tic; 
+[stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_sorting_cell,transition_rates_table,x0); 
+toc
 ```
 
 The outputs of the calculation are:  
-**stat_sol**: stationary solution for all the states (sparse variable)  
+**stat_sol**: stationary solution for all the states (sparse variable, only nonzero elements shown)  
 **term_verts_cell**: index of nonzero states. If the STG is disconnected, this variable is a cell of cells, where the nonzeros states in different subgraphs are in separate cells  
 **cell_subgraphs**: indices of (all) states belonging to the STG's different subgraphs
 
@@ -376,11 +380,11 @@ state_or_node_flags={'nodes','states'};
 diff_cutoff=0.15;
 figure('name','onedim parscan by param')
 [fig_filename,onedim_paramscan_output_cell]=fcn_onedim_parscan_plot_by_params(state_or_node_flags{1},...
-                                      stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
-                                      nonzero_states_inds,parscan_matrix,nodes,...
-                                      scan_params,scan_params_up_down,... % selected parameters
-                                      diff_cutoff,... % minimal variation for variable to be shown on plot
-                                      plot_param_settings);
+                             stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
+                             nonzero_states_inds,parscan_matrix,nodes,...
+                             scan_params,scan_params_up_down,... % selected parameters
+                             diff_cutoff,... % minimal variation for variable to be shown on plot
+                             plot_param_settings);
 ```
 
 We show below the plot for the one-dimensional scan of the rates of the 6 nodes that have the most transitions in the STG. The size/location of subplots and the line styles were manually adjusted for better visibility.
@@ -446,22 +450,57 @@ The heatmap looks as the following (states are the same as on previous plot, but
 ![onedim_parscan_heatmap_states_sensitivity_EMT_cohen_ModNet_by_vars_cutoff0p1](./readmeplots/onedim_parscan_heatmap_states_sensitivity_EMT_cohen_ModNet_by_vars_cutoff0p1.png)
 
 
-By selecting the lineplot option for the same model we get:
+The function has the following outputs (besides the plot itself):
+- resp_coeff: local sensitivity matrix of model variables to transition rates
+- scan_pars_sensit, scan_params_sensit_up_down: index of transition rates that where some model variable has a change in its value (or local sensitivity) above a certain threshold (in absolute value)
 
-![onedim_parscan_lineplot_nodes_values_kras15vars](./readmeplots)
-
-Based on these plots as well as the outputs of the function:
-- resp_coeff: local sensitivity matrix nodes versus transition rates
-- scan_pars_sensit,scan_params_sensit_up_down: index of transition rates that have a maximal local sensitivity value above a certain threshold (in absolute value)
-
-we can identify which are the transition rates that the model is sensitive to and use only these for multidimensional parameter scanning and/or parameter fitting.
+Now we have the transition rates the model is (most) sensitive to and we can use only these for multidimensional parameter scanning and/or parameter fitting, which are more intensive calculations.
 
 <!---##################################################################--->
 <!---##################################################################--->
 
 ### 6. Multi-dimensional parameter sensitivity analysis
 
-In multidimensional parameter scans we are changing the values of the selected transition rates at the same time by a Latin Hypercube Sampling (LHS) method to cover the entire parameter space and to investigate if there are some effects ignored in the one-dimensional parameter scan.
+In multidimensional parameter scans we are changing the values of all the selected transition rates at the same time, sampling the entire multidimensional parameter space.
+This can be done with a regular grid, but the size of this calculation grows exponentially, eg. if we want 5 values for _n_ parameters, we need to perform 5^n calculations. Therefore we recommend to do this (with a regular grid) for two-dimensions only. For two dimensions the results can be easily visualized on a heatmap. 
+
+More efficient is Latin Hypercube Sampling (LHS) where we sample the multidimensional space with _n_ sampling points distributed evenly into the _n_ compartments of the hypercube of the parameter space. The location of the sampling points within the compartments is random. 
+
+#### Multidimensional parameter scanning with regular grids
+
+For two dimensions we can define the parameter sampling grid by MATLAB's _meshgrid_ command and defining the limits and distribution of points. 
+For example we want to sample loguniformly from 1e-2 to 1e2. 
+```MATLAB
+n_scanvals=10; scanvals=logspace(-2,2,n_scanvals);  % with zero [0 logspace(-2,2,n_scanvals-1)]
+meshgrid_scanvals=meshgrid(scanvals,scanvals);
+```
+
+For the function _fcn\_calc\_paramsample\_table_ we need to input the grid as a table with each row as a parameter set and we also need to define the transition rates we want to scan in. We know from (Cohen 2015) that shutting down p53 and increasing Notch pathway activity should have a synergistic effects so we select the transition rates _u\_p53_ and _u\_Notch_pthw_ (nodes 11 and 13, up rates: {1,1}), and then call the function:
+```MATLAB
+paramsample_table=[repelem(scanvals,n_scanvals)' reshape(reshape(repelem(scanvals,n_scanvals),n_scanvals,n_scanvals)',n_scanvals^2,1)]; 
+multiscan_pars=[11 13]; multiscan_pars_up_down={1 1};
+
+disp_var=5; % show at every n% the progress
+[stat_sol_paramsample_table,stat_sol_states_paramsample_table]=fcn_calc_paramsample_table(paramsample_table,multiscan_pars,...
+                                            multiscan_pars_up_down,transition_rates_table,stg_table,x0,disp_var);
+```
+
+Plot the results as a two-dimensional heatmap for selected model variable(s), in our case we plot metastasis:
+```MATLAB
+% what model variables to plot?
+sel_nodes=4; % 
+% plot_settings: [fontsize on plot&axes, fontsize on axes, fontsize of subplot titles, axes tick fontsize]
+plot_settings=[28 30 40]; figure('name','2D scan')
+fcn_plot_twodim_parscan(stat_sol_paramsample_table,scanvals,multiscan_pars,multiscan_pars_up_down,nodes,sel_nodes,plot_settings)
+
+% SAVE PLOT
+resolution_dpi='-r200'; file_name_prefix=strcat('twodim_parscan_',strjoin(nodes(sel_nodes),'_'));
+fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi);
+```
+![twodim_parscan_Metastasis](./readmeplots/twodim_parscan_Metastasis.png)
+
+
+#### Multidimensional parameter scanning with Latin Hypercube Sampling (LHS)
 
 Again, we first need to select the transition rates to scan in, here we select the sensitive parameters identified in the previous section:
 ```MATLAB
@@ -672,6 +711,9 @@ export_fig(strcat(save_folder,model_name,'_',num2str(numel(predictor_names)),'fi
 
 ![kras15vars_6fittingpars_simulated_annealing](./readmeplots)
 
+### References 
+
+Cohen 2015
 
 <!---##################################################################--->
 <!---##################################################################--->
