@@ -1,7 +1,7 @@
 function [corr_matr,p_matrix_vars]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,scan_values,...
                                         nodes,sel_nodes,scan_params,scan_params_up_down,regr_type,plot_settings)
 
-if isempty(sel_nodes); sel_nodes=1:numel(nodes); end
+if isempty(sel_nodes); sel_nodes=1:size(scan_values,2); end
                                     
 % CORRELATIONS BETWEEN VARIABLES
 if strcmp(plot_type_flag(1),'var') || strcmp(plot_type_flag(1),'var_var') 
@@ -80,10 +80,10 @@ corr_matr=r_squared; p_matrix_vars=slope_intercept;
 if strcmp(plot_type_flag(3),'r_sq') || strcmp(plot_type_flag(3),'r_squared')
     val_to_plot=r_squared; min_col_val=0;
     if ~isnan(plot_settings(3)); maxval_color=plot_settings(3); else maxval_color=1.05*max(abs(val_to_plot(:))); end
-    title_text=strcat('R^2 (linear regression of variables as a fcn of',str_regr_type,' parameters)');
+    title_text=strcat('R^2 (linear regression)');
 elseif strcmp(plot_type_flag(3),'slope')
     val_to_plot=cellfun(@(v)v(1),slope_intercept); min_col_val=-1.1*max(abs(val_to_plot(:))); maxval_color=abs(min_col_val);
-    title_text='Regression coefficient (slope) of variables as a fcn of parameters';
+    title_text='Regression coefficient (slope)';
 end
 
 if strcmp(plot_type_flag(2),'heatmap')

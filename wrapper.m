@@ -430,7 +430,7 @@ fig_prefix=strcat(strjoin(plot_type_flag,'_'),'_corrs');
 %% linear or lin-log regression of VARIABLES as fcn of PARAMETERS: VARIABLE=f(PARAMETER), the function plots R squared
 
 plot_type_flag={'par_var','heatmap','r_sq'}; % {'par_var','heatmap'/'lineplot','r_sq'/'slope'}
-sel_nodes=setdiff(3:numel(nodes),[4:6 10:12 16]); %setdiff(3:numel(nodes),[3 5 6 7 9 11 12 16]); % 3:numel(nodes); % scan_params_sensit;
+sel_nodes=[]; % setdiff(3:numel(nodes),[4:6 10:12 16]); %setdiff(3:numel(nodes),[3 5 6 7 9 11 12 16]); % 3:numel(nodes); % scan_params_sensit;
 % plot_settings=[fontsize,maximum value for heatmap colors], if plot_settings(3)=NaN, then max color automatically selected
 plot_settings=[30 30 0.29]; 
 % if regression type is 'linlog', then the fit is y = a + b*log10(x)

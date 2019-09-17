@@ -588,26 +588,31 @@ The plot for our EMT model with the selected variables looks as:
 
 #### Regression of variables by transition rates
 
-We can also perform linear regression (optinonally taking the logarithm of transition rates) of node values as a function of transition rates and plot the regreesion coefficients:
+We can also perform linear regression of model variable or attractor state (probability) values as a function of transition rates and plot the regression coefficients (R^2).
+We first need to set arguments defining the type and properties of the plot and of the fitting, and also whether we want to fit 
+
 ```MATLAB
 plot_type_flag={'par_var','heatmap','r_sq'}; % {'par_var','heatmap'/'lineplot','r_sq'/'slope'}
-sel_nodes=setdiff(3:numel(nodes),8);
-% plot_settings=[fontsize,maximum value for heatmap colors], if plot_settings(2)=NaN, then max color automatically selected
-plot_settings=[14 NaN];
+sel_nodes=[];
+% plot_settings=[fontsize,maximum value for heatmap colors], if plot_settings(3)=NaN, then max color automatically selected
+plot_settings=[30 30 0.29]; 
 % if regression type is 'linlog', then the fit is y = a + b*log10(x)
-regr_type={'log','linear'}; % linlog recommended if parameter values log-uniformly distributed in sampling
+regr_types={'log','linear'}; % log recommended if parameter values log-uniformly distributed in sampling
+figure('name',strjoin(plot_type_flag))
+scan_values=stat_sol_states_lhs_parscan; % or: stat_sol_nodes_lhs_parscan
+[r_squared,slope_intercept]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,scan_values,...
+                                 nodes,sel_nodes,... % which nodes
+                                 scan_params_sensit,scan_params_up_down_sensit, ... % parameters (CAREFUL that they are same as in LHS!)
+                                 regr_types{1},plot_settings)
 
-[r_squared,slope_intercept]=...
-fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_lhs_parscan,...
-nodes,sel_nodes,scan_params,scan_params_up_down,regr_type{1},plot_settings);
-
-save_folder='sample_plots/'; fig_file_type={'.png','.eps'}; fig_name=strcat(save_folder,model_name,'_',strjoin(plot_type_flag,'_'),fig_file_type{2});
-export_fig(fig_name,'-transparent','-nocrop')
+% SAVE
+fig_prefix=strjoin(plot_type_flag,'_'); resolution_dpi='-r350'; 
+fcn_save_fig(fig_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
 ```
 
-Below is the plot of the regression coefficients for a 15-node version of the KRAS-model:
+Below is the plot of the regression coefficients for the three attractor states of the EMT model:
 
-![kras15_var_regr_par_var](./readmeplots)
+![par_var_heatmap_r_sq](readmeplots/par_var_heatmap_r_sq.png)
 
 In general we should get strong correlations for the sensitive variables, however if the effect of a transition
 rate is non-monotonic this is not necessarily the case.
@@ -624,10 +629,12 @@ The sample size (number of parameter sets used) can be defined as well to contro
 
 Run the analysis with the following commands:
 ```MATLAB
-sel_vars=setdiff(1:numel(nodes),find(sum(cell2mat(arrayfun(@(x) strcmp(nodes,x), {'cc','KRAS','CDC25B'},'un',0)')))); % selected nodes to display
+% selected nodes to display
+sel_vars=setdiff(1:numel(nodes),find(sum(cell2mat(arrayfun(@(x) strcmp(nodes,x), {'cc','KRAS','CDC25B'},'un',0)')))); 
 % sel_vars=[]; % if left empty, all nodes/states are analyzed
 sample_size=500; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
-plot_settings=[14 14 22 NaN NaN 10]; % [fontsize_plot,fontsize_axes,fontsize_title, min_color(optional), max_color(opt), progress_calcul_every_x_% (opt)];
+% [fontsize_plot,fontsize_axes,fontsize_title, min_color(optional), max_color(opt), progress_calcul_every_x_% (opt)];
+plot_settings=[14 14 22 NaN NaN 10]; 
 var_types={'nodes','states'}; % analysis for states or nodes
 
 sobol_sensit_index=...
@@ -648,7 +655,7 @@ Typically the results would be similar and consistent with linear regression, bu
 
 ### 7. Parameter fitting
 
-Simulated annealing
+#### Simulated annealing
 
 Finally, if we have experimental (or simulated) data for a given model, it is possible to perform parameter fitting on the transition rates.
 Since we do not have the gradient of the stationary solution, a gradient-free method is needed. I use below a simulated annealing script from [MATLAB Central](https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm), with the following modifications to store the convergence process:
@@ -688,12 +695,15 @@ xlabel('number of iterations','FontSize',16); set(gca,'FontSize',16); title('Par
 % SAVE FIGURE
 export_fig(strcat(save_folder,model_name,'_',num2str(numel(predictor_names)),'fittingpars_simulated_annealing',fig_file_type{2}),'-transparent','-nocrop')
 ```
-
 ![kras15vars_6fittingpars_simulated_annealing](./readmeplots)
+
+#### Fitting by taking initial numerical gradient
+
 
 ### References 
 
-Cohen 2015
+Cohen, D. P., Martignetti, L., Robine, S., Barillot, E., Zinovyev, A., and Calzone, L. (2015). Mathematical modelling of molecular pathways
+enabling tumour cell invasion and migration. PLoS computational biology, 11 (11), e1004571
 
 <!---##################################################################--->
 <!---##################################################################--->
