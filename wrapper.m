@@ -507,7 +507,7 @@ init_vals=fcn_statsol_values(init_par_vals); init_error=sum((y_data-init_vals).^
 
 % change in error moving from initial guess
 % input_cell = {y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names};
-error_thresh=0.01; % what % of initial error to stop?
+error_thresh=0.1; % what % of initial error to stop?
 step_thresh=[]; % what step # to stop?
 % init_error_table: changes to initial error when increasing or decreasing parameter values
 init_error_table=[]; % if we have it from previous fitting than feed it to fcn

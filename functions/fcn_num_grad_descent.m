@@ -24,6 +24,12 @@ end
 % fractional change in error: init_error_table./init_error
 % in which direction is the error decreasing? 1: param value increased, 2: param value decreased
 direction_row=arrayfun(@(x) find(init_error_table(x,:)<0),1:size(init_error_table,1),'un',0);
+
+if sum(cellfun(@(x) numel(x),direction_row)==0)>0
+[~,min_inds]=min(init_error_table,[],2);
+direction_row{cellfun(@(x) numel(x),direction_row)==0}=min_inds(cellfun(@(x) numel(x),direction_row)==0);
+end
+
 if sum(cellfun(@(x) numel(x),direction_row)>1)>0
 % [~,b]=min(init_error_table(cellfun(@(x) numel(x),direction_row)>1,:));
 [~,min_inds]=min(init_error_table,[],2);
