@@ -17,11 +17,11 @@ Exact calculation of stationary states + parameter analysis & fitting of stochas
       1. [Visualize binary heatmap of nonzero stationary states](#visualize-binary-heatmap-of-nonzero-stationary-states)
 1. [One-dimensional parameter sensitivity analysis](#5-one-dimensional-parameter-sensitivity-analysis)
 1. [Multi-dimensional parameter sensitivity analysis](#6-multi-dimensional-parameter-sensitivity-analysis)
-      1. [Multidimensional parameter scanning with regular grids](#multidim-regular-grid)
-	  1. [Multidimensional parameter scanning with Latin Hypercube Sampling (LHS)](#LHS-sampling)
+      1. [Multidimensional parameter scanning with regular grids](#multidimensional-parameter-scanning-with-regular-grids)
+	  1. [Multidimensional parameter scanning with Latin Hypercube Sampling](#multidimensional-parameter-scanning-with-Latin-Hypercube-Sampling)
 	  1. [Visualize LHS by scatter plots](#visualize-multi-dimensional-parameter-scans-by-scatter-plots)
-      1. [Correlations between variables](#correlations-between-variables-and-between-variables-and-transition-rates)
-      1. [Linear regression of variables by transition rates](#linear-regression-of-variables-by-transition-rates)
+      1. [Correlations between model variables](#correlations-between-model-variables)
+      1. [Regression of variables by transition rates](#regression-of-variables-by-transition-rates)
       1. [Importance of transition rates by regression tree](#importance-of-transition-rates-by-regression-tree)
       1. [Sobol total sensitivity index](#sobol-total-sensitivity-index)
 1. [Parameter fitting by simulated annealing](#7-parameter-fitting-by-simulated-annealing)
@@ -434,7 +434,9 @@ In the plot below we manually renamed the subplots so that they are more biologi
 
 ![onedim_parscan_lineplot_nodes_EMT_cohen_ModNet_by_params_r350](./readmeplots/onedim_parscan_lineplot_states_values_EMT_cohen_ModNet_by_vars_cutoff0p1.png)
 
-To plot the local sensitivities set we need to set *plot\_type\_options=[2 2 2];* and call the function again:
+
+To plot the local sensitivities we need to set *plot\_type\_options=[2 2 2];* and call the function again:
+
 
 ```MATLAB
 plot_type_options=[2 2 2];
@@ -445,6 +447,7 @@ figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel
                                 scan_params,scan_params_up_down,... 
                                 sensit_cutoff,plot_param_settings);
 ```
+
 
 The heatmap looks as the following (states are the same as on previous plot, but without renaming the subplots):
 ![onedim_parscan_heatmap_states_sensitivity_EMT_cohen_ModNet_by_vars_cutoff0p1](./readmeplots/onedim_parscan_heatmap_states_sensitivity_EMT_cohen_ModNet_by_vars_cutoff0p1.png)
@@ -482,83 +485,89 @@ multiscan_pars=[11 13]; multiscan_pars_up_down={1 1};
 
 disp_var=5; % show at every n% the progress
 [stat_sol_paramsample_table,stat_sol_states_paramsample_table]=fcn_calc_paramsample_table(paramsample_table,multiscan_pars,...
-                                            multiscan_pars_up_down,transition_rates_table,stg_table,x0,disp_var);
+                                     multiscan_pars_up_down,transition_rates_table,stg_table,x0,disp_var);
 ```
 
 Plot the results as a two-dimensional heatmap for selected model variable(s), in our case we plot metastasis:
 ```MATLAB
 % what model variables to plot?
-sel_nodes=4; % 
+sel_nodes=4;
 % plot_settings: [fontsize on plot&axes, fontsize on axes, fontsize of subplot titles, axes tick fontsize]
 plot_settings=[28 30 40]; figure('name','2D scan')
-fcn_plot_twodim_parscan(stat_sol_paramsample_table,scanvals,multiscan_pars,multiscan_pars_up_down,nodes,sel_nodes,plot_settings)
+fcn_plot_twodim_parscan(stat_sol_paramsample_table,scanvals,multiscan_pars,multiscan_pars_up_down,...
+							nodes,sel_nodes,plot_settings)
 
 % SAVE PLOT
 resolution_dpi='-r200'; file_name_prefix=strcat('twodim_parscan_',strjoin(nodes(sel_nodes),'_'));
 fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi);
 ```
+
 ![twodim_parscan_Metastasis](./readmeplots/twodim_parscan_Metastasis.png)
 
 
-#### Multidimensional parameter scanning with Latin Hypercube Sampling (LHS)
+#### Multidimensional parameter scanning with Latin Hypercube Sampling
 
-Again, we first need to select the transition rates to scan in, here we select the sensitive parameters identified in the previous section:
-```MATLAB
-scan_params=scan_pars_sensit; % scan_params=unique(stg_table(:,3))';
-% scan_params_up_down: id by up (1) or down (2) rate
-scan_params_up_down=scan_params_sensit_up_down; % num2cell(ones(1,numel(scan_params))) {[1 2], 1, [1 2]};
-```
 
-Then we perform LHS with the following arguments:
+To perform LHS we need to provide the arguments for the type and properties of the distribution and the sample size. For transition rates we can use the sensitive parameters identified by one-dimensional parameter scan.
+
 ```MATLAB
-sampling_types={'lognorm','linear','logunif'};
-sampling_type=sampling_types{3};
+sampling_types={'lognorm','linear','logunif'}; sampling_type=sampling_types{3};
+% par_min_mean: minimum or in case of lognormal the mean of distribution. Scalar or vector (if we want different values for different parameters)
+% max_stdev: maximum or in case of lognormal the mean of distribution. Scalar or vector (if we want different values for different parameters)
+%
+% for 'lognorm' and 'logunif' provide the LOG10 value of desired mean/min and stdev/max, ie. -2 means a mean of 0.01
+par_min_mean=-2; % repmat(1.5,1,numel(cell2mat(scan_params_up_down_sensit(:)))); par_min_mean(4)=3; 
+max_stdev=2; 	 % repmat(0.5,1,numel(cell2mat(scan_params_up_down_sensit(:))));
 % <lhs_scan_dim>: number of param sets
-lhs_scan_dim=1e3;
-% par_min_mean: minimum or in case of lognormal the mean of distribution. Can be a scalar or a vector, if we want different values for different parameters
-% max_stdev: maximum or in case of lognormal the mean of distribution. Can be a scalar or a vector, if we want different values for different parameters
-% for 'lognorm' and 'logunif' provide the log10 value of desired mean/min and stdev/max!!
-par_min_mean=-2; % repmat(1.5,1,numel(cell2mat(scan_params_up_down(:)))); par_min_mean(4)=3;
-max_stdev=2; % repmat(0.5,1,numel(cell2mat(scan_params_up_down(:))));    
+lhs_scan_dim=1000;
 
-[all_par_vals_lhs,stat_sol_lhs_parscan,...
-    stat_sol_states_lhs_parscan]=...
-    fcn_multidim_parscan_latinhypcube(par_min_mean,max_stdev,sampling_type,...
-lhs_scan_dim,scan_params,scan_params_up_down,transition_rates_table,stg_table,x0,nodes);
+% RUN the LHS
+[all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan]=... % outputs
+    fcn_multidim_parscan_latinhypcube(par_min_mean,max_stdev,sampling_type,lhs_scan_dim, ...
+                                      scan_params_sensit,scan_params_up_down_sensit, ... % transition rates
+                                      transition_rates_table,stg_table,x0,nodes);
 ```
 
 The outputs are:
 - \<all_par_vals_lhs>: table of parameter sets
 - \<stat_sol_lhs_parscan>: stationary values of nodes
 - \<stat_sol_states_lhs_parscan>: stationary values of states
-- \<stat_sol_states_lhs_parscan_cell>: indices of non-zero states, if they are always the same the variable is a 1-row array, otherwise a cell with the non-empty elements stat_sol_states_lhs_parscan_cell{k,1} contain values of nonzero states, elements stat_sol_states_lhs_parscan_cell{k,2} their indices
 
 #### Visualize multi-dimensional parameter scans by scatter plots
 
-We can plot the results as scatterplots of a given node's or state's values as a function of the scan parameters, with a trendline showing the mean value in a defined number of bins:
+We can plot the results as scatterplots of a given node's or state's values as a function of the scan parameters, with a trendline showing the mean value in a defined number of bins.
+
+First we select the variable to plot and whether we want to plot attractor states or model variables of the model:
+
+
 ```MATLAB
-var_ind=7; % which STATE or NODE to plot
-% <all_par_vals_lhs>: parameter sets
-param_settings = [50 4 16 stat_sol_states_lhs_parscan_cell]; [number_bins_for_mean,trendline_width,axes_fontsize,index nonzero states]
+% which variable to plot?
+var_ind=4;
 % STATES or NODES? <scan_values>: values to be plotted
-scan_values=stat_sol_lhs_parscan; % stat_sol_states_lhs_parscan
-
-% PLOT
-sampling_type=sampling_types{3}; % sampling_types={'lognorm','linear','logunif'};
-fcn_multidim_parscan_scatterplot(var_ind,all_par_vals_lhs,scan_values,scan_params,scan_params_up_down,nodes,sampling_type,param_settings)
+scan_values=stat_sol_states_lhs_parscan; % model variables: stat_sol_nodes_lhs_parscan; model states: stat_sol_states_lhs_parscan
 ```
 
-Below are the results for the node *dna_dam* (DNA damage) of the 10-node KRAS model:
-![LHS_multidimparscankras10vars](readmeplots)
-
-You can save the plot by
+Set the plot parameters, the first value in <param_settings> defines in how many bins (across the parameter scan range) we calculate the mean points for the trend line). Then call the plotting function.
 ```MATLAB
-save_folder='sample_plots/'; fig_file_type={'.png','.eps'};
-fig_name=strcat(save_folder,'multidim_parscan_trend_',nodes{var_ind},'_',model_name,fig_file_type{1});
-export_fig(fig_name,'-transparent','-nocrop')
+sampling_type=sampling_types{3}; % sampling_types={'lognorm','linear','logunif'};
+% file_name_prefix=strcat('LHS_parscan_scatterplot_trend_',nodes{var_ind}); 
+file_name_prefix=strcat('LHS_parscan_scatterplot_trend_state',num2str(var_ind));
+% param_settings: [number_bins_for_mean,trendline_width,axes_fontsize,index nonzero states]
+param_settings = [50 6 24 size(stat_sol_states_lhs_parscan)];
+
+figure('name',num2str(var_ind))
+fcn_multidim_parscan_scatterplot(var_ind,all_par_vals_lhs,scan_values,...
+        scan_params_sensit,scan_params_up_down_sensit,nodes,sampling_type,param_settings)
+
+% SAVE
+resolution_dpi='-r200'; fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 ```
 
-#### Correlations between variables and between variables and transition rates
+Below are the results for the apoptotic state with p63\_73 activation:
+![LHS_parscan_scatterplot_trend_state3](readmeplots/LHS_parscan_scatterplot_trend_state3.png)
+
+
+#### Correlations between model variables
 
 Plotting correlations within the variables can reveal the model's effective dimensionality is smaller than its total size.
 
@@ -584,7 +593,7 @@ For the 15-node KRAS-model we can see that several nodes always have the same va
 
 ![kras15vars_var_var_heatmap](./readmeplots)
 
-#### Linear regression of variables by transition rates
+#### Regression of variables by transition rates
 
 We can also perform linear regression (optinonally taking the logarithm of transition rates) of node values as a function of transition rates and plot the regreesion coefficients:
 ```MATLAB

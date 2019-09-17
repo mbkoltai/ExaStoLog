@@ -375,8 +375,6 @@ fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{3},'overwrite',reso
 
 % PERFORM Latin Hypercube sampling (LHS) SAMPLING
 sampling_types={'lognorm','linear','logunif'}; sampling_type=sampling_types{3};
-% <lhs_scan_dim>: number of param sets
-lhs_scan_dim=1000;
 % par_min_mean: minimum or in case of lognormal the mean of distribution. Can be a scalar or a vector, 
 % if we want different values for different parameters
 % max_stdev: maximum or in case of lognormal the mean of distribution. 
@@ -385,6 +383,8 @@ lhs_scan_dim=1000;
 % for 'lognorm' and 'logunif' provide the LOG10 value of desired mean/min and stdev/max!!, ie. -2 means a mean of 0.01
 par_min_mean=-2; % repmat(1.5,1,numel(cell2mat(scan_params_up_down(:)))); par_min_mean(4)=3; 
 max_stdev=2; % repmat(0.5,1,numel(cell2mat(scan_params_up_down(:))));
+% <lhs_scan_dim>: number of param sets
+lhs_scan_dim=1000;
 [all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan]=... % outputs
     fcn_multidim_parscan_latinhypcube(par_min_mean,max_stdev,sampling_type,lhs_scan_dim, ...
                                             scan_params_sensit,scan_params_up_down_sensit, ... % transition rates
@@ -392,23 +392,21 @@ max_stdev=2; % repmat(0.5,1,numel(cell2mat(scan_params_up_down(:))));
                     
 %% SCATTERPLOTS of STATE or NODE values as a function of the selected parameters, with the trendline shown (average value per parameter bin)
 
-% sel_nodes=[6 10 11 12 13 14 15];
-for var_ind=1:numel(stat_sol_states_lhs_parscan) % [4:8 scan_params_sensit]
-% find(strcmp(nodes,'CHEK1')); % which STATE or NODE to plot
-% <all_par_vals_lhs>: parameter sets
-% [number_bins_for_mean,trendline_width,axes_fontsize,index nonzero states]
-param_settings = [50 6 24 size(stat_sol_states_lhs_parscan)];
+% which variable to plot?
+var_ind=3;
 % STATES or NODES? <scan_values>: values to be plotted
-scan_values=stat_sol_states_lhs_parscan; % stat_sol_nodes_lhs_parscan stat_sol_states_lhs_parscan
+scan_values=stat_sol_states_lhs_parscan; % model variables: stat_sol_nodes_lhs_parscan; model states: stat_sol_states_lhs_parscan
+
 % PLOT
 sampling_type=sampling_types{3}; % sampling_types={'lognorm','linear','logunif'};
 % file_name_prefix=strcat('LHS_parscan_scatterplot_trend_',nodes{var_ind}); 
 file_name_prefix=strcat('LHS_parscan_scatterplot_trend_state',num2str(var_ind));
+% param_settings: [number_bins_for_mean,trendline_width,axes_fontsize,index nonzero states]
+param_settings = [50 6 24 size(stat_sol_states_lhs_parscan)];
+
 figure('name',num2str(var_ind))
 fcn_multidim_parscan_scatterplot(var_ind,all_par_vals_lhs,scan_values,...
         scan_params_sensit,scan_params_up_down_sensit,nodes,sampling_type,param_settings)
-end
-
 
 resolution_dpi='-r350'; fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 % fcn_save_fig('LHS_parscan_trend_AKT2',plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
