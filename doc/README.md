@@ -564,7 +564,7 @@ Below are the results for the apoptotic state with p63\_73 activation:
 
 #### Correlations between model variables
 
-Plotting correlations within the variables can reveal what are the upstream nodes that the model's output/phenotypic nodes primarily depend on, or reveal that the model's effective dimensionality is smaller than its total size.
+Plotting correlations among the variables can reveal what are the upstream nodes that the model's output/phenotypic nodes primarily depend on or that the model's effective dimensionality is smaller than its total size.
 
 To plot the heatmap of correlations between the model's _variables_ we need to provide the following arguments (we selected some of the nodes based on previous calculations knowing some of them show the same values):
 ```MATLAB
@@ -582,7 +582,8 @@ figure('name',strjoin(plot_type_flag))
 resolution_dpi='-r350'; fcn_save_fig(fig_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 ```
 
-The plot for 
+The plot for our EMT model with the selected variables looks as:
+
 ![var_var_heatmap_corrs](readmeplots/var_var_heatmap_corrs.png)
 
 #### Regression of variables by transition rates
