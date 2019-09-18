@@ -327,7 +327,7 @@ plot_param_settings={30,30,{height_width_gap bott_top_marg left_right_marg},mode
 % select type of plot
 plot_types={{'lineplot','heatmap'} {'nodes','states'} {'values','sensitivity'}};
 % if want to loop through all plot types: all_opts_perm=[[1 1 1]; unique([perms([1 1 2]); perms([2 2 1])],'rows'); [2 2 2]];
-plot_type_options=[2 2 2];
+plot_type_options=[1 1 1];
 figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel(plot_type_options), 'un',0),'_'));
 [resp_coeff,scan_params_sensit,scan_params_up_down_sensit,fig_filename]=fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
                                                    stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
@@ -339,7 +339,7 @@ figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel
 
 % SAVE figure
 % resolution_dpi='-r350'; 
-fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
+% fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 
 %% Multidimensional param sampling at UNIFORM distances (2-dimensions in example below)
 
@@ -548,13 +548,15 @@ y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(st
 
 % FITTING by simulated annealing (look at arguments in anneal/anneal.m)
 % initial guess for parameters
-init_par_vals=data_param_vals.*abs(normrnd(1,1,size(predictor_names))); init_error=fcn_statsol_sum_sq_dev(init_par_vals);
+init_par_vals=data_param_vals.*lognrnd(1,2,size(predictor_names)); init_error=fcn_statsol_sum_sq_dev(init_par_vals);
 % initial value of model nodes
 y_init=fcn_calc_init_stat_nodevals(x0,...
     split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,init_par_vals),''),...
     stg_sorting_cell,transition_rates_table_optim,x0),'');
 
-% simulated annealing with existing algorithm anneal/anneal.m (with modifications in script)
+% simulated annealing with algorithm anneal/anneal.m (with modifications in script)
+% struct('CoolSched',@(T) (.8*T), 'Generator',@(x) (x+(randperm(length(x))==length(x))*randn/100), 'InitTemp',1,...
+%    'MaxConsRej',1000, 'MaxSuccess',20, 'MaxTries',300, 'StopTemp',1e-8, 'StopVal',-Inf, 'Verbosity',1);
 fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10);
 tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); toc 
 % 20-40 mins for 15var KRAS model
@@ -575,9 +577,9 @@ plot_settings=[24 30];
 figure('name','simul anneal')
 fcn_plot_paramfitting(data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plot_settings)
 
-resolution_dpi='-r350';
+resolution_dpi='-r200'; % r350
 fcn_save_fig(strcat('simulated_annealing_',num2str(numel(predictor_names)),'fittingpars'),...
-    plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
+    plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi)
 
 % mean absolute error: mean(abs(y_data - fcn_statsol_values(optim_par_vals)))
 % distance of fitted params from true values: abs(optim_par_vals - sel_param_vals)./sel_param_vals
