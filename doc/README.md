@@ -658,7 +658,8 @@ We calculate here the usual numerical approximation of the analytical equivalent
 From the previous step of linear regression we can (optionally) take only the transition rates that have an R^2 value above a given threshold:
 ```MATLAB
 % for indexing, we need the sequential indices of transition rates (eg. 5th node up rate is 9, 6th node down rate is 12)
-[par_ind_table,sequential_indices_lhs,~] = fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes);
+[par_ind_table,sequential_indices_lhs,~] = ...
+	fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes);
 % threshold for R^2
 r_sq_thresh=0.05;
 % select transition rates
@@ -679,11 +680,11 @@ sample_size=[]; % if left empty, the sample size is half of the original param s
 disp_freq=10;
 var_types={'node','state'}; % analysis for states or nodes
 sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{2},...
-          all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan,...
-          sample_size,... % # of calculations per parameter
-          sequential_indices_lhs,... % indices of transition rates in the original LHS
-          scan_params_filtered,scan_params_up_down_filtered,... % or: scan_params_sensit,scan_params_up_down_sensit
-          stg_table,transition_rates_table,x0,nodes,sel_nodes,plot_settings,disp_freq);
+	all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan,...
+	sample_size,... % # of calculations per parameter
+	sequential_indices_lhs,... % indices of transition rates in the original LHS
+	scan_params_filtered,scan_params_up_down_filtered,... % or: scan_params_sensit,scan_params_up_down_sensit
+	stg_table,transition_rates_table,x0,nodes,sel_nodes,plot_settings,disp_freq);
 ```
 
 If we have already performed this calculation and just want to plot the results, provide the table **sobol_sensit_index** of results as the function's first argument:
@@ -732,8 +733,8 @@ We also need to provide a vector of values for the model's nodes that we want to
 data_param_vals=lognrnd(1,1,1,numel(predictor_names)); 
 transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
 y_data=fcn_calc_init_stat_nodevals(x0,...
-	split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
-	transition_rates_table_optim,x0),'x0');
+	split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),...
+	stg_sorting_cell,transition_rates_table_optim,x0),'x0');
 ```
 
 We also need to define anonymous functions to calculate the squared error from the data (and the stationary solution for a given parameter set):
@@ -761,8 +762,8 @@ init_error=fcn_statsol_sum_sq_dev(init_par_vals);
 % initial value of model nodes (with the initial parameter guess)
 y_init=fcn_calc_init_stat_nodevals(x0,...
     split_calc_inverse(fcn_build_trans_matr(stg_table,...
-						fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,init_par_vals),''),...
-    stg_sorting_cell,transition_rates_table_optim,x0),'');
+		fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,init_par_vals),''),...
+		stg_sorting_cell,transition_rates_table_optim,x0),'');
 
 tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); toc 
 ```
@@ -785,8 +786,8 @@ max_val=max(max(data_init_optim(:,3:end)));
 param_sets=[init_par_vals;data_param_vals;optim_par_vals];
 
 figure('name','param fitting (simul.ann.)'); 
-% select nodes to plot 
-sel_nodes=find(sum(data_init_optim)>0 & sum(data_init_optim)<3); % here we selected nodes that are not always 0 or 1
+% select nodes to plot (here we selected nodes that are not always 0 or 1)
+sel_nodes=find(sum(data_init_optim)>0 & sum(data_init_optim)<3);
 % PLOT fitting process
 thres_ind=size(T_loss,1); % thres_ind=find(T_loss(:,2)<1e-2,1); 
 plot_settings=[24 30];
@@ -834,8 +835,8 @@ init_error_table=[]; % if we have it from previous fitting than feed it to fcn
 incr_resol_init=0.15; incr_resol=0.03;
 
 [init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(init_error_table,...
-				{y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
-				init_par_vals,incr_resol,incr_resol_init,error_thresh,[]);
+	{y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
+	init_par_vals,incr_resol,incr_resol_init,error_thresh,[]);
 ```
 
 and plot the results by
