@@ -1,4 +1,0 @@
-# notes for traynard2016_mammalian_cellcycle.bnet model
-
-# G1 state represented by initial state: CycE=0 & CycA=0 & CycB=0 & Cdh1=1 & Rb=1 & p27=1
-% G2 state: Rb=0 & Cdh1=0 & p27=0 & CycE=0
