@@ -727,8 +727,8 @@ We also need to provide a vector of values for the model's nodes that we want to
 data_param_vals=lognrnd(1,1,1,numel(predictor_names)); 
 transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
 y_data=fcn_calc_init_stat_nodevals(x0,...
-		split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
-		transition_rates_table_optim,x0),'x0');
+	split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
+	transition_rates_table_optim,x0),'x0');
 ```
 
 We also need to define anonymous functions to calculate the squared error from the data (and the stationary solution for a given parameter set):
@@ -769,11 +769,13 @@ Below are the commands to plot the convergence process (first subplot) and the t
 ```MATLAB
 % model variable values with fitted parameters
 y_optim_param=fcn_calc_init_stat_nodevals(x0,...
-  split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,optim_par_vals),''),...
+  split_calc_inverse(fcn_build_trans_matr(stg_table,...
+  fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,optim_par_vals),''),...
   stg_sorting_cell,transition_rates_table,x0),'');
 
 % model variables: initial guess, true values (data), fitted values
-data_init_optim=[y_init; y_data; y_optim_param]; min_val=min(min(data_init_optim(:,3:end))); max_val=max(max(data_init_optim(:,3:end)));
+data_init_optim=[y_init; y_data; y_optim_param]; min_val=min(min(data_init_optim(:,3:end))); 
+max_val=max(max(data_init_optim(:,3:end)));
 % parameters: initial guess, true values, fitted values
 param_sets=[init_par_vals;data_param_vals;optim_par_vals];
 
@@ -805,8 +807,8 @@ Again we need to set up anonymous functions, define a vector of datapoints to fi
 data_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
 transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
 y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(...
-			fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
-		transition_rates_table_optim,x0),'x0');
+	fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
+	transition_rates_table_optim,x0),'x0');
 
 [~,fcn_statsol_values]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
 
