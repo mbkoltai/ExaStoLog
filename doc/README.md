@@ -792,7 +792,7 @@ error_thresh=0.1; % what % of initial error to stop?
 step_thresh=[]; % what step # to stop? you can leave this empty 
 % init_error_table: changes to initial error when increasing or decreasing parameter values
 init_error_table=[]; % if we have it from previous fitting than feed it to fcn
-% incr_resol_init: initial % change from the initial param values to calculate the numerical gradient (change in error) for the descent
+% incr_resol_init: initial % change from initial param values to calculate the numerical gradient for the descent
 % incr_resol: change in param values during gradient descent
 incr_resol_init=0.15; incr_resol=0.03;
 
