@@ -27,7 +27,7 @@
 
 <!--- The steps below are also available and directly executable in [this MATLAB live script](./wrapper.mlx).  --->
 
-#### The steps below are also contained in the MATLAB file *wrapper.m*, with more options.
+### The steps below are contained in the MATLAB file *wrapper.m*, with more options.
 
 ### 1. Prerequisites
 
@@ -38,15 +38,10 @@
 ##### - unzip the file 'toolboxes.zip' for the external MATLAB libraries used:
 
 - [Customizable heatmaps](https://mathworks.com/matlabcentral/fileexchange/24253-customizable-heat-maps)  
-
 - [Redblue colormap](https://mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap)  
-
 - [tight subplots](https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w) (for subplots with smaller gaps)  
-
 - [export_fig](https://mathworks.com/matlabcentral/fileexchange/23629-export_fig) (export figures as EPS or PDF as they appear on screen)  
-
-- [Simulated annealing](https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm) (parameter fitting by simulated annealing; the script was modified by author to output convergence process)  
-
+- [Simulated annealing](https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm) (parameter fitting by simulated annealing; the script was modified to output convergence process)  
 - [distinguishable_colors](https://www.mathworks.com/matlabcentral/fileexchange/29702-generate-maximally-perceptually-distinct-colors)
 
 ##### - add the folders to the path by typing 'add_functions'
@@ -697,8 +692,9 @@ We also need to provide a vector of values for the model's nodes that we want to
 % define data vector (generate some data OR load from elsewhere)
 data_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
 transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
-y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
-                                   transition_rates_table_optim,x0),'x0');
+y_data=fcn_calc_init_stat_nodevals(x0,
+				split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
+ 				transition_rates_table_optim,x0),'x0');
 ```
 
 We also need to define anonymous functions to calculate the squared error from the data (and the stationary solution for a given parameter set):
@@ -707,9 +703,12 @@ These functions need to be regenerated if you change the data for fitting.
 [fcn_statsol_sum_sq_dev,~]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
 ```
 
-Then by providing an initial guess for the fitting parameters we can run the annealing algorithm. 
 The hyperparameters of fitting are defined as a structure, _fitting\_arguments_, we set 'Verbosity' to 1 so we can see the convergence process, and 'Stopval' is the value of the sum of squared error where we want to stop the fitting process, we set this to (eg.) 10% of the initial error:
 ```MATLAB
+% default values for fitting hyperparameters:
+% struct('CoolSched',@(T) (0.8*T), 'Generator',@(x) (x+(randperm(length(x))==length(x))*randn/100), 'InitTemp',1,...
+%    'MaxConsRej',1000, 'MaxSuccess',20, 'MaxTries',300, 'StopTemp',1e-8, 'StopVal',-Inf, 'Verbosity',1);
+
 fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10);
 ```
 
@@ -728,7 +727,7 @@ tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_v
 
 Note that the convergence process can take long or can fail.
 
-Below are the commands to plot the convergence process (first subplot) and the true, initial guess and fitted model variable values (second subplot) of the EMT model:
+Below are the commands to plot the convergence process (first subplot) and the true, initial guess and fitted values of model variables (second subplot) of the EMT model:
 
 ```MATLAB
 figure('name','param fitting'); 
@@ -743,14 +742,14 @@ figure('name','simul anneal')
 fcn_plot_paramfitting(data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plot_settings)
 ```
 
-The plot looks the following (since we randomly generate the data and initial guess for parameters, this will look different for a new fitting process):
+The plot is shown below for a sample fitting. Ssince we randomly generate the data and initial guess for parameters, it will look different for a new fitting process:
 
 ![simulated_annealing_6fittingpars](readmeplots/simulated_annealing_6fittingpars.png)
 
 #### Fitting by initial numerical gradient
 
-Since in the case of the models we tested the transition rates have a monotonic effect on model variable values, we can attempt to take an initial, numerically calculated gradient of the error (sum of squared errors, SSE) as a function of the rates that we want to fit and try to reduce the error by incrementing them in the initial direction of error reduction. 
-This method is rather crude and does not guarentee to converge, but in some cases we have found it does. The evolution of the fittin error is displayed by the function, so if we see the error diverging we can stop the fitting process.
+Since for the models we tested the transition rates have a monotonic effect on model variable values, we can attempt to take an initial, numerically calculated gradient of the error (sum of squared errors, SSE) as a function of the rates and try to reduce the error by incrementing them in the initial direction of error reduction. 
+This method is rather crude and does not guarentee to converge, but in some cases we have found it does. The evolution of the fitting error is displayed by the function, so if we see the error diverging (growing) we can stop the fitting process.
 
 Again we need to set up anonymous functions, define a vector of datapoints to fit to, and an initial guess:
 ```MATLAB
@@ -760,6 +759,7 @@ data_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,num
 transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
 y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
                                    transition_rates_table_optim,x0),'x0');
+
 [~,fcn_statsol_values]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
 
 % initial values for parameters and error
@@ -767,15 +767,16 @@ init_par_vals=data_param_vals.*lognrnd(0,2,size(predictor_names)); % abs(normrnd
 init_vals=fcn_statsol_values(init_par_vals); init_error=sum((y_data-init_vals).^2); 
 ```
 
-Also we define at what % of the original error we want the fitting to stop at and what is the step size by which the rates are incremented (by their initial derivatives). We then run the fitting function:
+We define at what % of the original error we want the fitting to stop and what is the step size by which the rates are incremented (by their initial derivatives). We then run the fitting function:
 ```MATLAB
 error_thresh=0.1; % what % of initial error to stop?
-step_thresh=[]; % what step # to stop?
+step_thresh=[]; % what step # to stop? you can leave this empty 
 % init_error_table: changes to initial error when increasing or decreasing parameter values
 init_error_table=[]; % if we have it from previous fitting than feed it to fcn
 % incr_resol_init: initial % change from the initial param values to calculate the numerical gradient (change in error) for the descent
 % incr_resol: change in param values during gradient descent
 incr_resol_init=0.15; incr_resol=0.03;
+
 [init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(init_error_table,...
                                         {y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
                                         init_par_vals,incr_resol,incr_resol_init,error_thresh,[]);
@@ -792,7 +793,6 @@ fcn_plot_paramfitting(data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_sett
 fig_name=strcat('grad_descent',num2str(numel(predictor_names)),'fittingpars');
 fcn_save_fig(fig_name,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
 ```
-
 
 
 ### References 
