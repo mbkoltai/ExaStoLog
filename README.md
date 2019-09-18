@@ -3,7 +3,7 @@
 A MATLAB toolbox for the exact calculation of stationary states + parameter sensitivity analysis & fitting of stochastic logical models.  
 Author: Mihály Koltai, [Computational Systems Biology of Cancer at Institut Curie](https://github.com/sysbio-curie)
 
-Read the tutorial [here](https://github.com/mbkoltai/exact-stoch-log-mod/tree/master/doc) (**under construction**).
+Read the tutorial [here](https://github.com/mbkoltai/exact-stoch-log-mod/tree/master/doc).
 
 ### Requirements
 
@@ -27,4 +27,4 @@ Read the tutorial [here](https://github.com/mbkoltai/exact-stoch-log-mod/tree/ma
 
 #### - add the folders to the path by typing 'add_functions'
 
-For the detailed examples of calculations read the [tutorial here](https://github.com/mbkoltai/exact-stoch-log-mod/tree/master/doc) (**under construction**).
+For the detailed examples of calculations read the [tutorial here](https://github.com/mbkoltai/exact-stoch-log-mod/tree/master/doc).
