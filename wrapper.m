@@ -572,7 +572,6 @@ incr_resol_init=0.15; incr_resol=0.03;
 [init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(init_error_table,...
                                         {y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
                                         init_par_vals,incr_resol,incr_resol_init,error_thresh,[]);
-
 % parameters before and after optim: [optim_pars_conv([1 end],:); data_param_vals]; 
 
 % PLOT
@@ -584,5 +583,3 @@ fcn_plot_paramfitting(data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_sett
 % SAVE
 fig_name=strcat('grad_descent',num2str(numel(predictor_names)),'fittingpars');
 fcn_save_fig(fig_name,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

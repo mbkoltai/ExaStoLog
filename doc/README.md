@@ -11,7 +11,7 @@
       1. [Defining initial conditions](#defining-initial-conditions)
 1. [Calculation of stationary solution](#3-calculation-of-stationary-solution)
 1. [Visualizing the stationary solution](#4-visualizing-the-stationary-solution)
-      1. [Visualize stationary probability values for states and nodes](#visualize-stationary-probability-values-for-states-and-nodes)
+      1. [Visualize stationary probability values of attractor states and model variables](#visualize-stationary-probability-values-of-attractor-states-and-model-variables)
       1. [Visualize binary heatmap of nonzero stationary states](#visualize-binary-heatmap-of-nonzero-stationary-states)
 1. [One-dimensional parameter sensitivity analysis](#5-one-dimensional-parameter-sensitivity-analysis)
 1. [Multi-dimensional parameter sensitivity analysis](#6-multi-dimensional-parameter-sensitivity-analysis)
@@ -225,7 +225,7 @@ To have the stationary solution (and also the initial states) in terms of the pr
 
 ### 4. Visualizing the stationary solution
 
-#### Visualize stationary probability values for states and nodes
+#### Visualize stationary probability values of attractor states and model variables
 
 We can now visualize the stationary solution, along with the transition (or kinetic) matrix of the model.
 
@@ -238,7 +238,7 @@ Call the function _fcn\_plot\_A\_K\_stat\_sol_ with the following arguments:
 % barwidth_states_val: width of the bars for bar plot of stationary solutions of states
 % sel_nodes: nodes to show. If left empty, all nodes are shown
 % prob_thresh: minimal value for probability to display 
-% 	(useful for visibility if many attractor states or large cyclic attractor(s))
+% (useful for visibility if many attractor states or large cyclic attractor(s))
 
 % Call the function by:
 sel_nodes=[];
@@ -252,7 +252,7 @@ fcn_plot_A_K_stat_sol(A_sparse,nodes,sel_nodes,stat_sol,x0,plot_settings,prob_th
 
 ![single_solution_states_nodes_stat_sol_with_matrix](./readmeplots/single_solution_states_nodes_stat_sol_with_matrix.png)
 
-We create a directory for the figures of the model, specify the file types for figures and save the plot by running (**export_fig** toolbox needed, see requirements at the top of the tutorial) the following commands:
+We create a directory for the figures of the model, specify the file types for figures and save the plot by running (_export\_fig_ toolbox needed, see requirements at the top of the tutorial) the following commands:
 ```MATLAB
 if exist(plot_save_folder,'dir')==0; mkdir(plot_save_folder); end
 fig_file_type={'.png','.eps','.pdf','.jpg','.tif'};
@@ -789,7 +789,8 @@ y_optim_param=fcn_calc_init_stat_nodevals(x0,...
   stg_sorting_cell,transition_rates_table,x0),'');
 
 % model variables: initial guess, true values (data), fitted values
-data_init_optim=[y_init; y_data; y_optim_param]; min_val=min(min(data_init_optim(:,3:end))); 
+data_init_optim=[y_init; y_data; y_optim_param]; 
+min_val=min(min(data_init_optim(:,3:end))); 
 max_val=max(max(data_init_optim(:,3:end)));
 % parameters: initial guess, true values, fitted values
 param_sets=[init_par_vals;data_param_vals;optim_par_vals];
@@ -812,10 +813,14 @@ The plot is shown below for a sample fitting. Ssince we randomly generate the da
 
 #### Fitting by initial numerical gradient
 
-Since for the models we tested the transition rates have a monotonic effect on model variable values, we can attempt to take an initial, numerically calculated gradient of the error (sum of squared errors, SSE) as a function of the rates and try to reduce the error by incrementing them in the initial direction of error reduction. 
-This method is rather crude and does not guarentee to converge, but in some cases we have found it does. The evolution of the fitting error is displayed by the function. We have built in a condition into the function that if the error is growing for 2 consecutive steps the fitting process stops, so that a diverging process is automatically stopped.
+For the 5 models we analyzed the transition rates have a monotonic effect on model variable values. 
+Therefore we can take an initial, numerically calculated gradient of the error (sum of squared errors, SSE) as a function of the rates and attempt to reduce the error by incrementing them in the initial direction of error reduction. 
 
-Again we need to set up anonymous functions, define a vector of datapoints to fit to, and an initial guess:
+This method is rather crude and does not guarentee to converge, but in some cases we have found it does. 
+We have built in a condition into the function that if the error is growing for 2 consecutive steps the fitting process stops, so that a diverging process is automatically stopped. The evolution of the fitting error is displayed by the function. 
+
+Again we need to set up anonymous functions and define a vector of datapoints to fit to, as well as generate an initial guess for the transition rates:
+
 ```MATLAB
 [~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes); 
 % define data vector (generate some data OR load from elsewhere)
@@ -834,7 +839,7 @@ init_par_vals=data_param_vals.*lognrnd(0,2,size(predictor_names));
 init_vals=fcn_statsol_values(init_par_vals); init_error=sum((y_data-init_vals).^2); 
 ```
 
-We define at what % of the original error we want the fitting to stop and what is the step size by which the rates are incremented (by their initial derivatives). We then run the fitting function:
+We define at what % of the original error we want the fitting to stop and with what step size the rates are incremented (by their initial derivatives). We then run the fitting function:
 ```MATLAB
 error_thresh=0.1; % what % of initial error to stop?
 step_thresh=[]; % what step # to stop? you can leave this empty 
