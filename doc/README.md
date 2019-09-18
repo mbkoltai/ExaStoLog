@@ -174,7 +174,7 @@ dom_prob=1;
 distrib_types={'random','uniform'};
 % if plot_flag non-empty, we get a bar plot of initial values
 plot_flag='';
-% function assigns a probability of <dom_prob> to the states with the fixed nodes having the defined values
+% function assigns a probability of <dom_prob> to states with the fixed nodes
 x0=fcn_define_initial_states(initial_fixed_nodes,initial_fixed_nodes_vals,...
 				dom_prob,nodes,distrib_types{1},plot_flag);
 ```
@@ -228,7 +228,7 @@ To have the stationary solution (and also the initial states) in terms of the pr
 
 We can now visualize the stationary solution, along with the transition (or kinetic) matrix of the model.
 
-The following arguments need to be defined for the visualization:
+Call the function _fcn\_plot\_A\_K\_stat\_sol_ with the following arguments:
 ```MATLAB
 % ARGUMENTS
 % matrix_input: [], K_sparse or A_sparse (kinetic or transition matrix)
@@ -237,10 +237,8 @@ The following arguments need to be defined for the visualization:
 % barwidth_states_val: width of the bars for bar plot of stationary solutions of states
 % sel_nodes: nodes to show. If left empty, all nodes are shown
 % prob_thresh: minimal value for probability to display (useful for visibility if there are many attractor states or large cyclic attractor(s))
-```
 
-Call the function by:
-```MATLAB
+% Call the function by:
 sel_nodes=[];
 min_max_col=[0 1]; barwidth_states_val=0.8;
 fontsize=[24 40 20]; % [fontsize of plot, fontsize of titles, fontsize of binary states]
@@ -261,8 +259,9 @@ overwrite_flag='yes';
 
 % resolution of the figures
 resolution_dpi='-r350';
-
-fcn_save_fig('single_solution_states_nodes_stat_sol',plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi)
+% SAVE
+fcn_save_fig('single_solution_states_nodes_stat_sol',plot_save_folder,...
+fig_file_type{3},overwrite_flag,resolution_dpi)
 ```
 
 #### Visualize binary heatmap of nonzero stationary states
@@ -276,8 +275,8 @@ To visualize what are the model variables that are activated in the case of the 
 prob_thresh=0.01;  % []; % 0.05;
 % term_verts_cell: index of subgraphs for stable states
 % nodes: name of nodes
-% sel_nodes: nodes to show. if none selected, then all nodes shown
-sel_nodes=[]; % setdiff(2:numel(nodes)-1,[find(strcmp(nodes,{'Rb_b2'})) find(strcmp(nodes,{'p27_b2'}))]);
+% sel_nodes: nodes to show. if none selected, all nodes will be shown
+sel_nodes=[];
 % plot_param_settings
 % num_size_plot: font size of 0/1s on the heatmap
 % hor_gap: horizontal gap between terminal SCCs, bottom_marg: bottom margin, left_marg: left margin
@@ -315,7 +314,8 @@ We can for instance select all rates that have actual transitions in the subgrap
 ```MATLAB
 popul_subgraphs=cellfun(@(x) sum(ismember(find(x0>0), x)), cell_subgraphs)>0;
 subgraph_states=cell2mat(cell_subgraphs(popul_subgraphs)');
-par_inds_table=unique(stg_table(ismember(stg_table(:,1), subgraph_states) | ismember(stg_table(:,2), subgraph_states),3:4),'rows');
+par_inds_table=unique(stg_table(ismember(stg_table(:,1), subgraph_states) | ...
+								ismember(stg_table(:,2), subgraph_states),3:4),'rows');
 ```
 
 Now _par\_inds\_table_ contains these transition rates, the first column showing the corresponding node of the rates and the second whether it is for 1->0 (1) or the 0->1 (2) transition.  
@@ -364,7 +364,8 @@ Now we can build the table with the parameter values and start the scan:
 parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_down,nodes,sampling_types{1},parscan_min_max,n_steps);
 
 [stationary_state_vals_onedimscan,stationary_node_vals_onedimscan,stationary_state_inds_scan]=...
-    fcn_onedim_parscan_calc(stg_table,transition_rates_table,x0,nodes,parscan_matrix,scan_params,scan_params_up_down);
+    fcn_onedim_parscan_calc(stg_table,transition_rates_table,x0,...
+							nodes,parscan_matrix,scan_params,scan_params_up_down);
 ```
 
 We can first plot the results grouped by the transition rates of the parameter scan.
@@ -378,7 +379,7 @@ nonzero_states_inds=find(stat_sol>0);
 % plot parameters: gap between subplots, margins at bottom, top, left and right edges
 height_width_gap=[0.08 0.03]; bott_top_marg =[0.05 0.05]; left_right_marg=[0.04 0.01];
 params_tight_subplots={height_width_gap bott_top_marg left_right_marg};
-% plot_param_settings: [fontsize_axes,fontsize_title,legend_fontsize,linewidth,params_tight_subplots,model_name]
+% plot_param_settings: [fontsize_axes,fs_title,fs_legend,linewidth,params_tight_subplots,model_name]
 plot_param_settings={24,34,24,4,{height_width_gap bott_top_marg left_right_marg},model_name};
 % plotting stater or variables (nodes)?
 state_or_node_flags={'nodes','states'};
@@ -410,10 +411,11 @@ The arguments of the function are the following:
 % nonzero states of the model
 % nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))';
 nonzero_states_inds=find(stat_sol>0);
-% sensit_cutoff: minimal value for response coefficient (local sensitivity) or for the variation of node/state values
+% sensit_cutoff: minimal value for response coefficient (local sensit.) or variation of model/state values
 sensit_cutoff=0.1; 
 % parameters of plot
-height_width_gap=[0.1 0.04]; bott_top_marg=[0.03 0.1]; left_right_marg=[0.07 0.02]; params_tight_subplots={height_width_gap bott_top_marg left_right_marg};
+height_width_gap=[0.1 0.04]; bott_top_marg=[0.03 0.1]; left_right_marg=[0.07 0.02]; 
+params_tight_subplots={height_width_gap bott_top_marg left_right_marg};
 % plot_param_settings: [fontsize_axes,fontsize_title,params_tight_subplots,model_name]
 plot_param_settings={30,30,params_tight_subplots,model_name,'colorbar'};
 % plot_param_settings={12,14,[],model_name}; 
@@ -424,14 +426,16 @@ plot_type_options=[1 2 1];
 
 Then call the function and save the plot as (eg.) PNG:
 ```MATLAB
-[resp_coeff,scan_params_sensit,scan_params_up_down_sensit,fig_filename]=fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
+[resp_coeff,scan_params_sensit,scan_params_up_down_sensit,fig_filename]=...
+					fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
                            stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
                            nonzero_states_inds,parscan_matrix,nodes,...
                            scan_params,scan_params_up_down,...
                            sensit_cutoff,plot_param_settings);
 
 
-fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),plot_save_folder,fig_file_type{1},'overwrite','-r200');
+fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),plot_save_folder,...
+			 fig_file_type{1},'overwrite','-r200');
 ```
 
 Below we generate the plot showing the stationary probability value of the attractor states by a lineplot.
@@ -447,11 +451,12 @@ To plot the local sensitivities we need to set *plot\_type\_options=[2 2 2];* an
 ```MATLAB
 plot_type_options=[2 2 2];
 figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel(plot_type_options), 'un',0),'_'));
-[resp_coeff,scan_params_sensit,scan_params_up_down_sensit,fig_filename]=fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
-                                stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
-                                nonzero_states_inds,parscan_matrix,nodes,...
-                                scan_params,scan_params_up_down,... 
-                                sensit_cutoff,plot_param_settings);
+[resp_coeff,scan_params_sensit,scan_params_up_down_sensit,fig_filename]=...
+					fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
+                          stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
+                          nonzero_states_inds,parscan_matrix,nodes,...
+                          scan_params,scan_params_up_down,... 
+                          sensit_cutoff,plot_param_settings);
 ```
 
 
@@ -498,13 +503,15 @@ Plot the results as a two-dimensional heatmap for selected model variable(s), in
 ```MATLAB
 % what model variables to plot?
 sel_nodes=4;
-% plot_settings: [fontsize on plot&axes, fontsize on axes, fontsize of subplot titles, axes tick fontsize]
+% plot_settings: [fontsize on plot, fs axes, fs subplot titles, fs axes labels]
 plot_settings=[28 30 40]; figure('name','2D scan')
-fcn_plot_twodim_parscan(stat_sol_paramsample_table,scanvals,multiscan_pars,multiscan_pars_up_down,...
+fcn_plot_twodim_parscan(stat_sol_paramsample_table,scanvals,...
+						multiscan_pars,multiscan_pars_up_down,...
 							nodes,sel_nodes,plot_settings)
 
 % SAVE PLOT
-resolution_dpi='-r200'; file_name_prefix=strcat('twodim_parscan_',strjoin(nodes(sel_nodes),'_'));
+resolution_dpi='-r200'; 
+file_name_prefix=strcat('twodim_parscan_',strjoin(nodes(sel_nodes),'_'));
 fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi);
 ```
 
@@ -518,8 +525,8 @@ To perform LHS we need to provide the arguments for the type and properties of t
 
 ```MATLAB
 sampling_types={'lognorm','linear','logunif'}; sampling_type=sampling_types{3};
-% par_min_mean: minimum or in case of lognormal the mean of distribution. Scalar or vector (if we want different values for different parameters)
-% max_stdev: maximum or in case of lognormal the mean of distribution. Scalar or vector (if we want different values for different parameters)
+% par_min_mean: minimum or (if lognormal) mean of distribution. Scalar or vector (if different values for different parameters)
+% max_stdev: maximum or in case of lognormal the mean of distribution. Scalar or vector
 %
 % for 'lognorm' and 'logunif' provide the LOG10 value of desired mean/min and stdev/max, ie. -2 means a mean of 0.01
 par_min_mean=-2; % repmat(1.5,1,numel(cell2mat(scan_params_up_down_sensit(:)))); par_min_mean(4)=3; 
@@ -530,8 +537,8 @@ lhs_scan_dim=1000;
 % RUN the LHS
 [all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan]=... % outputs
     fcn_multidim_parscan_latinhypcube(par_min_mean,max_stdev,sampling_type,lhs_scan_dim, ...
-                                      scan_params_sensit,scan_params_up_down_sensit, ... % transition rates
-                                      transition_rates_table,stg_table,x0,nodes);
+                          scan_params_sensit,scan_params_up_down_sensit, ...
+                          transition_rates_table,stg_table,x0,nodes);
 ```
 
 The outputs are:
@@ -550,7 +557,8 @@ First we select the variable to plot and whether we want to plot attractor state
 % which variable to plot?
 var_ind=4;
 % STATES or NODES? <scan_values>: values to be plotted
-scan_values=stat_sol_states_lhs_parscan; % model variables: stat_sol_nodes_lhs_parscan; model states: stat_sol_states_lhs_parscan
+% model variables: stat_sol_nodes_lhs_parscan; states: stat_sol_states_lhs_parscan
+scan_values=stat_sol_states_lhs_parscan; 
 ```
 
 Set the plot parameters, the first value in <param_settings> defines in how many bins (across the parameter scan range) we calculate the mean points for the trend line). Then call the plotting function.
@@ -566,7 +574,8 @@ fcn_multidim_parscan_scatterplot(var_ind,all_par_vals_lhs,scan_values,...
         scan_params_sensit,scan_params_up_down_sensit,nodes,sampling_type,param_settings)
 
 % SAVE
-resolution_dpi='-r200'; fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
+resolution_dpi='-r200'; 
+fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 ```
 
 Below are the results for the apoptotic state with p63\_73 activation:
@@ -586,11 +595,12 @@ plot_settings=[NaN 26 32];
 plot_type_flag={'var_var','heatmap'}; % this is plotting the heatmap of correlations between variables
 
 figure('name',strjoin(plot_type_flag))
-[varvar_corr_matr,p_matrix_vars]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,stat_sol_nodes_lhs_parscan,...
-                                            nodes,sel_nodes,[],[],[],plot_settings);
+[varvar_corr_matr,p_matrix_vars]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,...
+									stat_sol_nodes_lhs_parscan,nodes,sel_nodes,[],[],[],plot_settings);
 
 % SAVE
-resolution_dpi='-r350'; fcn_save_fig(fig_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
+resolution_dpi='-r350'; 
+fcn_save_fig(fig_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
 ```
 
 The plot for our EMT model with the selected variables looks as:
@@ -611,10 +621,11 @@ plot_settings=[30 30 0.29];
 regr_types={'log','linear'}; % log recommended if parameter values log-uniformly distributed in sampling
 figure('name',strjoin(plot_type_flag))
 scan_values=stat_sol_states_lhs_parscan; % or: stat_sol_nodes_lhs_parscan
-[r_squared,slope_intercept]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,scan_values,...
-                                 nodes,sel_nodes,... % which nodes
-                                 scan_params_sensit,scan_params_up_down_sensit, ... % parameters (CAREFUL that they are same as in LHS!)
-                                 regr_types{1},plot_settings)
+[r_squared,slope_intercept]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,...
+					 all_par_vals_lhs,scan_values,...
+                     nodes,sel_nodes,... % which nodes
+                     scan_params_sensit,scan_params_up_down_sensit, ... % same params as in LHS!
+                     regr_types{1},plot_settings)
 
 % SAVE
 fig_prefix=strjoin(plot_type_flag,'_'); resolution_dpi='-r350'; 
@@ -642,8 +653,9 @@ From the previous step of linear regression we can (optionally) take only the tr
 r_sq_thresh=0.05;
 % select transition rates
 par_ind_table_filtered=par_ind_table(sum(r_squared>r_sq_thresh)>0,:);
-scan_params_filtered=unique(par_ind_table_filtered(:,1))'; % scan_params_unique=unique(par_ind_table(sum(r_squared>0.2)>0,1))'; 
-scan_params_up_down_filtered=arrayfun(@(x) par_ind_table_filtered(par_ind_table_filtered(:,1)==x,2)', scan_params_filtered,'un',0);
+scan_params_filtered=unique(par_ind_table_filtered(:,1))'; 
+scan_params_up_down_filtered=arrayfun(@(x) par_ind_table_filtered(par_ind_table_filtered(:,1)==x,2)', ...
+										   scan_params_filtered,'un',0);
 ```
 
 The sample size (number of parameter sets used for the re-calculations) can be defined, with higher samples giving better estimates.
@@ -660,7 +672,7 @@ sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{2},...
           all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan,...
           sample_size,... % # of calculations per parameter
           sequential_indices_lhs,... % indices of transition rates in the original LHS
-          scan_params_filtered,scan_params_up_down_filtered,... % original from LHS: scan_params_sensit,scan_params_up_down_sensit
+          scan_params_filtered,scan_params_up_down_filtered,... % or: scan_params_sensit,scan_params_up_down_sensit
           stg_table,transition_rates_table,x0,nodes,sel_nodes,plot_settings,disp_freq);
 ```
 
@@ -790,7 +802,7 @@ y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(st
 [~,fcn_statsol_values]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
 
 % initial values for parameters and error
-init_par_vals=data_param_vals.*lognrnd(0,2,size(predictor_names)); % abs(normrnd(1,2,size(predictor_names))); 
+init_par_vals=data_param_vals.*lognrnd(0,2,size(predictor_names));
 init_vals=fcn_statsol_values(init_par_vals); init_error=sum((y_data-init_vals).^2); 
 ```
 
