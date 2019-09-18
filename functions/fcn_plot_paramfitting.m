@@ -32,7 +32,7 @@ fig_subpl2=subplot(1,2,2);
 barplot_gca=barh(data_init_optim(:,sel_nodes)'); set(fig_subpl2,'ytick',1:numel(sel_nodes)); 
 legend({'initial guess','data','optimized'},'FontSize',label_fontsize,'Box', 'off')
 set(gca,'FontSize',label_ticks_fontsize); 
-xticklabels=get(gca,'xtick'); set(fig_subpl2,'xticklabel',xticklabels,'FontSize',label_ticks_fontsize);
+% xticklabels=get(gca,'xtick'); set(fig_subpl2,'xticklabel',xticklabels,'FontSize',label_ticks_fontsize);
 xlabel('stationary probabilities','FontSize',label_fontsize); 
 % set(fig_subpl2,'yticklabel',''); % strrep(nodes(sel_nodes),'_','\_'),'FontSize',label_fontsize
 set(fig_subpl2,'yticklabel',strrep(nodes(sel_nodes),'_','\_'),'FontSize',label_fontsize);

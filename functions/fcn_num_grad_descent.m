@@ -42,11 +42,19 @@ incr_vector = repmat(1+incr_resol, size(up_down_inds)); incr_vector(up_down_inds
 k=0; error_val=init_error; 
 step_truth_val=k<step_thresh; if isempty(step_truth_val); step_truth_val=1; end 
 
+disp('starting incrementing trans. rates by initial gradient')
+
 while error_val>init_error*error_thresh && step_truth_val
     k=k+1;
+    
     if k==1; optim_pars=init_par_vals; else; optim_pars=optim_pars.*incr_vector; end
-    optim_pars_conv(k,:)=optim_pars; statsol_parscan(k,:)=fcn_statsol_values(optim_pars);
+    optim_pars_conv(k,:)=optim_pars; 
+    statsol_parscan(k,:)=fcn_statsol_values(optim_pars);
     error_val=sum((y_data - statsol_parscan(k,:) ).^2); error_conv(k,1)=error_val; 
+        
+        if k>3  && (error_conv(k,1)>error_conv(k-1,1) && error_conv(k,1)>error_conv(k-2,1) )
+            break
+        end  
     disp(k)
     disp(error_val);
 end

@@ -211,6 +211,9 @@ To have the stationary solution (and also the initial states) in terms of the pr
 [stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol);
 ```
 
+<!---##################################################################--->
+<!---##################################################################--->
+
 ### 4. Visualizing the stationary solution
 
 #### Visualize stationary probability values for states and nodes
@@ -291,6 +294,9 @@ Save the figure by
 resolution_dpi='-r350';
 fcn_save_fig('binary_heatmap_states',plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi);
 ```
+
+<!---##################################################################--->
+<!---##################################################################--->
 
 ### 5. One-dimensional parameter sensitivity analysis
 
@@ -669,6 +675,9 @@ Below is the heatmap of the Sobol total sensitivity indices for the three attrac
 
 Typically the results are similar to linear regression, but the latter can miss parameters that have a non-monotonic/nonlinear effect.
 
+<!---##################################################################--->
+<!---##################################################################--->
+
 ### 7. Parameter fitting
 
 #### Simulated annealing
@@ -725,19 +734,27 @@ y_init=fcn_calc_init_stat_nodevals(x0,...
 tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); toc 
 ```
 
-Note that the convergence process can take long or can fail.
+Note that simulated annealing typically shows slow convergence and it can also fail to converge. For error reductions of 50-98% we have encountered convergence times of 1-3 hours.
 
 Below are the commands to plot the convergence process (first subplot) and the true, initial guess and fitted values of model variables (second subplot) of the EMT model:
 
 ```MATLAB
-figure('name','param fitting'); 
-% which variables to show on the second subplot
-sel_nodes=find(sum(data_init_optim)>0 & sum(data_init_optim)<3); % 3:numel(nodes);
+% model variable values with fitted parameters
+y_optim_param=fcn_calc_init_stat_nodevals(x0,...
+  split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,optim_par_vals),''),...
+  stg_sorting_cell,transition_rates_table,x0),'');
+
+% model variables: initial guess, true values (data), fitted values
+data_init_optim=[y_init; y_data; y_optim_param]; min_val=min(min(data_init_optim(:,3:end))); max_val=max(max(data_init_optim(:,3:end)));
+% parameters: initial guess, true values, fitted values
+param_sets=[init_par_vals;data_param_vals;optim_par_vals];
+
+figure('name','param fitting (simul.ann.)'); 
+% select nodes to plot 
+sel_nodes=find(sum(data_init_optim)>0 & sum(data_init_optim)<3); % here we selected nodes that are not always 0 or 1
 % PLOT fitting process
 thres_ind=size(T_loss,1); % thres_ind=find(T_loss(:,2)<1e-2,1); 
-vars_show=2; % 1=temperature, 2=error
 plot_settings=[24 30];
-
 figure('name','simul anneal')
 fcn_plot_paramfitting(data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plot_settings)
 ```
@@ -746,10 +763,12 @@ The plot is shown below for a sample fitting. Ssince we randomly generate the da
 
 ![simulated_annealing_6fittingpars](readmeplots/simulated_annealing_6fittingpars.png)
 
+<!---##################################################################--->
+
 #### Fitting by initial numerical gradient
 
 Since for the models we tested the transition rates have a monotonic effect on model variable values, we can attempt to take an initial, numerically calculated gradient of the error (sum of squared errors, SSE) as a function of the rates and try to reduce the error by incrementing them in the initial direction of error reduction. 
-This method is rather crude and does not guarentee to converge, but in some cases we have found it does. The evolution of the fitting error is displayed by the function, so if we see the error diverging (growing) we can stop the fitting process.
+This method is rather crude and does not guarentee to converge, but in some cases we have found it does. The evolution of the fitting error is displayed by the function. We have built in a condition into the function that if the error is growing for 2 consecutive steps the fitting process stops, so that a diverging process is automatically stopped.
 
 Again we need to set up anonymous functions, define a vector of datapoints to fit to, and an initial guess:
 ```MATLAB
@@ -778,8 +797,8 @@ init_error_table=[]; % if we have it from previous fitting than feed it to fcn
 incr_resol_init=0.15; incr_resol=0.03;
 
 [init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(init_error_table,...
-                                        {y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
-                                        init_par_vals,incr_resol,incr_resol_init,error_thresh,[]);
+                           {y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
+                           init_par_vals,incr_resol,incr_resol_init,error_thresh,[]);
 ```
 
 and plot the results by
@@ -793,6 +812,15 @@ fcn_plot_paramfitting(data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_sett
 fig_name=strcat('grad_descent',num2str(numel(predictor_names)),'fittingpars');
 fcn_save_fig(fig_name,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
 ```
+
+Below is an example of a succesful fitting by the initial gradient with the following values for the parameters:
+```MATLAB
+scan_params_sensit=[11 13 15 16];; scan_params_up_down_sensit={2, 1, [1 2], 2};
+data_param_vals=[6.7960 2.1261 7.721 8.9191 0.5793];
+init_par_vals=[1.2834 0.4969 48.4048 4.9638 0.1760];
+```
+
+![grad_descent5fittingpars](readmeplots/grad_descent5fittingpars.png)
 
 
 ### References 
