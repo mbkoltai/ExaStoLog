@@ -52,6 +52,7 @@
 #### Defining nodes and logical rules
 
 Models can be defined by entering the list of nodes and their corresponding rules as a cell of strings, using MATLAB logical notation ('&', '|', '~', '(', ')'), or by providing the path to a BoolNet file.
+
 We provide below the names of the models we analyzed in the paper and select the EMT model (Cohen et al 2015) to be read in by the function *fcn_bnet_readin*, also specifying a folder to save plots to:
 
 
