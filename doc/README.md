@@ -657,7 +657,8 @@ We calculate here the usual numerical approximation of the analytical equivalent
 
 From the previous step of linear regression we can (optionally) take only the transition rates that have an R^2 value above a given threshold:
 ```MATLAB
-% for indexing, we need the sequential indices of transition rates (eg. 5th node up rate is 9, 6th node down rate is 12)
+% for indexing, we need the sequential indices of transition rates 
+% (eg. 5th node's up rate {5,1}->9, 6th node down rate is {6,2}->12)
 [par_ind_table,sequential_indices_lhs,~] = ...
 	fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes);
 % threshold for R^2
@@ -689,7 +690,8 @@ sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{2},...
 
 If we have already performed this calculation and just want to plot the results, provide the table **sobol_sensit_index** of results as the function's first argument:
 ```MATLAB
-% PLOT SETTINGS: [fontsize_plot,fontsize_axes,fontsize_title, min_color(optional), max_color(opt), angle of x-axis labels];
+% plot_settings: 
+% [fontsize_plot,fs_axes,fs_title,min_color(optional),max_color(opt),angle x-axis labels];
 plot_settings=[30 30 40 0 0.5 90];
 fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{2},all_par_vals_lhs,[],[],[],...
 	sequential_indices_lhs,scan_params_filtered,scan_params_up_down_filtered,[],[],[],...
@@ -740,7 +742,8 @@ y_data=fcn_calc_init_stat_nodevals(x0,...
 We also need to define anonymous functions to calculate the squared error from the data (and the stationary solution for a given parameter set):
 These functions need to be regenerated if you change the data for fitting.
 ```MATLAB
-[fcn_statsol_sum_sq_dev,~]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
+[fcn_statsol_sum_sq_dev,~]=...
+	fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
 ```
 
 The hyperparameters of fitting are defined as a structure, _fitting\_arguments_, we set 'Verbosity' to 1 so we can see the convergence process, and 'Stopval' is the value of the sum of squared error where we want to stop the fitting process, we set this to (eg.) 10% of the initial error:
@@ -765,7 +768,9 @@ y_init=fcn_calc_init_stat_nodevals(x0,...
 		fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,init_par_vals),''),...
 		stg_sorting_cell,transition_rates_table_optim,x0),'');
 
-tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); toc 
+tic; 
+[optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); 
+toc 
 ```
 
 Note that simulated annealing typically shows slow convergence and it can also fail to converge. For error reductions of 50-98% we have encountered convergence times of 1-3 hours.
@@ -811,7 +816,9 @@ Again we need to set up anonymous functions, define a vector of datapoints to fi
 [~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes); 
 % define data vector (generate some data OR load from elsewhere)
 data_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
-transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
+transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],...
+	predictor_names,data_param_vals);
+
 y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(...
 	fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
 	transition_rates_table_optim,x0),'x0');
