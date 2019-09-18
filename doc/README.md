@@ -78,7 +78,7 @@ Check if all variables referred to by rules are found in the list of nodes:
 fcn_nodes_rules_cmp(nodes,rules)
 ```
 
-If the BOOLNET file is not consistent in terms of its nodes and rules, this function displays an error message, otherwise prints *Model seems correct: all elements in rules found in nodes list*.
+If the BOOLNET file is not consistent in terms of its nodes and rules, this function displays an error message, otherwise prints *'Model seems correct: all elements in rules found in nodes list'*.
 
 To create the logical model we need to generate a function file:
 ```MATLAB
@@ -87,12 +87,13 @@ fcn_write_logicrules(nodes,rules,truth_table_filename)
 ```
 #### Creating the state transition graph
 
-From this function file we generate the state transition graph (STG) of the logical model. This step (it can take a few seconds) is independent of the values of transition rates, so needs to be done only once for a given model:
+From this function file we generate the state transition graph (STG) of the logical model. This step can take a few seconds and it is independent of the values of transition rates, so it needs to be done only once for a given model:
 ```MATLAB
 tic; stg_table=fcn_build_stg_table(truth_table_filename,nodes); toc
 ```
 
-We can check the density of the STG by dividing the number of actual transitions by that of all possible transitions, for the EMT model this is 8.4e-06:
+We can check the density of the STG by dividing the number of actual transitions by that of all possible transitions. 
+For the EMT model the density is 8.4e-06:
 ```MATLAB
 size(stg_table,1)/(2^(2*numel(nodes)))
 ```
@@ -101,14 +102,15 @@ size(stg_table,1)/(2^(2*numel(nodes)))
 
 To calculate the stationary states of a model we need to assign values to the *2xn* (n=number of nodes) transition rates of the model.
 
-We can select a subset of the transition rates to have a specific value by their names, which is always comprised of *d_* or *u_* and the name of the respective node, and also define the vector of values we want them to have.
+We can select a subset of the transition rates to have a specific value by their names (always comprised of *d_* or *u_* and the name of the respective node), and also define the vector of values we want them to have.
 For example we can write: *chosen_rates={'u_p53','d_AKT1'};  chosen_rates_vals=[0.25, 0.15];*
-We can leave both variables empty to have uniform values:
+Alternatively, we can leave both variables empty to have uniform values:
 ```MATLAB
 chosen_rates=[]; chosen_rates_vals=[];
 ```
 
-Next we call the function to generate the table of transition rates. We need to select if we want to have the rates to have a uniform value or to be sampled from a normal distribution, in the latter case specify the mean and standard distribution:
+Next we call the function to generate the table of transition rates. 
+We need to choose if we want to have the rates to have a uniform value or to be sampled from a (normal) distribution, in the latter case we need to specify the mean and standard distribution:
 ```MATLAB
 % ARGUMENTS
 % <uniform> assigns a value of 1 to all params. <random> samples from a lognormal distribution
@@ -116,7 +118,7 @@ distr_type={'uniform','random'};
 % if 'random' is chosen, the mean and standard dev of a normal distrib has to be defined
 meanval=[]; sd_val=[]; 
 transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,...
-							chosen_rates,chosen_rates_vals);
+						chosen_rates,chosen_rates_vals);
 ```
 
 #### Creating the transition matrix
@@ -126,7 +128,8 @@ Now we can build the transition matrix of the model with the specified transitio
 [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,'');
 ```
 
-For the subsequent calculations only the transition matrix *A* is needed as a variable (it is converted to the kinetic matrix within functions), if we want to have the kinetic matrix *K* as a variable (*dp(t)/dt=Kp(t)*, as opposed to *p(t+1)=p(t)A*), then run the function as:
+For the subsequent calculations only the transition matrix *A* is needed as a variable (it is converted to the kinetic matrix within functions).
+If we want to have the kinetic matrix *K* as a variable (*dp(t)/dt=Kp(t)*, as opposed to *p(t+1)=p(t)A*), then run the function as:
 ```MATLAB
 [A_sparse,K_sparse]=fcn_build_trans_matr(stg_table,transition_rates_table,'kinetic');
 ```
@@ -135,16 +138,17 @@ We can visualize the transition matrix by:
 spy(A_sparse);
 xlabel('model states'); ylabel('model states'); set(gca,'FontSize',24)
 ```
-Check the size of the largest objects that we've generated:
+
+To check the size of the largest objects that we've generated so far, run:
 ```MATLAB
 size_limit_mb=1; fcn_objects_memory_size(whos,size_limit_mb)
 ```
 
 #### Defining initial conditions
 
-We define an initial condition by specifying a given state we want to have a larger than random (there are 2^n states in total) probability.
-To do this we select the nodes we want to have defined values and the total (summed) probability of the states which satisfy the defined condition.
-For the analyyzed models we provide a number of initial conditions that are biologically interesting:
+We define an initial condition by specifying certain states we want to have a larger than random (1/(2^n)) probability.
+To do this we select the nodes we want to have defined values and the total probability of the states which satisfy this defined condition.
+For the analyzed models we provided a number of initial conditions that are biologically interesting:
 
 ```MATLAB
 % selected nodes for inital conditions
@@ -168,7 +172,10 @@ initial_fixed_nodes=initial_fixed_nodes_list{model_index};
 initial_fixed_nodes_vals=initial_fixed_nodes_vals_list{model_index};
 ```
 
-Then with the function *fcn_define_initial_states* we assign the probability *dom_prob* among the selected states, and the remainging *1-dom_prob* probability is either uniformly or randomly distributed among the other possible states
+In this example with the EMT model we set the input nodes ('ECMicroenv','DNAdamage') to 1, the phenotypic ('Metastasis','Migration','Invasion','EMT','Apoptosis') nodes and p53 to 0, and the Notch pathway node (Notch_pthw) to 1.
+
+Then with the function *fcn_define_initial_states* we assign the probability *dom_prob* among the selected states (uniformly or randomly), and the remaining *1-dom_prob* probability is distributed (also uniformly or randomly) among the other possible states:
+
 ```MATLAB
 dom_prob=1;
 % if <random> the probability is randomly distributed among states, if <uniform> uniformly
@@ -192,16 +199,17 @@ x0=ones(2^numel(nodes),1)/(2^numel(nodes));
 
 ### 3. Calculation of stationary solution
 
-Topological sorting of the STG is a parameter-independent step that we need to perform only once for a model (except if we set transition rates to 0, or change the initial condition), so we do it before the calculation of the solution:
+Topological sorting of the STG, as well as the identification of cycles and subgraphs are parameter-independent steps that we need to perform only once for a model (except if we set transition rates to 0, or change the initial condition), so we do it before the calculation of the solution:
 ```MATLAB
 stg_sorting_cell=fcn_scc_subgraphs(A_sparse,x0);
 ```
-This function outputs its progress and shows how many cycles the STG contains, in the case of the EMT model the calculation is 9 seconds (on a CENTOS computer with 8 cores (Intel(R) Xeon(R) CPU X5472 \@ 3.00GHz) and we get the message:
+
+The function outputs its progress and shows how many cycles the STG contains, in the case of the EMT model the calculation is 9 seconds (on a CENTOS computer with 8 cores (Intel(R) Xeon(R) CPU X5472 \@ 3.00GHz) and we get the message:
 *cycles of length:1   64  208  224  256 (256640      16       8       8       4 times)*
 
 This is informative because the existence of cycles is the main limiting factor in the staionary solutions's calculation, and cycles larger than 1000 vertices might make the calculation unfeasible.
 
-With the transition matrix, table of transition rates and the initial condition defined we can now calculate the stationary solution of the model, that takes around 2-3 seconds for the EMT model:
+With the transition matrix, the table of transition rates and the initial condition defined, we can now calculate the stationary solution of the model, that takes around 2-3 seconds for the EMT model:
 
 ```MATLAB
 tic; 
@@ -211,9 +219,9 @@ toc
 ```
 
 The outputs of the calculation are:  
-**stat_sol**: stationary solution for all the states (sparse variable, only nonzero elements shown)  
-**term_verts_cell**: index of nonzero states. If the STG is disconnected, this variable is a cell of cells, where the nonzeros states in different subgraphs are in separate cells  
-**cell_subgraphs**: indices of (all) states belonging to the STG's different subgraphs
+*stat_sol*: stationary solution for all the states (sparse variable, only nonzero elements shown)  
+*term_verts_cell*: index of nonzero states. If the STG is disconnected, this variable is a cell of cells, where the nonzeros states in different subgraphs are in separate cells  
+*cell_subgraphs*: indices of (all) states belonging to the STG's different subgraphs
 
 To have the stationary solution (and also the initial states) in terms of the probabilities of the (activation of the) model's _variables_, call the function:
 ```MATLAB
@@ -243,7 +251,8 @@ Call the function _fcn\_plot\_A\_K\_stat\_sol_ with the following arguments:
 % Call the function by:
 sel_nodes=[];
 min_max_col=[0 1]; barwidth_states_val=0.8;
-fontsize=[24 40 20]; % [fontsize of plot, fontsize of titles, fontsize of binary states]
+% fontsize: [fontsize of plot, fontsize of titles, fontsize of binary states]
+fontsize=[24 40 20]; 
 plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.03;
 
 figure('name','A_K_stat_sol')
@@ -252,14 +261,14 @@ fcn_plot_A_K_stat_sol(A_sparse,nodes,sel_nodes,stat_sol,x0,plot_settings,prob_th
 
 ![single_solution_states_nodes_stat_sol_with_matrix](./readmeplots/single_solution_states_nodes_stat_sol_with_matrix.png)
 
-We create a directory for the figures of the model, specify the file types for figures and save the plot by running (_export\_fig_ toolbox needed, see requirements at the top of the tutorial) the following commands:
+We create a directory for the figures of the model, specify the file types for figures and save the plot by running the following commands (_export\_fig_ toolbox needed, see requirements at the top of the tutorial):
 ```MATLAB
 if exist(plot_save_folder,'dir')==0; mkdir(plot_save_folder); end
 fig_file_type={'.png','.eps','.pdf','.jpg','.tif'};
 % if <overwrite_flag> non-empty then existing file with same name is overwritten.
 overwrite_flag='yes';
 
-% resolution of the figures
+% resolution of the figures (dpi)
 resolution_dpi='-r350';
 % SAVE
 fcn_save_fig('single_solution_states_nodes_stat_sol',plot_save_folder,...
@@ -268,13 +277,13 @@ fig_file_type{3},overwrite_flag,resolution_dpi)
 
 #### Visualize binary heatmap of nonzero stationary states
 
-To visualize what are the model variables that are activated in the case of the stable states of the model on a heatmap, we need to provide the following arguments and call the plotting function _fcn_plot_statsol_bin_hmap_:
+To visualize what model variables are activated for the stable states of the model, we need to provide the following arguments and call the plotting function _fcn_plot_statsol_bin_hmap_, getting a heatmap:
 
 ```MATLAB
 
 % stat_sol: vector of stationary solutions
 % prob_thresh: probability threshold for states to show (if left empty, all states shown)
-prob_thresh=0.01;  % []; % 0.05;
+prob_thresh=0.01;  
 % term_verts_cell: index of subgraphs for stable states
 % nodes: name of nodes
 % sel_nodes: nodes to show. if none selected, all nodes will be shown
@@ -295,8 +304,8 @@ term_verts_cell,nodes,sel_nodes,plot_param_settings,tight_subplot_flag,ranking_f
 
 ![binary_statsol_heatmap_15vars](./readmeplots/EMT_11_binary_heatmap_states.png)
 
-On the y-axis we see the probabilities of the stable states (index of the subgraph where they are located in parenthesis), on the x-axis the variables of the model with the heatmap showing their value (0 or 1).
-In the case of cyclic attractors containing multiple states these rows would have no gapes in between them (see figure for mammalian cell cycle model in our article).
+On the y-axis we see the probabilities of the stable states (in parenthesis is the index of the subgraph in which they are located), on the x-axis the variables of the model with the heatmap showing their value (0 or 1).
+In the case of cyclic attractors containing multiple states these rows have no gaps in between them (see figure for mammalian cell cycle model in our article).
 
 Save the figure by
 ```MATLAB
@@ -309,7 +318,7 @@ fcn_save_fig('binary_heatmap_states',plot_save_folder,fig_file_type{3},overwrite
 
 ### 5. One-dimensional parameter sensitivity analysis
 
-To investigate the effect of the transition rates we can first perform one dimensional parameter scans. This means changing the value of parameters one by one and looking at the effect on stationary solutions.
+To investigate the effect of the transition rates we can first perform one-dimensional parameter scans. This means changing the value of parameters one by one and looking at the effect on stationary solutions.
 
 First we need to select the nodes whose transition rates we want to scan in.
 We can for instance select all rates that have actual transitions in the subgraph of the STG:
@@ -320,9 +329,9 @@ par_inds_table=unique(stg_table(ismember(stg_table(:,1), subgraph_states) | ...
 					ismember(stg_table(:,2), subgraph_states),3:4),'rows');
 ```
 
-Now _par\_inds\_table_ contains these transition rates, the first column showing the corresponding node of the rates and the second whether it is for 1->0 (1) or the 0->1 (2) transition.  
+Now _par\_inds\_table_ contains these transition rates, the first column containing the indices of the corresponding nodes and the second the indices for the type of transition: 1->0 (1) or the 0->1 (2).  
 
-We can also quantify the number of occurrences by transition rate and take the _n_ most common ones:
+We can also quantify the number of occurrences by transition rates and take the _n_ most common ones:
 ```MATLAB
 % most common transitions
 for k=1:size(par_inds_table,1)
@@ -350,12 +359,12 @@ We can also select nodes by their name:
 scan_params=find(ismember(nodes,{'Notch_pthw','p53','EMTreg','FOXO3','p63_73'}));
 ```
 
-Then we need to choose if we want to scan in the up or the down rate or both. Here we select all indices that have actual transitions:
+Then we need to choose if we want to scan in the up or the down rates or both. Here we select all indices that have actual transitions:
 ```MATLAB
 scan_params_up_down=arrayfun(@(x) par_inds_table(par_inds_table(:,1)==x,2)', scan_params,'un',0);
 ```
 
-We now need to provide the range of values we want to scan in, the resolution, and whether we want to sample linearly or logarithmically:
+We now need to provide the range of values we want to scan in, the resolution of the scan, and whether we want to sample linearly or logarithmically:
 ```MATLAB
 % min and max of range of values; resolution of the scan; linear or logarithmic sampling
 parscan_min_max = [1e-2 1e2]; n_steps=10; sampling_types={'log','linear'};
@@ -363,23 +372,25 @@ parscan_min_max = [1e-2 1e2]; n_steps=10; sampling_types={'log','linear'};
 
 Now we can build the table with the parameter values and start the scan:
 ```MATLAB
+% matrix of parameter values
 parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_down,...
 		nodes,sampling_types{1},parscan_min_max,n_steps);
 
+% calculation
 [stationary_state_vals_onedimscan,stationary_node_vals_onedimscan,stationary_state_inds_scan]=...
     fcn_onedim_parscan_calc(stg_table,transition_rates_table,x0,...
 		nodes,parscan_matrix,scan_params,scan_params_up_down);
 ```
 
 We can first plot the results grouped by the transition rates of the parameter scan.
-On each subplot we plot the stationary value of attractor states or model variables as a function of one of the transition rates.
+In this case, on each subplot we have the stationary value of attractor states or model variables as a function of one transition rate.
 We define a threshold for the minimal variation in the value of the variables to be plotted, so variables that do not change as a function of a transition rate are not shown on the plot.
 
 Let's provide the arguments for plotting:
 ```MATLAB
 % index of nonzero states
 nonzero_states_inds=find(stat_sol>0);
-% plot parameters: gap between subplots, margins at bottom, top, left and right edges
+% plot parameters: [vertical, horizontal] gap between subplots, margins at [bottom, top], [left, right]
 height_width_gap=[0.08 0.03]; bott_top_marg =[0.05 0.05]; left_right_marg=[0.04 0.01];
 params_tight_subplots={height_width_gap bott_top_marg left_right_marg};
 % plot_param_settings: [fontsize_axes,fs_title,fs_legend,linewidth,params_tight_subplots,model_name]
@@ -390,29 +401,31 @@ state_or_node_flags={'nodes','states'};
 diff_cutoff=0.15;
 figure('name','onedim parscan by param')
 [fig_filename,onedim_paramscan_output_cell]=fcn_onedim_parscan_plot_by_params(state_or_node_flags{1},...
-                             stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
-                             nonzero_states_inds,parscan_matrix,nodes,...
-                             scan_params,scan_params_up_down,... % selected parameters
-                             diff_cutoff,... % minimal variation for variable to be shown on plot
-                             plot_param_settings);
+		stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
+		nonzero_states_inds,parscan_matrix,nodes,...
+		scan_params,scan_params_up_down,... % selected parameters
+		diff_cutoff,... % minimal variation for variable to be shown on plot
+		plot_param_settings);
 ```
 
-We show below the plot for the one-dimensional scan of the rates of the 6 nodes that have the most transitions in the STG. The size/location of subplots and the line styles were manually adjusted for better visibility.
+We show below the plot for the one-dimensional scan of the rates of the 6 nodes that have the most transitions in the STG. 
+The size/location of subplots and the line styles were manually adjusted for better visibility.
 
 ![onedim_parscan_lineplot_nodes_EMT_cohen_ModNet_by_params_r350](./readmeplots/onedim_parscan_lineplot_nodes_EMT_cohen_ModNet_by_params_r350.png)
 
-Alternatively, we can plot the results of the parameter scan grouped by variables. In this case on each subplot it is the stationary probability of one state or model variable that is shown, as a function of those transition rates that have a significant (threshold set by user) effect on its value.
+
+Alternatively, we can plot the results of the parameter scan grouped by variables. 
+In this case on each subplot it is the stationary probability of one state or model variable that is shown, as a function of those transition rates that have a significant (threshold set by user) effect on its value.
 
 With the function _fcn\_onedim\_parscan\_plot\_parsensit_ we have multiple ways to plot the results of the parameter scan:
 - to plot as a heatmap or lineplot
 - to plot the values for the model's nodes or states
 - to plot the probability values of states/nodes or their local sensitivity across the transition rate values
 
-Choosing between these is by the _plot\_types_ variable (cell).
+Choosing between these is by subsetting the variable (cell) _plot\_types_ variable_.
 The arguments of the function are the following:
 ```MATLAB
 % nonzero states of the model
-% nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))';
 nonzero_states_inds=find(stat_sol>0);
 % sensit_cutoff: minimal value for local sensitivity or variation of model/state values
 sensit_cutoff=0.1; 
@@ -436,20 +449,17 @@ Then call the function and save the plot as (eg.) PNG:
 		scan_params,scan_params_up_down,...
 		sensit_cutoff,plot_param_settings);
 
-
-fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),plot_save_folder,...
-			 fig_file_type{1},'overwrite','-r200');
+fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),...
+	plot_save_folder,fig_file_type{1},'overwrite','-r200');
 ```
 
-Below we generate the plot showing the stationary probability value of the attractor states by a lineplot.
-The default titles for states generated by the function are their numerical indices and the binary string of the state itself. 
+Below we generate the lineplot of the stationary probability value of the attractor states.
+The default titles for states generated by the function are their decimal indices and the binary string of the state itself. 
 In the plot below we manually renamed the subplots so that they are more biologically meaningful, as well as changed some line styles and fonts for better visibility. 
 
 ![onedim_parscan_lineplot_nodes_EMT_cohen_ModNet_by_params_r350](./readmeplots/onedim_parscan_lineplot_states_values_EMT_cohen_ModNet_by_vars_cutoff0p1.png)
 
-
-To plot the local sensitivities we need to set *plot\_type\_options=[2 2 2];* and call the function again:
-
+To plot the local sensitivities of the states/variables to the rates, we need to set *plot\_type\_options=[2 2 2];* and call the function again:
 
 ```MATLAB
 plot_type_options=[2 2 2];
@@ -463,16 +473,15 @@ figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, ...
                           sensit_cutoff,plot_param_settings);
 ```
 
-
-The heatmap looks as the following (states are the same as on previous plot, but without renaming the subplots):
+The heatmap looks as the following (states are the same as on previous plot, without renaming the subplots):
 ![onedim_parscan_heatmap_states_sensitivity_EMT_cohen_ModNet_by_vars_cutoff0p1](./readmeplots/onedim_parscan_heatmap_states_sensitivity_EMT_cohen_ModNet_by_vars_cutoff0p1.png)
 
 
-The function has the following outputs (besides the plot itself):
-- resp_coeff: local sensitivity matrix of model variables to transition rates
-- scan_pars_sensit, scan_params_sensit_up_down: index of transition rates that where some model variable has a change in its value (or local sensitivity) above a certain threshold (in absolute value)
+This function has the following outputs (besides the plot itself):
+- *resp_coeff*: local sensitivity (response coefficient) matrix of model variables to transition rates
+- *scan_pars_sensit*, *scan_params_sensit_up_down*: index of transition rates where at least one model variable has a change in its value (or its local sensitivity's value is) above a certain threshold (in absolute value)
 
-Now we have the transition rates the model is (most) sensitive to and we can use only these for multidimensional parameter scanning and/or parameter fitting, which are more intensive calculations.
+Now we have the transition rates the model is (most) sensitive to and we can use (only) these for multidimensional parameter scanning and/or parameter fitting, which are more intensive calculations.
 
 <!---##################################################################--->
 <!---##################################################################--->
@@ -480,20 +489,22 @@ Now we have the transition rates the model is (most) sensitive to and we can use
 ### 6. Multi-dimensional parameter sensitivity analysis
 
 In multidimensional parameter scans we are changing the values of all the selected transition rates at the same time, sampling the entire multidimensional parameter space.
-This can be done with a regular grid, but the size of this calculation grows exponentially, eg. if we want 5 values for _n_ parameters, we need to perform 5^n calculations. Therefore we recommend to do this (with a regular grid) for two-dimensions only. For two dimensions the results can be easily visualized on a heatmap. 
+This can be done with a regular grid, but the size of this calculation grows exponentially, eg. if we want 5 values for _n_ parameters, we need to perform 5^n calculations. Therefore we recommend to do this (with a regular grid) for two-dimensions only. 
+For two dimensions the results can be easily visualized on a heatmap. 
 
-More efficient is Latin Hypercube Sampling (LHS) where we sample the multidimensional space with _n_ sampling points distributed evenly into the _n_ compartments of the hypercube of the parameter space. The location of the sampling points within the compartments is random. 
+More efficient is Latin Hypercube Sampling (LHS) where we sample the multidimensional space with _n_ sampling points distributed evenly into the _n_ compartments of the hypercube of the parameter space. The location of the sampling points *within* the compartments is random. 
 
 #### Multidimensional parameter scanning with regular grids
 
-For two dimensions we can define the parameter sampling grid by MATLAB's _meshgrid_ command and defining the limits and distribution of points. 
+For two dimensions we can define the parameter sampling grid by MATLAB's _meshgrid_ command, after defining the range and distribution of sampling points. 
 For example we want to sample loguniformly from 1e-2 to 1e2. 
 ```MATLAB
-n_scanvals=10; scanvals=logspace(-2,2,n_scanvals);  % with zero [0 logspace(-2,2,n_scanvals-1)]
+n_scanvals=10; scanvals=logspace(-2,2,n_scanvals);  % with zero: [0 logspace(-2,2,n_scanvals-1)]
 meshgrid_scanvals=meshgrid(scanvals,scanvals);
 ```
 
-For the function _fcn\_calc\_paramsample\_table_ we need to input the grid as a table with each row as a parameter set and we also need to define the transition rates we want to scan in. We know from (Cohen 2015) that shutting down p53 and increasing Notch pathway activity should have a synergistic effects so we select the transition rates _u\_p53_ and _u\_Notch_pthw_ (nodes 11 and 13, up rates: {1,1}), and then call the function:
+For the function _fcn\_calc\_paramsample\_table_ we need to input the grid as a table with each row as a parameter set and we also need to define the transition rates we want to scan in. 
+We know from (Cohen 2015) that shutting down p53 and increasing Notch pathway activity should have a synergistic effect, so we select the transition rates _u\_p53_ and _u\_Notch_pthw_ (nodes [11,13], up rates: {1,1}) and then call the function:
 ```MATLAB
 paramsample_table=[repelem(scanvals,n_scanvals)' ...
 	reshape(reshape(repelem(scanvals,n_scanvals),n_scanvals,n_scanvals)',n_scanvals^2,1)]; 
@@ -506,7 +517,7 @@ disp_var=5; % show at every n% the progress
 		multiscan_pars_up_down,transition_rates_table,stg_table,x0,disp_var);
 ```
 
-Plot the results as a two-dimensional heatmap for selected model variable(s), in our case we plot metastasis:
+Plot the results as a two-dimensional heatmap for selected model variable(s), in our case metastasis:
 ```MATLAB
 % what model variables to plot?
 sel_nodes=4;
@@ -527,20 +538,19 @@ fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{1},'overwrite',reso
 
 #### Multidimensional parameter scanning with Latin Hypercube Sampling
 
-
 To perform LHS we need to provide the arguments for the type and properties of the distribution and the sample size. 
 For transition rates we can use the sensitive parameters identified by one-dimensional parameter scan.
 
 ```MATLAB
 sampling_types={'lognorm','linear','logunif'}; sampling_type=sampling_types{3};
 % par_min_mean: minimum or (if lognormal) mean of distribution. 
-%  can be scalar or vector (if different values for different parameters)
+%  				Can be a scalar or vector (if different values for different parameters)
 % max_stdev: maximum or in case of lognormal the mean of distribution. Scalar or vector
 %
 % for 'lognorm','logunif' provide LOG10 value of desired mean/min & stdev/max (-2 is a mean of 0.01)
 par_min_mean=-2; % repmat(1.5,1,numel(cell2mat(scan_params_up_down_sensit(:)))); par_min_mean(4)=3; 
 max_stdev=2; 	 % repmat(0.5,1,numel(cell2mat(scan_params_up_down_sensit(:))));
-% <lhs_scan_dim>: number of param sets
+% number of param sets
 lhs_scan_dim=1000;
 
 % RUN the LHS
@@ -557,10 +567,9 @@ The outputs are:
 
 #### Visualize multi-dimensional parameter scans by scatter plots
 
-We can plot the results as scatterplots of a given node's or state's values as a function of the scan parameters, with a trendline showing the mean value in a defined number of bins.
+We can plot the results first as scatterplots of a given model variable's or state's values as a function of the scan parameters, with a trendline showing the mean value in a defined number of bins.
 
-First we select the variable to plot and whether we want to plot attractor states or model variables of the model:
-
+First we select the variable to plot and whether we want to plot attractor states or model variables:
 
 ```MATLAB
 % which variable to plot?
@@ -593,15 +602,17 @@ Below are the results for the apoptotic state with p63\_73 activation:
 
 #### Correlations between model variables
 
-Plotting correlations among the variables can reveal what are the upstream nodes that the model's output/phenotypic nodes primarily depend on or that the model's effective dimensionality is smaller than its total size.
+Plotting correlations among the variables can reveal what are the upstream nodes that the model's output/phenotypic nodes primarily depend on.
+Also if we see that some model variables' values are 100% correlated this can be an indication that the model's effective dimensionality is smaller than its total size.
 
-To plot the heatmap of correlations between the model's _variables_ we need to provide the following arguments (we selected some of the nodes based on previous calculations knowing some of them show the same values):
+To plot the heatmap of correlations between the model's variables we need to provide the following arguments (we selected variables below based on previous calculations that showed some of them always have the same values):
 ```MATLAB
 % sel_nodes: name of selected nodes (pls provide in ascending order) (if left empty, all shown)
 sel_nodes=[3 7 8 10 11 13:15 17:20]; 
 % plot_settings: [fontsize on plot, fontsize on axes/labels]
 plot_settings=[NaN 26 32]; 
-plot_type_flag={'var_var','heatmap'}; % this is plotting the heatmap of correlations between variables
+% we'll plot correlations between variables, as a heatmap
+plot_type_flag={'var_var','heatmap'}; 
 
 figure('name',strjoin(plot_type_flag))
 [varvar_corr_matr,p_matrix_vars]=...
@@ -619,8 +630,8 @@ The plot for our EMT model with the selected variables looks as:
 
 #### Regression of variables by transition rates
 
-We can also perform linear regression of model variable or attractor state (probability) values as a function of transition rates and plot the regression coefficients (R^2).
-We first need to set arguments defining the type and properties of the plot and of the fitting, and also whether we want to fit 
+We can also perform linear regression of model variables or attractor states as a function of transition rates and plot the regression coefficients (R^2).
+We first need to set arguments defining the type and properties of the plot and of the fitting, and also whether we want to fit model variables or states:
 
 ```MATLAB
 plot_type_flag={'par_var','heatmap','r_sq'}; % {'par_var','heatmap'/'lineplot','r_sq'/'slope'}
@@ -653,8 +664,9 @@ rate is non-monotonic this is not necessarily the case.
 #### Sobol total sensitivity index
 
 The [Sobol total sensitivity index](https://en.wikipedia.org/wiki/Variance-based_sensitivity_analysis) is a global sensitivity index that indicates how much of the total variance in a variable is due to variation in a given parameter.
-As opposed to linear regression this index does not assume monotonicity or linearity of the effects of parameters on variable values.
-We calculate here the usual numerical approximation of the analytical equivalent from LHS, using the results of the LHS, but for the selected transition rates the solutions need to be recalculated to get the Sobol indices, so this can be a time-consuming calculation.
+As opposed to linear regression this index does not assume monotonicity or linearity of the  parameter effects on variable values.
+We calculate here the usual numerical approximation of the analytical equivalent from LHS. 
+For the selected transition rates the solutions need to be recalculated to get the Sobol indices, so this can be a time-consuming calculation.
 
 From the previous step of linear regression we can (optionally) take only the transition rates that have an R^2 value above a given threshold:
 ```MATLAB
@@ -686,11 +698,11 @@ sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{2},...
 	all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan,...
 	sample_size,... % # of calculations per parameter
 	sequential_indices_lhs,... % indices of transition rates in the original LHS
-	scan_params_filtered,scan_params_up_down_filtered,... % scan_params_sensit,scan_params_up_down_sensit
+	scan_params_filtered,scan_params_up_down_filtered,... % or: scan_params_sensit,scan_params_up_down_sensit
 	stg_table,transition_rates_table,x0,nodes,sel_nodes,plot_settings,disp_freq);
 ```
 
-If we have already performed this calculation and just want to plot the results, provide the table **sobol_sensit_index** of results as the function's first argument:
+To plot the results, provide the table **sobol_sensit_index** of results as the function's first argument:
 ```MATLAB
 % plot_settings: 
 % [fontsize_plot,fs_axes,fs_title,min_color(optional),max_color(opt),angle x-axis labels];
@@ -708,7 +720,7 @@ fcn_save_fig('sobol_sensitivity_index',plot_save_folder,fig_file_type{3},'overwr
 Below is the heatmap of the Sobol total sensitivity indices for the three attractor states of the EMT model:
 ![sobol_sensitivity_index](readmeplots/sobol_sensitivity_index.png)
 
-Typically the results are similar to linear regression, but the latter can miss parameters that have a non-monotonic/nonlinear effect.
+Typically, as in this example, the results are similar to linear regression, but the latter can miss parameters that have a non-monotonic/nonlinear effect.
 
 <!---##################################################################--->
 <!---##################################################################--->
@@ -728,7 +740,7 @@ We use below a [simulated annealing script from MATLAB Central](https://mathwork
 (These changes are already written into the script, you do not need to do anything about them.)
 
 First we need to provide the parameters we want to fit, which can be the sensitive transition rates identified above.
-We also need to provide a vector of values for the model's nodes that we want to fit the model to.
+As data, we also need to provide a vector of values for the model's variables that we want to fit the model to.
 ```MATLAB
 % names of selected transition rates
 [~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes); 
@@ -743,14 +755,14 @@ y_data=fcn_calc_init_stat_nodevals(x0,...
 	stg_sorting_cell,transition_rates_table_optim,x0),'x0');
 ```
 
-We also need to define anonymous functions to calculate the squared error from the data (and the stationary solution for a given parameter set):
-These functions need to be regenerated if you change the data for fitting.
+We also need to define anonymous functions to calculate the stationary solution for a given parameter set and its squared error relative to the data:
+These functions need to be rerun if we change the data for fitting.
 ```MATLAB
 [fcn_statsol_sum_sq_dev,~]=...
 	fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
 ```
 
-The hyperparameters of fitting are defined as a structure, _fitting\_arguments_, we set 'Verbosity' to 1 so we can see the convergence process, and 'Stopval' is the value of the sum of squared error where we want to stop the fitting process, we set this to (eg.) 10% of the initial error:
+The hyperparameters of fitting are defined as the structure _fitting\_arguments_: we set 'Verbosity' to 1 so we can see the convergence process, and 'Stopval' to (eg.) 10% of the initial error (the value of the sum of squared error to stop the fitting process):
 ```MATLAB
 % default values for fitting hyperparameters:
 % struct('CoolSched',@(T) (0.8*T), 'Generator',@(x) (x+(randperm(length(x))==length(x))*randn/100),...
@@ -763,7 +775,7 @@ fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10);
 Then we define an initial guess and run the algorithm:
 ```MATLAB
 % initial guess for parameters
-init_par_vals=data_param_vals.*abs(normrnd(1,1,size(predictor_names))); 
+init_par_vals=data_param_vals.*normrnd(1,1,size(predictor_names)); 
 init_error=fcn_statsol_sum_sq_dev(init_par_vals);
 
 % initial value of model nodes (with the initial parameter guess)
@@ -777,7 +789,8 @@ tic;
 toc 
 ```
 
-Note that simulated annealing typically shows slow convergence and it can also fail to converge. For error reductions of 50-98% we have encountered convergence times of 1-3 hours.
+Note that simulated annealing typically shows slow convergence and it can also fail to converge. 
+For error reductions between 50-99% we have encountered convergence times of 1-3 hours.
 
 Below are the commands to plot the convergence process (first subplot) and the true, initial guess and fitted values of model variables (second subplot) of the EMT model:
 
@@ -805,16 +818,17 @@ figure('name','simul anneal')
 fcn_plot_paramfitting(data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plot_settings)
 ```
 
-The plot is shown below for a sample fitting. Ssince we randomly generate the data and initial guess for parameters, it will look different for a new fitting process:
-
 ![simulated_annealing_6fittingpars](readmeplots/simulated_annealing_6fittingpars.png)
+
+This plot is for a sample fitting process. Since we randomly generate the data and initial guess for parameters, it will look different for a new fitting.
+
 
 <!---##################################################################--->
 
 #### Fitting by initial numerical gradient
 
 For the 5 models we analyzed the transition rates have a monotonic effect on model variable values. 
-Therefore we can take an initial, numerically calculated gradient of the error (sum of squared errors, SSE) as a function of the rates and attempt to reduce the error by incrementing them in the initial direction of error reduction. 
+Therefore we can take an initial, numerically calculated gradient of the error (SSE) as a function of the rates and attempt to reduce the error by incrementing the rates with their initial direction. 
 
 This method is rather crude and does not guarentee to converge, but in some cases we have found it does. 
 We have built in a condition into the function that if the error is growing for 2 consecutive steps the fitting process stops, so that a diverging process is automatically stopped. The evolution of the fitting error is displayed by the function. 
@@ -823,30 +837,32 @@ Again we need to set up anonymous functions and define a vector of datapoints to
 
 ```MATLAB
 [~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes); 
-% define data vector (generate some data OR load from elsewhere)
-data_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
+% create simulated data by randomly generating parameter values
+data_param_vals=lognrnd(1,1,1,numel(predictor_names)); 
 transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],...
 	predictor_names,data_param_vals);
 
+% generate 'data' from parameters
 y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(...
 	fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
 	transition_rates_table_optim,x0),'x0');
 
+% anonymous functions for fitting
 [~,fcn_statsol_values]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
 
-% initial values for parameters and error
+% initial values for parameters, model variables and error
 init_par_vals=data_param_vals.*lognrnd(0,2,size(predictor_names));
-init_vals=fcn_statsol_values(init_par_vals); init_error=sum((y_data-init_vals).^2); 
+init_vals=fcn_statsol_values(init_par_vals); 
+init_error=sum((y_data-init_vals).^2); 
 ```
 
 We define at what % of the original error we want the fitting to stop and with what step size the rates are incremented (by their initial derivatives). We then run the fitting function:
 ```MATLAB
-error_thresh=0.1; % what % of initial error to stop?
-step_thresh=[]; % what step # to stop? you can leave this empty 
+error_thresh=0.1; 	% what % of initial error to stop?
+step_thresh=[]; 	% what step # to stop? you can leave this empty 
 % init_error_table: changes to initial error when increasing or decreasing parameter values
 init_error_table=[]; % if we have it from previous fitting than feed it to fcn
-% incr_resol_init: initial % change from initial param values
-%				   to calculate the numerical gradient for the descent
+% incr_resol_init: initial % change from initial param values to calculate the numerical gradient
 % incr_resol: change in param values during gradient descent
 incr_resol_init=0.15; incr_resol=0.03;
 
