@@ -1,5 +1,9 @@
-% This file contains the commands to run the functions calculating the
-% stationary solution of stoch logical models, plot results and perform parametric analysis
+%% ExaStoLog
+% This file contains the commands to run the functions calculating the stationary solution of stoch logical models, 
+% plot results and perform parametric analysis
+%
+% READ the tutorial at: https://github.com/mbkoltai/exact-stoch-log-mod
+% author: Mihaly Koltai, mihaly.koltai@curie.fr
 
 % go to the folder of the file
 editor_service=com.mathworks.mlservices.MLEditorServices; editor_app=editor_service.getEditorApplication;
