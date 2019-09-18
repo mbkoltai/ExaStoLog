@@ -110,9 +110,12 @@ chosen_rates=[]; chosen_rates_vals=[];
 Next we call the function to generate the table of transition rates. We need to select if we want to have the rates to have a uniform value or to be sampled from a normal distribution, in the latter case specify the mean and standard distribution:
 ```MATLAB
 % ARGUMENTS
-distr_type={'uniform','random'}; % <uniform> assigns a value of 1 to all params. <random> samples from a lognormal distribution
-meanval=[]; sd_val=[]; % if 'random' is chosen, the mean and standard dev of a normal distrib has to be defined
-transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,chosen_rates,chosen_rates_vals);
+% <uniform> assigns a value of 1 to all params. <random> samples from a lognormal distribution
+distr_type={'uniform','random'}; 
+% if 'random' is chosen, the mean and standard dev of a normal distrib has to be defined
+meanval=[]; sd_val=[]; 
+transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,...
+							chosen_rates,chosen_rates_vals);
 ```
 
 #### Creating the transition matrix
@@ -144,11 +147,12 @@ For the analyyzed models we provide a number of initial conditions that are biol
 
 ```MATLAB
 % selected nodes for inital conditions
-initial_fixed_nodes_list={ {'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}, ... % mammalian_cc
- {'cc','KRAS','DSB','cell_death'}, ... % krasmodel15vars
- {'Alpelisib', 'Everolimus','PIM','Proliferation','Apoptosis'},...  % breast_cancer_zanudo2017
- {'ECMicroenv','DNAdamage','Metastasis','Migration','Invasion','EMT','Apoptosis','Notch_pthw','p53'}, ... % EMT_cohen_ModNet
- {'EGF','ERBB1','ERBB2','ERBB3','p21','p27'}}; % sahin_breast_cancer_refined
+initial_fixed_nodes_list=...
+{ {'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}, ... % mammalian_cc
+{'cc','KRAS','DSB','cell_death'}, ... % krasmodel15vars
+{'Alpelisib', 'Everolimus','PIM','Proliferation','Apoptosis'},...  % breast_cancer_zanudo2017
+{'ECMicroenv','DNAdamage','Metastasis','Migration','Invasion','EMT','Apoptosis','Notch_pthw','p53'}, ... % EMT_cohen_ModNet
+{'EGF','ERBB1','ERBB2','ERBB3','p21','p27'}}; % sahin_breast_cancer_refined
 
 % values for selected nodes
 initial_fixed_nodes_vals_list = {[0 0 0 1 1 1 1 1], ... % mammalian_cc
@@ -159,7 +163,8 @@ initial_fixed_nodes_vals_list = {[0 0 0 1 1 1 1 1], ... % mammalian_cc
 
 
 % select the initial condition for the model we are working on
-initial_fixed_nodes=initial_fixed_nodes_list{model_index}; initial_fixed_nodes_vals=initial_fixed_nodes_vals_list{model_index};
+initial_fixed_nodes=initial_fixed_nodes_list{model_index}; 
+initial_fixed_nodes_vals=initial_fixed_nodes_vals_list{model_index};
 ```
 
 Then with the function *fcn_define_initial_states* we assign the probability *dom_prob* among the selected states, and the remainging *1-dom_prob* probability is either uniformly or randomly distributed among the other possible states
@@ -170,8 +175,10 @@ distrib_types={'random','uniform'};
 % if plot_flag non-empty, we get a bar plot of initial values
 plot_flag='';
 % function assigns a probability of <dom_prob> to the states with the fixed nodes having the defined values
-x0=fcn_define_initial_states(initial_fixed_nodes,initial_fixed_nodes_vals,dom_prob,nodes,distrib_types{1},plot_flag);
+x0=fcn_define_initial_states(initial_fixed_nodes,initial_fixed_nodes_vals,...
+				dom_prob,nodes,distrib_types{1},plot_flag);
 ```
+
 If \<plot_flag> is non-empty we also get a bar plot of the initial states.
 
 We can also define a completely random or uniform probability distribution of initial states:
@@ -197,7 +204,8 @@ With the transition matrix, table of transition rates and the initial condition 
 
 ```MATLAB
 tic; 
-[stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_sorting_cell,transition_rates_table,x0); 
+[stat_sol,term_verts_cell,cell_subgraphs]=...
+	split_calc_inverse(A_sparse,stg_sorting_cell,transition_rates_table,x0); 
 toc
 ```
 
