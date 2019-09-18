@@ -236,7 +236,8 @@ Call the function _fcn\_plot\_A\_K\_stat\_sol_ with the following arguments:
 % fontsize: [font size on the heatmap, title font size for stationary solutions]
 % barwidth_states_val: width of the bars for bar plot of stationary solutions of states
 % sel_nodes: nodes to show. If left empty, all nodes are shown
-% prob_thresh: minimal value for probability to display (useful for visibility if there are many attractor states or large cyclic attractor(s))
+% prob_thresh: minimal value for probability to display 
+% 	(useful for visibility if many attractor states or large cyclic attractor(s))
 
 % Call the function by:
 sel_nodes=[];
@@ -315,7 +316,7 @@ We can for instance select all rates that have actual transitions in the subgrap
 popul_subgraphs=cellfun(@(x) sum(ismember(find(x0>0), x)), cell_subgraphs)>0;
 subgraph_states=cell2mat(cell_subgraphs(popul_subgraphs)');
 par_inds_table=unique(stg_table(ismember(stg_table(:,1), subgraph_states) | ...
-								ismember(stg_table(:,2), subgraph_states),3:4),'rows');
+					ismember(stg_table(:,2), subgraph_states),3:4),'rows');
 ```
 
 Now _par\_inds\_table_ contains these transition rates, the first column showing the corresponding node of the rates and the second whether it is for 1->0 (1) or the 0->1 (2) transition.  
@@ -365,7 +366,7 @@ parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_dow
 
 [stationary_state_vals_onedimscan,stationary_node_vals_onedimscan,stationary_state_inds_scan]=...
     fcn_onedim_parscan_calc(stg_table,transition_rates_table,x0,...
-							nodes,parscan_matrix,scan_params,scan_params_up_down);
+		nodes,parscan_matrix,scan_params,scan_params_up_down);
 ```
 
 We can first plot the results grouped by the transition rates of the parameter scan.
@@ -427,11 +428,11 @@ plot_type_options=[1 2 1];
 Then call the function and save the plot as (eg.) PNG:
 ```MATLAB
 [resp_coeff,scan_params_sensit,scan_params_up_down_sensit,fig_filename]=...
-					fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
-                           stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
-                           nonzero_states_inds,parscan_matrix,nodes,...
-                           scan_params,scan_params_up_down,...
-                           sensit_cutoff,plot_param_settings);
+		fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
+              stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
+              nonzero_states_inds,parscan_matrix,nodes,...
+              scan_params,scan_params_up_down,...
+              sensit_cutoff,plot_param_settings);
 
 
 fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),plot_save_folder,...
@@ -452,7 +453,7 @@ To plot the local sensitivities we need to set *plot\_type\_options=[2 2 2];* an
 plot_type_options=[2 2 2];
 figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel(plot_type_options), 'un',0),'_'));
 [resp_coeff,scan_params_sensit,scan_params_up_down_sensit,fig_filename]=...
-					fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
+			fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
                           stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
                           nonzero_states_inds,parscan_matrix,nodes,...
                           scan_params,scan_params_up_down,... 
@@ -495,8 +496,9 @@ paramsample_table=[repelem(scanvals,n_scanvals)' reshape(reshape(repelem(scanval
 multiscan_pars=[11 13]; multiscan_pars_up_down={1 1};
 
 disp_var=5; % show at every n% the progress
-[stat_sol_paramsample_table,stat_sol_states_paramsample_table]=fcn_calc_paramsample_table(paramsample_table,multiscan_pars,...
-                                     multiscan_pars_up_down,transition_rates_table,stg_table,x0,disp_var);
+[stat_sol_paramsample_table,stat_sol_states_paramsample_table]=...
+		fcn_calc_paramsample_table(paramsample_table,multiscan_pars,...
+				multiscan_pars_up_down,transition_rates_table,stg_table,x0,disp_var);
 ```
 
 Plot the results as a two-dimensional heatmap for selected model variable(s), in our case we plot metastasis:
@@ -506,8 +508,8 @@ sel_nodes=4;
 % plot_settings: [fontsize on plot, fs axes, fs subplot titles, fs axes labels]
 plot_settings=[28 30 40]; figure('name','2D scan')
 fcn_plot_twodim_parscan(stat_sol_paramsample_table,scanvals,...
-						multiscan_pars,multiscan_pars_up_down,...
-							nodes,sel_nodes,plot_settings)
+			multiscan_pars,multiscan_pars_up_down,...
+			nodes,sel_nodes,plot_settings)
 
 % SAVE PLOT
 resolution_dpi='-r200'; 
@@ -525,7 +527,8 @@ To perform LHS we need to provide the arguments for the type and properties of t
 
 ```MATLAB
 sampling_types={'lognorm','linear','logunif'}; sampling_type=sampling_types{3};
-% par_min_mean: minimum or (if lognormal) mean of distribution. Scalar or vector (if different values for different parameters)
+% par_min_mean: minimum or (if lognormal) mean of distribution. 
+%  can be scalar or vector (if different values for different parameters)
 % max_stdev: maximum or in case of lognormal the mean of distribution. Scalar or vector
 %
 % for 'lognorm' and 'logunif' provide the LOG10 value of desired mean/min and stdev/max, ie. -2 means a mean of 0.01
@@ -595,8 +598,9 @@ plot_settings=[NaN 26 32];
 plot_type_flag={'var_var','heatmap'}; % this is plotting the heatmap of correlations between variables
 
 figure('name',strjoin(plot_type_flag))
-[varvar_corr_matr,p_matrix_vars]=fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,...
-									stat_sol_nodes_lhs_parscan,nodes,sel_nodes,[],[],[],plot_settings);
+[varvar_corr_matr,p_matrix_vars]=...
+			fcn_multidim_parscan_parvarcorrs(plot_type_flag,all_par_vals_lhs,...
+				stat_sol_nodes_lhs_parscan,nodes,sel_nodes,[],[],[],plot_settings);
 
 % SAVE
 resolution_dpi='-r350'; 
@@ -615,7 +619,8 @@ We first need to set arguments defining the type and properties of the plot and 
 ```MATLAB
 plot_type_flag={'par_var','heatmap','r_sq'}; % {'par_var','heatmap'/'lineplot','r_sq'/'slope'}
 sel_nodes=[];
-% plot_settings=[fontsize,maximum value for heatmap colors], if plot_settings(3)=NaN, then max color automatically selected
+% plot_settings=[fontsize,maximum value for heatmap colors], 
+% if plot_settings(3)=NaN, then max color automatically selected
 plot_settings=[30 30 0.29]; 
 % if regression type is 'linlog', then the fit is y = a + b*log10(x)
 regr_types={'log','linear'}; % log recommended if parameter values log-uniformly distributed in sampling
@@ -655,7 +660,7 @@ r_sq_thresh=0.05;
 par_ind_table_filtered=par_ind_table(sum(r_squared>r_sq_thresh)>0,:);
 scan_params_filtered=unique(par_ind_table_filtered(:,1))'; 
 scan_params_up_down_filtered=arrayfun(@(x) par_ind_table_filtered(par_ind_table_filtered(:,1)==x,2)', ...
-										   scan_params_filtered,'un',0);
+								scan_params_filtered,'un',0);
 ```
 
 The sample size (number of parameter sets used for the re-calculations) can be defined, with higher samples giving better estimates.
@@ -719,11 +724,11 @@ We also need to provide a vector of values for the model's nodes that we want to
 [~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes); 
 
 % define data vector (generate some data OR load from elsewhere)
-data_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
+data_param_vals=lognrnd(1,1,1,numel(predictor_names)); 
 transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
-y_data=fcn_calc_init_stat_nodevals(x0,
-				split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
- 				transition_rates_table_optim,x0),'x0');
+y_data=fcn_calc_init_stat_nodevals(x0,...
+		split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
+		transition_rates_table_optim,x0),'x0');
 ```
 
 We also need to define anonymous functions to calculate the squared error from the data (and the stationary solution for a given parameter set):
@@ -735,8 +740,9 @@ These functions need to be regenerated if you change the data for fitting.
 The hyperparameters of fitting are defined as a structure, _fitting\_arguments_, we set 'Verbosity' to 1 so we can see the convergence process, and 'Stopval' is the value of the sum of squared error where we want to stop the fitting process, we set this to (eg.) 10% of the initial error:
 ```MATLAB
 % default values for fitting hyperparameters:
-% struct('CoolSched',@(T) (0.8*T), 'Generator',@(x) (x+(randperm(length(x))==length(x))*randn/100), 'InitTemp',1,...
-%    'MaxConsRej',1000, 'MaxSuccess',20, 'MaxTries',300, 'StopTemp',1e-8, 'StopVal',-Inf, 'Verbosity',1);
+% struct('CoolSched',@(T) (0.8*T), 'Generator',@(x) (x+(randperm(length(x))==length(x))*randn/100),...
+% 'InitTemp',1,'MaxConsRej',1000, 'MaxSuccess',20,...
+% 'MaxTries',300, 'StopTemp',1e-8, 'StopVal',-Inf, 'Verbosity',1);
 
 fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10);
 ```
@@ -744,11 +750,13 @@ fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10);
 Then we define an initial guess and run the algorithm:
 ```MATLAB
 % initial guess for parameters
-init_par_vals=data_param_vals.*abs(normrnd(1,1,size(predictor_names))); init_error=fcn_statsol_sum_sq_dev(init_par_vals);
+init_par_vals=data_param_vals.*abs(normrnd(1,1,size(predictor_names))); 
+init_error=fcn_statsol_sum_sq_dev(init_par_vals);
 
 % initial value of model nodes (with the initial parameter guess)
 y_init=fcn_calc_init_stat_nodevals(x0,...
-    split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,init_par_vals),''),...
+    split_calc_inverse(fcn_build_trans_matr(stg_table,...
+						fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,init_par_vals),''),...
     stg_sorting_cell,transition_rates_table_optim,x0),'');
 
 tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); toc 
@@ -796,8 +804,9 @@ Again we need to set up anonymous functions, define a vector of datapoints to fi
 % define data vector (generate some data OR load from elsewhere)
 data_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
 transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
-y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
-                                   transition_rates_table_optim,x0),'x0');
+y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(...
+			fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
+		transition_rates_table_optim,x0),'x0');
 
 [~,fcn_statsol_values]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
 
@@ -812,13 +821,14 @@ error_thresh=0.1; % what % of initial error to stop?
 step_thresh=[]; % what step # to stop? you can leave this empty 
 % init_error_table: changes to initial error when increasing or decreasing parameter values
 init_error_table=[]; % if we have it from previous fitting than feed it to fcn
-% incr_resol_init: initial % change from initial param values to calculate the numerical gradient for the descent
+% incr_resol_init: initial % change from initial param values
+%				   to calculate the numerical gradient for the descent
 % incr_resol: change in param values during gradient descent
 incr_resol_init=0.15; incr_resol=0.03;
 
 [init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(init_error_table,...
-                           {y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
-                           init_par_vals,incr_resol,incr_resol_init,error_thresh,[]);
+				{y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
+				init_par_vals,incr_resol,incr_resol_init,error_thresh,[]);
 ```
 
 and plot the results by
