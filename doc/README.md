@@ -151,7 +151,7 @@ initial_fixed_nodes_list=...
 { {'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}, ... % mammalian_cc
 {'cc','KRAS','DSB','cell_death'}, ... % krasmodel15vars
 {'Alpelisib', 'Everolimus','PIM','Proliferation','Apoptosis'},...  % breast_cancer_zanudo2017
-{'ECMicroenv','DNAdamage','Metastasis','Migration','Invasion','EMT','Apoptosis','Notch_pthw','p53'}, ... % EMT_cohen_ModNet
+{'ECMicroenv','DNAdamage','Metastasis','Migration','Invasion','EMT','Apoptosis','Notch_pthw','p53'}, ... % EMT
 {'EGF','ERBB1','ERBB2','ERBB3','p21','p27'}}; % sahin_breast_cancer_refined
 
 % values for selected nodes
@@ -362,7 +362,8 @@ parscan_min_max = [1e-2 1e2]; n_steps=10; sampling_types={'log','linear'};
 
 Now we can build the table with the parameter values and start the scan:
 ```MATLAB
-parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_down,nodes,sampling_types{1},parscan_min_max,n_steps);
+parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_down,...
+		nodes,sampling_types{1},parscan_min_max,n_steps);
 
 [stationary_state_vals_onedimscan,stationary_node_vals_onedimscan,stationary_state_inds_scan]=...
     fcn_onedim_parscan_calc(stg_table,transition_rates_table,x0,...
@@ -412,7 +413,7 @@ The arguments of the function are the following:
 % nonzero states of the model
 % nonzero_states=unique(cell2mat(stationary_state_inds_scan(:)'))';
 nonzero_states_inds=find(stat_sol>0);
-% sensit_cutoff: minimal value for response coefficient (local sensit.) or variation of model/state values
+% sensit_cutoff: minimal value for local sensitivity or variation of model/state values
 sensit_cutoff=0.1; 
 % parameters of plot
 height_width_gap=[0.1 0.04]; bott_top_marg=[0.03 0.1]; left_right_marg=[0.07 0.02]; 
@@ -451,7 +452,8 @@ To plot the local sensitivities we need to set *plot\_type\_options=[2 2 2];* an
 
 ```MATLAB
 plot_type_options=[2 2 2];
-figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, 1:numel(plot_type_options), 'un',0),'_'));
+figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, ...
+		1:numel(plot_type_options), 'un',0),'_'));
 [resp_coeff,scan_params_sensit,scan_params_up_down_sensit,fig_filename]=...
 			fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
                           stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
@@ -492,13 +494,15 @@ meshgrid_scanvals=meshgrid(scanvals,scanvals);
 
 For the function _fcn\_calc\_paramsample\_table_ we need to input the grid as a table with each row as a parameter set and we also need to define the transition rates we want to scan in. We know from (Cohen 2015) that shutting down p53 and increasing Notch pathway activity should have a synergistic effects so we select the transition rates _u\_p53_ and _u\_Notch_pthw_ (nodes 11 and 13, up rates: {1,1}), and then call the function:
 ```MATLAB
-paramsample_table=[repelem(scanvals,n_scanvals)' reshape(reshape(repelem(scanvals,n_scanvals),n_scanvals,n_scanvals)',n_scanvals^2,1)]; 
+paramsample_table=[repelem(scanvals,n_scanvals)' ...
+	reshape(reshape(repelem(scanvals,n_scanvals),n_scanvals,n_scanvals)',n_scanvals^2,1)]; 
+% transition rates to scan in
 multiscan_pars=[11 13]; multiscan_pars_up_down={1 1};
 
 disp_var=5; % show at every n% the progress
 [stat_sol_paramsample_table,stat_sol_states_paramsample_table]=...
 		fcn_calc_paramsample_table(paramsample_table,multiscan_pars,...
-				multiscan_pars_up_down,transition_rates_table,stg_table,x0,disp_var);
+		multiscan_pars_up_down,transition_rates_table,stg_table,x0,disp_var);
 ```
 
 Plot the results as a two-dimensional heatmap for selected model variable(s), in our case we plot metastasis:
@@ -523,7 +527,8 @@ fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{1},'overwrite',reso
 #### Multidimensional parameter scanning with Latin Hypercube Sampling
 
 
-To perform LHS we need to provide the arguments for the type and properties of the distribution and the sample size. For transition rates we can use the sensitive parameters identified by one-dimensional parameter scan.
+To perform LHS we need to provide the arguments for the type and properties of the distribution and the sample size. 
+For transition rates we can use the sensitive parameters identified by one-dimensional parameter scan.
 
 ```MATLAB
 sampling_types={'lognorm','linear','logunif'}; sampling_type=sampling_types{3};
@@ -531,7 +536,7 @@ sampling_types={'lognorm','linear','logunif'}; sampling_type=sampling_types{3};
 %  can be scalar or vector (if different values for different parameters)
 % max_stdev: maximum or in case of lognormal the mean of distribution. Scalar or vector
 %
-% for 'lognorm' and 'logunif' provide the LOG10 value of desired mean/min and stdev/max, ie. -2 means a mean of 0.01
+% for 'lognorm','logunif' provide LOG10 value of desired mean/min & stdev/max (-2 is a mean of 0.01)
 par_min_mean=-2; % repmat(1.5,1,numel(cell2mat(scan_params_up_down_sensit(:)))); par_min_mean(4)=3; 
 max_stdev=2; 	 % repmat(0.5,1,numel(cell2mat(scan_params_up_down_sensit(:))));
 % <lhs_scan_dim>: number of param sets
@@ -660,7 +665,7 @@ r_sq_thresh=0.05;
 par_ind_table_filtered=par_ind_table(sum(r_squared>r_sq_thresh)>0,:);
 scan_params_filtered=unique(par_ind_table_filtered(:,1))'; 
 scan_params_up_down_filtered=arrayfun(@(x) par_ind_table_filtered(par_ind_table_filtered(:,1)==x,2)', ...
-								scan_params_filtered,'un',0);
+		scan_params_filtered,'un',0);
 ```
 
 The sample size (number of parameter sets used for the re-calculations) can be defined, with higher samples giving better estimates.
@@ -686,8 +691,8 @@ If we have already performed this calculation and just want to plot the results,
 % PLOT SETTINGS: [fontsize_plot,fontsize_axes,fontsize_title, min_color(optional), max_color(opt), angle of x-axis labels];
 plot_settings=[30 30 40 0 0.5 90];
 fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{2},all_par_vals_lhs,[],[],[],...
-                       sequential_indices_lhs,scan_params_filtered,scan_params_up_down_filtered,[],[],[],...
-					   nodes,sel_nodes,plot_settings,[]);
+	sequential_indices_lhs,scan_params_filtered,scan_params_up_down_filtered,[],[],[],...
+	nodes,sel_nodes,plot_settings,[]);
 xticklabels({'Metastasis','Apoptosis (p53)','Apoptosis (p63_73)'})
 
 % SAVE
