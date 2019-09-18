@@ -22,9 +22,12 @@
       1. [Regression of variables by transition rates](#regression-of-variables-by-transition-rates)
       1. [Sobol total sensitivity index](#sobol-total-sensitivity-index)
 1. [Parameter fitting](#7-parameter-fitting)
+	  1. [Simulated annealing](#simulated-annealing)
+	  1. [Fitting by initial numerical gradient](#fitting-by-initial-numerical-gradient)
 
 <!--- The steps below are also available and directly executable in [this MATLAB live script](./wrapper.mlx).  --->
 
+#### The steps below are also contained in the MATLAB file *wrapper.m*, with more options.
 
 ### 1. Prerequisites
 
@@ -48,7 +51,6 @@
 
 ##### - add the folders to the path by typing 'add_functions'
 
-##### The steps below are also contained in the MATLAB file *wrapper.m*, with more options.
 
 ### 2. Model creation
 
@@ -745,7 +747,7 @@ The plot looks the following (since we randomly generate the data and initial gu
 
 ![simulated_annealing_6fittingpars](readmeplots/simulated_annealing_6fittingpars.png)
 
-#### Fitting by taking initial numerical gradient
+#### Fitting by initial numerical gradient
 
 Since in the case of the models we tested the transition rates have a monotonic effect on model variable values, we can attempt to take an initial, numerically calculated gradient of the error (sum of squared errors, SSE) as a function of the rates that we want to fit and try to reduce the error by incrementing them in the initial direction of error reduction. 
 This method is rather crude and does not guarentee to converge, but in some cases we have found it does. The evolution of the fittin error is displayed by the function, so if we see the error diverging we can stop the fitting process.

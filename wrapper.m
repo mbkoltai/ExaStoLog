@@ -555,11 +555,11 @@ y_init=fcn_calc_init_stat_nodevals(x0,...
     stg_sorting_cell,transition_rates_table_optim,x0),'');
 
 % simulated annealing with algorithm anneal/anneal.m (with modifications in script)
+% default values for fittin hyperparameters:
 % struct('CoolSched',@(T) (.8*T), 'Generator',@(x) (x+(randperm(length(x))==length(x))*randn/100), 'InitTemp',1,...
 %    'MaxConsRej',1000, 'MaxSuccess',20, 'MaxTries',300, 'StopTemp',1e-8, 'StopVal',-Inf, 'Verbosity',1);
-fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10);
+fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10, 'MaxTries',30,'MaxConsRej',100);
 tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); toc 
-% 20-40 mins for 15var KRAS model
 
 % output with fitted parameters
 y_optim_param=fcn_calc_init_stat_nodevals(x0,...
