@@ -24,18 +24,16 @@ model_name=model_name_list{model_index};
 
 % read in model from BOOLNET file
 [nodes,rules]=fcn_bnet_readin(strcat('model_files/',model_name,'.bnet'));
+% Compare if rules and nodes are consistent
+fcn_nodes_rules_cmp(nodes,rules)
 
 % where to save figures
 plot_save_folder=strcat('doc/sample_plots/',model_name,'/');
-
-fcn_nodes_rules_cmp(nodes,rules)
-
-truth_table_filename='fcn_truthtable.m';
-fcn_write_logicrules(nodes,rules,truth_table_filename)
-
+% write file with logical rules
+truth_table_filename='fcn_truthtable.m'; fcn_write_logicrules(nodes,rules,truth_table_filename)
+% build STG
 tic; stg_table=fcn_build_stg_table(truth_table_filename,nodes); toc
-
-size(stg_table,1)/(2^(2*numel(nodes)))
+% density of STG: size(stg_table,1)/(2^(2*numel(nodes)))
 
 %% choose transition rates
 
@@ -45,8 +43,7 @@ chosen_rates=[]; chosen_rates_vals=[];
 distr_type={'uniform','random'}; 
 % if 'random' is chosen, the mean and standard dev of a normal distrib has to be defined
 meanval=[]; sd_val=[]; 
-transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,...
-						chosen_rates,chosen_rates_vals);
+transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,chosen_rates,chosen_rates_vals);
                     
 %% BUILD transition matrix
 
@@ -409,8 +406,7 @@ fcn_save_fig('sobol_sensitivity_index',plot_save_folder,fig_file_type{3},'overwr
 
 % define data vector (generate some data OR load from elsewhere)
 data_param_vals=lognrnd(1,1,1,numel(predictor_names)); 
-transition_rates_table_optim=...
-	fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
+transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
 
 y_data=fcn_calc_init_stat_nodevals(x0,...
 	split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),...
@@ -428,14 +424,11 @@ init_par_vals=data_param_vals.*normrnd(1,1,size(predictor_names));
 init_error=fcn_statsol_sum_sq_dev(init_par_vals);
 
 % initial value of model nodes (with the initial parameter guess)
-y_init=fcn_calc_init_stat_nodevals(x0,...
-    split_calc_inverse(fcn_build_trans_matr(stg_table,...
+y_init=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,...
 		fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,init_par_vals),''),...
 		stg_sorting_cell,transition_rates_table_optim,x0),'');
 % FIT
-tic; 
-[optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); 
-toc;
+tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); toc;
 
 % RESULTS
 % model variable values with fitted parameters
@@ -466,8 +459,7 @@ fcn_plot_paramfitting(data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plo
 [~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes); 
 % create simulated data by randomly generating parameter values
 data_param_vals=lognrnd(1,1,1,numel(predictor_names)); 
-transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],...
-	predictor_names,data_param_vals);
+transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
 
 % generate 'data' from parameters
 y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(...
