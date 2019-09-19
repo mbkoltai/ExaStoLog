@@ -17,7 +17,7 @@ Author: Mihály Koltai, [Computational Systems Biology of Cancer at Institut Cur
 - [Customizable heatmaps](https://mathworks.com/matlabcentral/fileexchange/24253-customizable-heat-maps) (for heatmaps)  
 - [Redblue colormap](https://mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap) (for heatmaps)  
 - [distinguishable_colors](https://www.mathworks.com/matlabcentral/fileexchange/29702-generate-maximally-perceptually-distinct-colors) (for lineplots of one dimensional parameter scans. Requires Image Processing toolbox!)  
-- [tight subplots](https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w) (for smaller gaps between subplots them)  
+- [tight subplots](https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w) (for customizable gaps between subplots)  
 - [Simulated annealing](https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm) (parameter fitting by simulated annealing)  
 
 These libraries are for visualizations and parameter fitting, not for the calculations themselves, so they are optional, but we recommend using them for all the features of the toolbox.
