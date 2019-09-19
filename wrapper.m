@@ -201,8 +201,6 @@ overwrite_flag='yes';
 resolution_dpi='-r350'; % magnification=0.8;  strcat('-r',num2str(magnification*get(0, 'ScreenPixelsPerInch')));
 fcn_save_fig('single_solution_states_nodes_stat_sol',plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi);
 
-% 
-
 %% PLOT binary heatmap of nonzero stationary states with their probability
 
 % ARGUMENTS of function:
