@@ -91,7 +91,7 @@ stg_sorting_cell=fcn_scc_subgraphs(A_sparse,x0);
 
 tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_sorting_cell,transition_rates_table,x0); toc
 % by model variables
-[stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol);
+[stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol,'x0');
 
 %% visualize solution
 
