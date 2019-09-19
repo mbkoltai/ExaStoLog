@@ -31,20 +31,22 @@
 
 ### 1. Prerequisites
 
-##### - MATLAB version 2015b or later. (Tested in MATLAB 2015b, 2018b, 2019a.)
+#### - MATLAB version 2015b or later. (Tested in MATLAB 2015b, 2018b, 2019a.)
 
-##### - clone the [repository](https://github.com/mbkoltai/exact-stoch-log-mod) and enter the directory
+#### - clone the [repository](https://github.com/mbkoltai/exact-stoch-log-mod) and enter the directory
 
-##### - unzip the file 'toolboxes.zip' for the external MATLAB libraries used:
+#### - unzip the file 'toolboxes.zip' for the external MATLAB libraries used:
 
-- [Customizable heatmaps](https://mathworks.com/matlabcentral/fileexchange/24253-customizable-heat-maps)  
-- [Redblue colormap](https://mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap)  
-- [tight subplots](https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w) (for subplots with smaller gaps)  
-- [export_fig](https://mathworks.com/matlabcentral/fileexchange/23629-export_fig) (export figures as EPS or PDF as they appear on screen)  
-- [Simulated annealing](https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm) (parameter fitting by simulated annealing; the script was modified to output convergence process)  
-- [distinguishable_colors](https://www.mathworks.com/matlabcentral/fileexchange/29702-generate-maximally-perceptually-distinct-colors)
+- [export_fig](https://mathworks.com/matlabcentral/fileexchange/23629-export_fig) (export figures as EPS/PDF/PNG as they appear on screen)  
+- [Customizable heatmaps](https://mathworks.com/matlabcentral/fileexchange/24253-customizable-heat-maps) (for heatmaps)  
+- [Redblue colormap](https://mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap) (for heatmaps)  
+- [distinguishable_colors](https://www.mathworks.com/matlabcentral/fileexchange/29702-generate-maximally-perceptually-distinct-colors) (for lineplots of one dimensional parameter scans. Requires *Image Processing* toolbox!)  
+- [tight subplots](https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w) (for customizable gaps between subplots)  
+- [Simulated annealing](https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm) (parameter fitting by simulated annealing)  
 
-##### - add the folders to the path by typing 'add_functions'
+These libraries are for visualizations and parameter fitting, not for the calculations themselves, so they are optional, but we recommend using them for all the features of the toolbox.
+
+#### - add the folders to the path by typing 'add_functions'
 
 
 ### 2. Model creation
