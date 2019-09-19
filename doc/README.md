@@ -27,7 +27,8 @@
 
 <!--- The steps below are also available and directly executable in [this MATLAB live script](./wrapper.mlx).  --->
 
-### The steps below are contained in the MATLAB file *wrapper.m*, with more options.
+### The steps below are contained in the MATLAB file [tutorial_commands.m](https://github.com/mbkoltai/exact-stoch-log-mod/blob/master/tutorial_commands.m). 
+The file [wrapper.m](https://github.com/mbkoltai/exact-stoch-log-mod/blob/master/wrapper.m) contains these commands with further options and explanations.
 
 ### 1. Prerequisites
 
