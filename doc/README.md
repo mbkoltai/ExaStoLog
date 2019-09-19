@@ -57,16 +57,17 @@ We provide below the names of the models we analyzed in the paper and select the
 
 
 ```MATLAB
+% names of models
 model_name_list = {'mammalian_cc', ...
 'krasmodel15vars', ...
 'breast_cancer_zanudo2017'....
 'EMT_cohen_ModNet',...
 'sahin_breast_cancer_refined'}; %
-% name of the model
+% select the index of one model
 model_index=4;
 model_name=model_name_list{model_index};
 
-% model read in from BOOLNET file
+% read in model from BOOLNET file
 [nodes,rules]=fcn_bnet_readin(strcat('model_files/',model_name,'.bnet'));
 
 % where to save figures
