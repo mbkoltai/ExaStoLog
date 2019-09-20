@@ -261,6 +261,8 @@ plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.03;
 
 figure('name','A_K_stat_sol')
 fcn_plot_A_K_stat_sol(A_sparse,nodes,sel_nodes,stat_sol,x0,plot_settings,prob_thresh)
+
+% remove ylabels from 2nd subplot by selecting it and running: set(gca,'yticklabel','');
 ```
 
 ![single_solution_states_nodes_stat_sol_with_matrix](./readmeplots/single_solution_states_nodes_stat_sol_with_matrix.png)
@@ -464,10 +466,17 @@ In the plot below we manually renamed the subplots so that they are more biologi
 
 ![onedim_parscan_lineplot_nodes_EMT_cohen_ModNet_by_params_r350](./readmeplots/onedim_parscan_lineplot_states_values_EMT_cohen_ModNet_by_vars_cutoff0p1.png)
 
-To plot the local sensitivities of the states/variables to the rates, we need to set *plot\_type\_options=[2 2 2];* and call the function again:
+To plot the local sensitivities of the states/variables to the rates, we need to set *plot\_type\_options=[2 2 2];* and call the function again (adjust the plot parameters accodingly):
 
 ```MATLAB
 plot_type_options=[2 2 2];
+% ADJUST plot arrangement
+% parameters of plot
+height_width_gap=[0.1 0.04]; bott_top_marg=[0.03 0.1]; left_right_marg=[0.07 0.02]; 
+params_tight_subplots={height_width_gap bott_top_marg left_right_marg};
+% plot_param_settings: [fontsize_axes,fontsize_title,params_tight_subplots,model_name]
+plot_param_settings={30,30,params_tight_subplots,model_name,'colorbar'};
+
 figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, ...
 		1:numel(plot_type_options), 'un',0),'_'));
 [resp_coeff,scan_params_sensit,scan_params_up_down_sensit,fig_filename]=...
@@ -785,7 +794,7 @@ fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10);
 Then we define an initial guess and run the algorithm:
 ```MATLAB
 % initial guess for parameters
-init_par_vals=data_param_vals.*normrnd(1,1,size(predictor_names)); 
+init_par_vals=data_param_vals.*lognrnd(0,2,size(predictor_names)); 
 init_error=fcn_statsol_sum_sq_dev(init_par_vals);
 
 % initial value of model nodes (with the initial parameter guess)

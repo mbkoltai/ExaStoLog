@@ -87,6 +87,9 @@ x0=fcn_define_initial_states(initial_fixed_nodes,initial_fixed_nodes_vals,...
 
 stg_sorting_cell=fcn_scc_subgraphs(A_sparse,x0);
 
+% check size of objects
+size_limit_mb=1; fcn_objects_memory_size(whos,size_limit_mb)
+
 %% calculate stationary solution
 
 tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_sorting_cell,transition_rates_table,x0); toc
@@ -113,6 +116,8 @@ plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.03;
 
 figure('name','A_K_stat_sol')
 fcn_plot_A_K_stat_sol(A_sparse,nodes,sel_nodes,stat_sol,x0,plot_settings,prob_thresh)
+
+% remove ylabels from 2nd subplot by selecting it and running: set(gca,'yticklabel','');
 
 %% SAVE figure
 if exist(plot_save_folder,'dir')==0; mkdir(plot_save_folder); end
@@ -205,6 +210,7 @@ figure('name','onedim parscan by param')
 		scan_params,scan_params_up_down,... % selected parameters
 		diff_cutoff,... % minimal variation for variable to be shown on plot
 		plot_param_settings);
+
 %% SAVE
 
 fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(diff_cutoff),'.','p')),...
@@ -224,7 +230,7 @@ plot_param_settings={30,30,params_tight_subplots,model_name,'colorbar'};
 % plot_param_settings={12,14,[],model_name}; 
 % select type of plot
 plot_types={{'lineplot','heatmap'} {'nodes','states'} {'values','sensitivity'}};
-plot_type_options=[1 2 1];
+plot_type_options=[1 1 1];
 
 figure('name','onedim parscan by vars')
 [resp_coeff,scan_params_sensit,scan_params_up_down_sensit,fig_filename]=...
@@ -240,7 +246,14 @@ fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p'
 
 %% PLOT local sensitivities
 
-plot_type_options=[2 2 2];
+plot_type_options=[2 1 2];
+% ADJUST plot arrangement
+% parameters of plot
+height_width_gap=[0.1 0.04]; bott_top_marg=[0.03 0.1]; left_right_marg=[0.07 0.02]; 
+params_tight_subplots={height_width_gap bott_top_marg left_right_marg};
+% plot_param_settings: [fontsize_axes,fontsize_title,params_tight_subplots,model_name]
+plot_param_settings={30,30,params_tight_subplots,model_name,'colorbar'};
+
 figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, ...
 		1:numel(plot_type_options), 'un',0),'_'));
 [resp_coeff,scan_params_sensit,scan_params_up_down_sensit,fig_filename]=...
@@ -328,9 +341,9 @@ fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{3},'overwrite',reso
 %% PLOT Correlations between model variables
 
 % sel_nodes: name of selected nodes (pls provide in ascending order) (if left empty, all shown)
-sel_nodes=[3 7 8 10 11 13:15 17:20]; 
+sel_nodes=[]; % 3 7 8 10 11 13:15 17:20
 % plot_settings: [fontsize on plot, fontsize on axes/labels]
-plot_settings=[NaN 26 32]; 
+plot_settings=[NaN 10 26]; 
 % we'll plot correlations between variables, as a heatmap
 plot_type_flag={'var_var','heatmap'}; 
 
@@ -424,8 +437,8 @@ y_data=fcn_calc_init_stat_nodevals(x0,...
 
 [fcn_statsol_sum_sq_dev,~]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
 
-% initial guess for parameters
-init_par_vals=data_param_vals.*normrnd(1,1,size(predictor_names)); 
+% initial guess for parameters: true values dist
+init_par_vals=data_param_vals.*lognrnd(0,2,size(predictor_names)); 
 init_error=fcn_statsol_sum_sq_dev(init_par_vals);
 
 % initial value of model nodes (with the initial parameter guess)
