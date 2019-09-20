@@ -341,8 +341,8 @@ We can also quantify the number of occurrences by transition rates and take the 
 for k=1:size(par_inds_table,1)
     param_freq(k) = sum(stg_table(:,3)==par_inds_table(k,1) & stg_table(:,4)==par_inds_table(k,2));
 end
-% top n most frequent transitions
-[~,top_freq_trans_rates]=maxk(param_freq,6);
+% transition rates sorted by their number of occurrence in STG
+[~,top_freq_trans_rates]=sort(param_freq,'descend');
 ```
 
 We can now select which transition rates we want to scan in.
@@ -355,7 +355,7 @@ scan_params=unique(par_inds_table(:,1))';
 
 To select the most frequent _n_ rates:
 ```MATLAB
-scan_params=par_inds_table(top_freq_trans_rates,1)';
+scan_params=par_inds_table(top_freq_trans_rates(1:6),1)';
 ```
 
 We can also select nodes by their name:
@@ -398,7 +398,7 @@ nonzero_states_inds=find(stat_sol>0);
 height_width_gap=[0.08 0.03]; bott_top_marg =[0.05 0.05]; left_right_marg=[0.04 0.01];
 params_tight_subplots={height_width_gap bott_top_marg left_right_marg};
 % plot_param_settings: [fontsize_axes,fs_title,fs_legend,linewidth,params_tight_subplots,model_name]
-plot_param_settings={24,34,24,4,{height_width_gap bott_top_marg left_right_marg},model_name};
+plot_param_settings={24,34,24,4,params_tight_subplots,model_name};
 % plotting stater or variables (nodes)?
 state_or_node_flags={'nodes','states'};
 % cutoff for minimal variation to show a variable
@@ -446,6 +446,7 @@ plot_type_options=[1 2 1];
 
 Then call the function and save the plot as (eg.) PNG:
 ```MATLAB
+figure('name','onedim parscan by vars')
 [resp_coeff,scan_params_sensit,scan_params_up_down_sensit,fig_filename]=...
 	fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
 		stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
@@ -549,7 +550,7 @@ For transition rates we can use the sensitive parameters identified by one-dimen
 sampling_types={'lognorm','linear','logunif'}; sampling_type=sampling_types{3};
 % par_min_mean: minimum or (if lognormal) mean of distribution. 
 %  				Can be a scalar or vector (if different values for different parameters)
-% max_stdev: maximum or in case of lognormal the mean of distribution. Scalar or vector
+% max_stdev: maximum or in case of lognormal the stand dev of distribution. Scalar or vector
 %
 % for 'lognorm','logunif' provide LOG10 value of desired mean/min & stdev/max (-2 is a mean of 0.01)
 par_min_mean=-2; % repmat(1.5,1,numel(cell2mat(scan_params_up_down_sensit(:)))); par_min_mean(4)=3; 
@@ -577,7 +578,7 @@ First we select the variable to plot and whether we want to plot attractor state
 
 ```MATLAB
 % which variable to plot?
-var_ind=4;
+var_ind=1;
 % STATES or NODES? <scan_values>: values to be plotted
 % model variables: stat_sol_nodes_lhs_parscan; states: stat_sol_states_lhs_parscan
 scan_values=stat_sol_states_lhs_parscan; 
@@ -697,6 +698,8 @@ sel_nodes=[]; 	% if left empty, all nodes/states are analyzed
 sample_size=[]; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
 % how often (what %) should the progress of calculation be displayed?
 disp_freq=10;
+% plot settings set to empty bc we are doing the calculation here
+plot_settings=[];
 var_types={'node','state'}; % analysis for states or nodes
 sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{2},...
 	all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan,...

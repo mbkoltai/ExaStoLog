@@ -162,11 +162,11 @@ for k=1:size(par_inds_table,1)
     param_freq(k) = sum(stg_table(:,3)==par_inds_table(k,1) & stg_table(:,4)==par_inds_table(k,2));
 end
 % top n most frequent transitions
-[~,top_freq_trans_rates]=maxk(param_freq,6);
+[~,top_freq_trans_rates]=sort(param_freq,'descend');
 
 % all
 scan_params=unique(par_inds_table(:,1))';
-% most common: scan_params=par_inds_table(top_freq_trans_rates,1)';
+% most common: scan_params=par_inds_table(top_freq_trans_rates(1:6),1)';
 % by name: scan_params=find(ismember(nodes,{'Notch_pthw','p53','EMTreg','FOXO3','p63_73'}));
 
 % up and down rates (all)
@@ -193,7 +193,7 @@ nonzero_states_inds=find(stat_sol>0);
 height_width_gap=[0.08 0.03]; bott_top_marg =[0.05 0.05]; left_right_marg=[0.04 0.01];
 params_tight_subplots={height_width_gap bott_top_marg left_right_marg};
 % plot_param_settings: [fontsize_axes,fs_title,fs_legend,linewidth,params_tight_subplots,model_name]
-plot_param_settings={24,34,24,4,{height_width_gap bott_top_marg left_right_marg},model_name};
+plot_param_settings={24,34,24,4,params_tight_subplots,model_name};
 % plotting stater or variables (nodes)?
 state_or_node_flags={'nodes','states'};
 % cutoff for minimal variation to show a variable
@@ -205,7 +205,11 @@ figure('name','onedim parscan by param')
 		scan_params,scan_params_up_down,... % selected parameters
 		diff_cutoff,... % minimal variation for variable to be shown on plot
 		plot_param_settings);
-    
+%% SAVE
+
+fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(diff_cutoff),'.','p')),...
+	plot_save_folder,fig_file_type{1},'overwrite','-r200');
+
 %% PLOT 1-dimensional scan grouped by model variables/states
 
 % nonzero states of the model
@@ -222,12 +226,14 @@ plot_param_settings={30,30,params_tight_subplots,model_name,'colorbar'};
 plot_types={{'lineplot','heatmap'} {'nodes','states'} {'values','sensitivity'}};
 plot_type_options=[1 2 1];
 
+figure('name','onedim parscan by vars')
 [resp_coeff,scan_params_sensit,scan_params_up_down_sensit,fig_filename]=...
 	fcn_onedim_parscan_plot_parsensit(plot_types,plot_type_options,...
 		stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
 		nonzero_states_inds,parscan_matrix,nodes,...
 		scan_params,scan_params_up_down,...
 		sensit_cutoff,plot_param_settings);
+
 %% SAVE
 fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),...
 	plot_save_folder,fig_file_type{1},'overwrite','-r200');
@@ -300,7 +306,7 @@ lhs_scan_dim=1000;
 %% Visualize multi-dimensional parameter scans by scatter plots
 
 % which variable to plot?
-var_ind=4;
+var_ind=1;
 % STATES or NODES? <scan_values>: values to be plotted
 % model variables: stat_sol_nodes_lhs_parscan; states: stat_sol_states_lhs_parscan
 scan_values=stat_sol_states_lhs_parscan; 
@@ -377,6 +383,8 @@ sel_nodes=[]; 	% if left empty, all nodes/states are analyzed
 sample_size=[]; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
 % how often (what %) should the progress of calculation be displayed?
 disp_freq=10;
+% plot settings set to empty bc we are doing the calculation here
+plot_settings=[];
 var_types={'node','state'}; % analysis for states or nodes
 sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{2},...
 	all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan,...

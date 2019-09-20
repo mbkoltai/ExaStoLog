@@ -247,12 +247,12 @@ for k=1:size(par_inds_table,1)
     param_freq(k) = sum(stg_table(:,3)==par_inds_table(k,1) & stg_table(:,4)==par_inds_table(k,2));
 end
 % top n most frequent transitions
-[~,top_freq_trans_rates]=maxk(param_freq,6);
+[~,top_freq_trans_rates]=sort(param_freq,'descend');
 
 % all rates that have corresponding transitions
 scan_params=unique(par_inds_table(:,1))';
 % all nodes that have transitions: unique(par_inds_table(:,1))'; 
-% most frequent: par_inds_table(top_freq_trans_rates,1)';
+% most frequent: scan_params=par_inds_table(top_freq_trans_rates(1:6),1)';
 % Zanudo: find(ismember(nodes,{'AKT','SGK1','TSC','FOXO3','BIM','BAD','mTORC1','PI3K','PRAS40'})); 
 % all nodes that have transitions, except phenotypes: setdiff(unique(par_inds_table(:,1))',find(ismember(nodes,{'Apoptosis','Proliferation'})))
 % selected nodes: find(ismember(nodes,{'AKT','SGK1','TSC','FOXO3','BIM','BAD','mTORC1'})); % 
