@@ -1,8 +1,8 @@
-function []=fcn_plot_simul_anneal(data_init_optim,T_loss,nodes,sel_nodes,vars_show,thres_ind,plot_settings)
+function []=fcn_plot_paramfitting(data_init_optim,T_loss,nodes,sel_nodes,vars_show,thres_ind,plot_settings)
 
 
 label_ticks_fontsize=plot_settings(1); label_fontsize=plot_settings(2);
-
+if isempty(sel_nodes); sel_nodes=1:size(data_init_optim,2); end
 
 if size(T_loss,2)>1 
     error_data=T_loss(1:thres_ind,vars_show);

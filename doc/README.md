@@ -718,6 +718,9 @@ fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{2},all_par_
 	sequential_indices_lhs,scan_params_filtered,scan_params_up_down_filtered,[],[],[],...
 	nodes,sel_nodes,plot_settings,[]);
 xticklabels({'Metastasis','Apoptosis (p53)','Apoptosis (p63_73)'})
+% for MATLAB pre-2016b: 
+% set(gca,'xtick',1:3);  set(gca,'xticklabel',{'Metastasis','Apoptosis (p53)','Apoptosis (p63_73)'});
+
 
 % SAVE
 resolution_dpi='-r350'; 
@@ -865,7 +868,7 @@ init_error=sum((y_data-init_vals).^2);
 
 We define at what % of the original error we want the fitting to stop and with what step size the rates are incremented (by their initial derivatives). We then run the fitting function:
 ```MATLAB
-error_thresh=0.1; 	% what % of initial error to stop?
+error_thresh_fraction=0.1; 	% what % of initial error to stop?
 step_thresh=[]; 	% what step # to stop? you can leave this empty 
 % init_error_table: changes to initial error when increasing or decreasing parameter values
 init_error_table=[]; % if we have it from previous fitting than feed it to fcn
@@ -875,14 +878,16 @@ incr_resol_init=0.15; incr_resol=0.03;
 
 [init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(init_error_table,...
 	{y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
-	init_par_vals,incr_resol,incr_resol_init,error_thresh,[]);
+	init_par_vals,incr_resol,incr_resol_init,error_thresh_fraction,[]);
 ```
 
 and plot the results by
 ```MATLAB
 % PLOT
-figure('name','numer grad_desc')
+% which vars to show, if empty all are shown
+sel_nodes=[];
 data_init_optim=[statsol_parscan([1 end],:); y_data];
+figure('name','numer grad_desc')
 fcn_plot_paramfitting(data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_settings)
 
 % SAVE

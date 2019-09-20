@@ -402,6 +402,8 @@ fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_types{2},all_par_
 	sequential_indices_lhs,scan_params_filtered,scan_params_up_down_filtered,[],[],[],...
 	nodes,sel_nodes,plot_settings,[]);
 xticklabels({'Metastasis','Apoptosis (p53)','Apoptosis (p63_73)'})
+% for MATLAB pre-2016b: 
+% set(gca,'xtick',1:3);  set(gca,'xticklabel',{'Metastasis','Apoptosis (p53)','Apoptosis (p63_73)'});
 
 %% SAVE
 resolution_dpi='-r350'; 
@@ -422,11 +424,6 @@ y_data=fcn_calc_init_stat_nodevals(x0,...
 
 [fcn_statsol_sum_sq_dev,~]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
 
-% default values for fitting hyperparameters:
-% struct('CoolSched',@(T) (0.8*T), 'Generator',@(x) (x+(randperm(length(x))==length(x))*randn/100),...
-% 'InitTemp',1,'MaxConsRej',1000, 'MaxSuccess',20,...
-% 'MaxTries',300, 'StopTemp',1e-8, 'StopVal',-Inf, 'Verbosity',1);
-
 % initial guess for parameters
 init_par_vals=data_param_vals.*normrnd(1,1,size(predictor_names)); 
 init_error=fcn_statsol_sum_sq_dev(init_par_vals);
@@ -435,6 +432,12 @@ init_error=fcn_statsol_sum_sq_dev(init_par_vals);
 y_init=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,...
 		fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,init_par_vals),''),...
 		stg_sorting_cell,transition_rates_table_optim,x0),'');
+% default values for fitting hyperparameters:
+% struct('CoolSched',@(T) (0.8*T), 'Generator',@(x) (x+(randperm(length(x))==length(x))*randn/100),...
+% 'InitTemp',1,'MaxConsRej',1000, 'MaxSuccess',20,...
+% 'MaxTries',300, 'StopTemp',1e-8, 'StopVal',-Inf, 'Verbosity',1);
+fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10, 'MaxTries',30,'MaxConsRej',100);
+
 % FIT
 tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); toc;
 
@@ -481,7 +484,7 @@ y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(...
 init_par_vals=data_param_vals.*lognrnd(0,2,size(predictor_names));
 init_vals=fcn_statsol_values(init_par_vals); init_error=sum((y_data-init_vals).^2); 
 
-error_thresh=0.1; 	% what % of initial error to stop?
+error_thresh_fraction=0.1; 	% what % of initial error to stop?
 step_thresh=[]; 	% what step # to stop? you can leave this empty 
 % init_error_table: changes to initial error when increasing or decreasing parameter values
 init_error_table=[]; % if we have it from previous fitting than feed it to fcn
@@ -492,12 +495,14 @@ incr_resol_init=0.15; incr_resol=0.03;
 % FIT
 [init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(init_error_table,...
 	{y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
-	init_par_vals,incr_resol,incr_resol_init,error_thresh,[]);
+	init_par_vals,incr_resol,incr_resol_init,error_thresh_fraction,[]);
 
 %% PLOT
 
-figure('name','numer grad_desc')
+% which vars to show, if empty all are shown
+sel_nodes=[];
 data_init_optim=[statsol_parscan([1 end],:); y_data];
+figure('name','numer grad_desc')
 fcn_plot_paramfitting(data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_settings)
 
 %% SAVE
