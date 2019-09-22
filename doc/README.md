@@ -761,14 +761,16 @@ init_par_vals=data_param_vals.*lognrnd(1,2,size(predictor_names));
 
 % initial true value of variables/states, values of states/variables with the initial parameter scan, initial error
 var_type_flag='states'; % 'vars' 'states'
-[y_data,y_init_pred,init_error]=fcn_param_fitting_data_initguess_error(var_type_flag,x0,stg_table,data_param_vals,init_par_vals,...
-                                            stg_sorting_cell,nodes,predictor_names);
+[y_data,y_init_pred,init_error]=fcn_param_fitting_data_initguess_error(var_type_flag,...
+					x0,stg_table,data_param_vals,init_par_vals,...
+					stg_sorting_cell,nodes,predictor_names);
 ```
 
 We also need to define anonymous functions to calculate the stationary solution for a given parameter set and its squared error relative to the data:
 These functions need to be rerun if we change the data for fitting.
 ```MATLAB
-[fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_handles_fitting(var_type_flag,y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
+[fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_handles_fitting(var_type_flag,...
+				y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
 ```
 
 Next we need to decide what parameter fitting method we use.
@@ -801,8 +803,9 @@ Below are the commands to plot the convergence process (first subplot) and the t
 
 ```MATLAB
 % model/state stationary values with the fitted parameters
-[y_optim_param,~,~]=fcn_param_fitting_data_initguess_error(var_type_flag,x0,stg_table,data_param_vals,optim_par_vals,...
-                                            stg_sorting_cell,nodes,predictor_names);
+[y_optim_param,~,~]=fcn_param_fitting_data_initguess_error(var_type_flag,...
+			x0,stg_table,data_param_vals,optim_par_vals,...
+			stg_sorting_cell,nodes,predictor_names);
 
 % [initial guess, true values (data), fitted values]
 data_init_optim=[y_init; y_data; y_optim_param]; 

@@ -430,12 +430,15 @@ data_param_vals=lognrnd(1,1,1,numel(predictor_names));
 % initial guess for parameters
 init_par_vals=data_param_vals.*lognrnd(1,2,size(predictor_names)); 
 
-%% initial true value of variables/states, initial guess
-
+% initial true value of variables/states, initial guess
 var_type_flag='states'; % 'vars' 'states'
-[y_data,y_init_pred,init_error]=fcn_param_fitting_data_initguess_error(var_type_flag,x0,stg_table,data_param_vals,init_par_vals,...
-                                            stg_sorting_cell,nodes,predictor_names);
-[fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_handles_fitting(var_type_flag,y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
+[y_data,y_init_pred,init_error]=fcn_param_fitting_data_initguess_error(var_type_flag,...
+                                        x0,stg_table,data_param_vals,init_par_vals,...
+                                        stg_sorting_cell,nodes,predictor_names);
+
+%% function handles for fitting
+[fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_handles_fitting(var_type_flag,...
+                                y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
 
 %% FITTING by simul anneal
 
@@ -448,12 +451,12 @@ fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10, 'MaxTries',30,
 tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); toc;
 
 % RESULTS
-% model variable values with fitted parameters
+% values with fitted parameters
 [y_optim_param,~,~]=fcn_param_fitting_data_initguess_error(var_type_flag,x0,stg_table,data_param_vals,optim_par_vals,...
                                             stg_sorting_cell,nodes,predictor_names);
 
 % model variables: initial guess, true values (data), fitted values
-data_init_optim=[y_init; y_data; y_optim_param]; 
+data_init_optim=[y_init_pred; y_data; y_optim_param]; 
 min_val=min(min(data_init_optim(:,3:end))); max_val=max(max(data_init_optim(:,3:end)));
 % parameters: initial guess, true values, fitted values
 param_sets=[init_par_vals;data_param_vals;optim_par_vals];
@@ -486,12 +489,13 @@ incr_resol_init=0.15; incr_resol=0.03;
 [init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(var_type_flag,init_error_table,...
 	{y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
 	init_par_vals,incr_resol,incr_resol_init,error_thresh_fraction,[]);
+
 %% PLOT
 % which vars/states to show, if empty all are shown
 sel_nodes=[];
-data_init_optim=[statsol_parscan([1 end],:); y_data]; state_var_flags={'state','var'};
-figure('name','numer grad_desc')
-fcn_plot_paramfitting(state_var_flags{1},data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_settings)
+data_init_optim=[statsol_parscan([1 end],:); y_data']; 
+figure('name','numer grad_desc') % state_var_flags={'state','var'};
+fcn_plot_paramfitting(var_type_flag,data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_settings)
 
 %% SAVE
 fig_name=strcat('grad_descent',num2str(numel(predictor_names)),'fittingpars');
