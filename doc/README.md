@@ -759,7 +759,7 @@ data_param_vals=lognrnd(1,1,1,numel(predictor_names));
 % initial guess for parameters
 init_par_vals=data_param_vals.*lognrnd(1,2,size(predictor_names)); 
 
-% initial true value of variables/states, values of states/variables with the initial parameter scan, initial error
+% true value of variables/states, values of states/variables with init param guess, initial error
 var_type_flag='states'; % 'vars' 'states'
 [y_data,y_init_pred,init_error]=fcn_param_fitting_data_initguess_error(var_type_flag,...
 					x0,stg_table,data_param_vals,init_par_vals,...
