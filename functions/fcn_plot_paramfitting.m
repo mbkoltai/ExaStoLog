@@ -1,8 +1,14 @@
-function []=fcn_plot_paramfitting(data_init_optim,T_loss,nodes,sel_nodes,vars_show,thres_ind,plot_settings)
+function []=fcn_plot_paramfitting(state_var_flag,data_init_optim,T_loss,nodes,sel_nodes,vars_show,thres_ind,plot_settings)
 
+if isempty(sel_nodes); sel_nodes=1:size(data_init_optim,2); end
+    
+if strcmp(state_var_flag,'var') || strcmp(state_var_flag,'vars')
+    xlabels_strings=strrep(nodes(sel_nodes),'_','\_');
+else
+    xlabels_strings=arrayfun(@(x) strcat('state',num2str(x)),sel_nodes,'un',0);
+end
 
 label_ticks_fontsize=plot_settings(1); label_fontsize=plot_settings(2);
-if isempty(sel_nodes); sel_nodes=1:size(data_init_optim,2); end
 
 if size(T_loss,2)>1 
     error_data=T_loss(1:thres_ind,vars_show);
@@ -26,8 +32,8 @@ else
     legend(legend_strs(vars_show));
 end
 grid on;
-xlabel('number of iterations','FontSize',label_fontsize); % title('Parameter fitting by simulated annealing','FontSize',22)
-% 
+xlabel('number of iterations','FontSize',label_fontsize); 
+% title('Parameter fitting by simulated annealing','FontSize',22)
 fig_subpl2=subplot(1,2,2); 
 barplot_gca=barh(data_init_optim(:,sel_nodes)'); set(fig_subpl2,'ytick',1:numel(sel_nodes)); 
 legend({'initial guess','data','optimized'},'FontSize',label_fontsize,'Box', 'off')
@@ -35,4 +41,4 @@ set(gca,'FontSize',label_ticks_fontsize);
 % xticklabels=get(gca,'xtick'); set(fig_subpl2,'xticklabel',xticklabels,'FontSize',label_ticks_fontsize);
 xlabel('stationary probabilities','FontSize',label_fontsize); 
 % set(fig_subpl2,'yticklabel',''); % strrep(nodes(sel_nodes),'_','\_'),'FontSize',label_fontsize
-set(fig_subpl2,'yticklabel',strrep(nodes(sel_nodes),'_','\_'),'FontSize',label_fontsize);
+set(fig_subpl2,'yticklabel',xlabels_strings,'FontSize',label_fontsize);
