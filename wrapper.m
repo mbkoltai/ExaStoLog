@@ -1,5 +1,6 @@
 %% ExaStoLog
-% This file contains the commands to run the functions calculating the stationary solution of stoch logical models, 
+% This file contains the commands to run the functions 
+% calculating the stationary solution of stochastic logical models, 
 % plot results and perform parametric analysis
 %
 % READ the tutorial at: https://github.com/mbkoltai/exact-stoch-log-mod
@@ -492,96 +493,84 @@ xticklabels({'Metastasis','Apoptosis (p53)','Apoptosis (p63_73)'})
 % SAVE
 % resolution_dpi='-r350'; fcn_save_fig('sobol_sensitivity_index',plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
 
-%% PARAMETER FITTING: SIMULATED ANNEALING
+%% PARAMETER FITTING: define data, initial guess
 
-% define parameters to vary (predictor_names)
-% sensitive parameters identified by 1-dimensional param scan: scan_params_sensit,scan_params_up_down_sensit
+% scan_params_sensit=[11 13 15 16]; scan_params_up_down_sensit={2,1,2,[1 2]};
+% names of selected transition rates
 [~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes); 
 % define data vector (generate some data OR load from elsewhere)
-data_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
-transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
-y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
-                                   transition_rates_table_optim,x0),'x0');
-
-% create functions that calculate sum of squared deviations & values of
-% variables (composed of different fcns) 
-% RERUN THIS if you want to fit to new data or new non-fitted transition rates!!
-[fcn_statsol_sum_sq_dev,~]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
-
-% FITTING by simulated annealing (look at arguments in anneal/anneal.m)
+data_param_vals=lognrnd(1,1,1,numel(predictor_names)); 
 % initial guess for parameters
-init_par_vals=data_param_vals.*lognrnd(1,2,size(predictor_names)); init_error=fcn_statsol_sum_sq_dev(init_par_vals);
-% initial value of model nodes
-y_init=fcn_calc_init_stat_nodevals(x0,...
-    split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,init_par_vals),''),...
-    stg_sorting_cell,transition_rates_table_optim,x0),'');
+init_par_vals=data_param_vals.*lognrnd(1,2,size(predictor_names)); 
 
-% simulated annealing with algorithm anneal/anneal.m (with modifications in script)
-% default values for fittin hyperparameters:
-% struct('CoolSched',@(T) (.8*T), 'Generator',@(x) (x+(randperm(length(x))==length(x))*randn/100), 'InitTemp',1,...
-%    'MaxConsRej',1000, 'MaxSuccess',20, 'MaxTries',300, 'StopTemp',1e-8, 'StopVal',-Inf, 'Verbosity',1);
+% initial true value of variables/states, initial guess
+var_type_flag='states'; % 'vars' 'states'
+[y_data,y_init_pred,init_error]=fcn_param_fitting_data_initguess_error(var_type_flag,...
+                                        x0,stg_table,data_param_vals,init_par_vals,...
+                                        stg_sorting_cell,nodes,predictor_names);
+
+%% function handles for fitting
+[fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_handles_fitting(var_type_flag,...
+                                y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
+
+%% FITTING by simul anneal
+
+% default values for fitting hyperparameters:
+% struct('CoolSched',@(T) (0.8*T), 'Generator',@(x) (x+(randperm(length(x))==length(x))*randn/100),...
+% 'InitTemp',1,'MaxConsRej',1000, 'MaxSuccess',20,...
+% 'MaxTries',300, 'StopTemp',1e-8, 'StopVal',-Inf, 'Verbosity',1);
 fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10, 'MaxTries',30,'MaxConsRej',100);
-tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); toc 
+% FIT
+tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); toc;
 
-% output with fitted parameters
-y_optim_param=fcn_calc_init_stat_nodevals(x0,...
-  split_calc_inverse(fcn_build_trans_matr(stg_table,fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,optim_par_vals),''),...
-  stg_sorting_cell,transition_rates_table,x0),'');
-% model variables: initial guess, true values, fitted values
-data_init_optim=[y_init; y_data; y_optim_param]; min_val=min(min(data_init_optim(:,3:end))); max_val=max(max(data_init_optim(:,3:end)));
+% RESULTS
+% values with fitted parameters
+[y_optim_param,~,~]=fcn_param_fitting_data_initguess_error(var_type_flag,x0,stg_table,data_param_vals,optim_par_vals,...
+                                            stg_sorting_cell,nodes,predictor_names);
+
+% values of fitted variables: [initial guess, true values (data), fitted values]
+% careful with dimensions: for states, these are column vectors
+data_init_optim=[y_init_pred; y_data; y_optim_param]; 
 % parameters: initial guess, true values, fitted values
 param_sets=[init_par_vals;data_param_vals;optim_par_vals];
 
+%% PLOT: simulated annealing
+
 figure('name','param fitting (simul.ann.)'); 
-% select nodes to plot 
-sel_nodes=find(sum(data_init_optim)>0 & sum(data_init_optim)<3); % nodes that are not always 0 or 1
+% select nodes to plot (here we selected nodes that are not always 0 or 1)
+sel_nodes=find(sum(data_init_optim)>0 & sum(data_init_optim)<3);
 % PLOT fitting process
 thres_ind=size(T_loss,1); % thres_ind=find(T_loss(:,2)<1e-2,1); 
-plot_settings=[24 30];
+plot_settings=[24 30]; 
+% var_type_flag='vars'; % 'states'
 figure('name','simul anneal')
-fcn_plot_paramfitting(data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plot_settings)
+fcn_plot_paramfitting(var_type_flag,data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plot_settings)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Fitting by initial numerical gradient
 
-resolution_dpi='-r200'; % r350
-fcn_save_fig(strcat('simulated_annealing_',num2str(numel(predictor_names)),'fittingpars'),...
-    plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi)
-
-% mean absolute error: mean(abs(y_data - fcn_statsol_values(optim_par_vals)))
-% distance of fitted params from true values: abs(optim_par_vals - sel_param_vals)./sel_param_vals
-
-%% PARAMETER FITTING: calculating numerical gradient
-
-[~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes); 
-% define data vector (generate some data OR load from elsewhere)
-data_param_vals=lognrnd(1,1,1,numel(predictor_names)); % abs(normrnd(1,0.5,1,numel(predictor_names)));
-transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
-y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
-                                   transition_rates_table_optim,x0),'x0');
-[~,fcn_statsol_values]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
-
-% initial values for parameters and error
-init_par_vals=data_param_vals.*lognrnd(0,2,size(predictor_names)); % abs(normrnd(1,2,size(predictor_names))); 
-init_vals=fcn_statsol_values(init_par_vals); init_error=sum((y_data-init_vals).^2); 
-
-% change in error moving from initial guess
-% input_cell = {y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names};
-error_thresh=0.05; % what % of initial error to stop?
-step_thresh=[]; % what step # to stop?
+error_thresh_fraction=0.1; 	% what % of initial error to stop?
+step_thresh=[]; 	% what step # to stop? you can leave this empty 
 % init_error_table: changes to initial error when increasing or decreasing parameter values
 init_error_table=[]; % if we have it from previous fitting than feed it to fcn
-% incr_resol_init: initial % change from the initial param values to calculate the numerical gradient (change in error) for the descent
+% incr_resol_init: initial % change from initial param values to calculate the numerical gradient
 % incr_resol: change in param values during gradient descent
 incr_resol_init=0.15; incr_resol=0.03;
-[init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(init_error_table,...
-                                        {y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
-                                        init_par_vals,incr_resol,incr_resol_init,error_thresh,[]);
-% parameters before and after optim: [optim_pars_conv([1 end],:); data_param_vals]; 
 
-% PLOT
-figure('name','numer grad_desc')
-data_init_optim=[statsol_parscan([1 end],:); y_data];
-fcn_plot_paramfitting(data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_settings)
-% xticklabels=get(gca,'xtick'); set(gca,'xticklabel',xticklabels,'FontSize',30);
+% FIT
+% var_type_flag: 'states' or 'vars'
+% careful that string and data type are consistent!!
+[init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(var_type_flag,init_error_table,...
+	{y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
+	init_par_vals,incr_resol,incr_resol_init,error_thresh_fraction,step_thresh);
 
-% SAVE
-fig_name=strcat('grad_descent',num2str(numel(predictor_names)),'fittingpars');
-fcn_save_fig(fig_name,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
+%% PLOT
+% which vars/states to show, if empty all are shown
+sel_nodes=[]; plot_settings=[24 30]; 
+% if its states you fitted, take the transpose of ydata
+data_init_optim=[statsol_parscan([1 end],:); y_data']; 
+figure('name','numer grad_desc') % state_var_flags={'state','var'};
+fcn_plot_paramfitting(var_type_flag,data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_settings)
+
+%% SAVE
+fig_name=strcat('grad_descent_',var_type_flag,'_',num2str(numel(predictor_names)),'fittingpars');
+fcn_save_fig(fig_name,plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi)

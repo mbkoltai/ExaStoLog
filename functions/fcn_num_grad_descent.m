@@ -18,7 +18,8 @@ init_error_table=zeros(numel(data_param_vals),2);
 for up_down_counter=1:2
 for k=1:numel(data_param_vals)
     init_par_vals_mod=init_par_vals; 
-if up_down_counter==1; init_par_vals_mod(k)=init_par_vals_mod(k)*(1+incr_resol_init); else init_par_vals_mod(k)=init_par_vals_mod(k)*(1-incr_resol_init); end
+if up_down_counter==1; init_par_vals_mod(k)=init_par_vals_mod(k)*(1+incr_resol_init); 
+else init_par_vals_mod(k)=init_par_vals_mod(k)*(1-incr_resol_init); end
 % disp(init_par_vals_mod-init_par_vals)
 % error wrt original guess, if positive, error is growing
     if strcmp(state_var_ind,'var')

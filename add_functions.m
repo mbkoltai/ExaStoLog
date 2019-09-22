@@ -1,3 +1,6 @@
+% optional defaults settings: title font weight normal, docked figures
+set(0,'DefaultAxesTitleFontWeight','normal'); set(0,'DefaultFigureWindowStyle','docked');
+
 
 addpath('functions/') 
 addpath('toolboxes/')
@@ -19,6 +22,3 @@ addpath('toolboxes/anneal') % https://mathworks.com/matlabcentral/fileexchange/1
 
 % optional for maximal distinguishable colors on plots
 addpath('toolboxes/distinguishable_colors/')
-
-% optional defaults settings: title font weight normal, docked figures
-set(0,'DefaultAxesTitleFontWeight','normal'); set(0,'DefaultFigureWindowStyle','docked');

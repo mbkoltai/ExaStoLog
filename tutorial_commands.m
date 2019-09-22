@@ -455,9 +455,9 @@ tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_v
 [y_optim_param,~,~]=fcn_param_fitting_data_initguess_error(var_type_flag,x0,stg_table,data_param_vals,optim_par_vals,...
                                             stg_sorting_cell,nodes,predictor_names);
 
-% model variables: initial guess, true values (data), fitted values
+% values of fitted variables: [initial guess, true values (data), fitted values]
+% careful with dimensions: for states, these are column vectors
 data_init_optim=[y_init_pred; y_data; y_optim_param]; 
-min_val=min(min(data_init_optim(:,3:end))); max_val=max(max(data_init_optim(:,3:end)));
 % parameters: initial guess, true values, fitted values
 param_sets=[init_par_vals;data_param_vals;optim_par_vals];
 
@@ -488,15 +488,16 @@ incr_resol_init=0.15; incr_resol=0.03;
 % careful that string and data type are consistent!!
 [init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(var_type_flag,init_error_table,...
 	{y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
-	init_par_vals,incr_resol,incr_resol_init,error_thresh_fraction,[]);
+	init_par_vals,incr_resol,incr_resol_init,error_thresh_fraction,step_thresh);
 
 %% PLOT
 % which vars/states to show, if empty all are shown
-sel_nodes=[];
+sel_nodes=[]; plot_settings=[24 30]; 
+% if its states you fitted, take the transpose of ydata
 data_init_optim=[statsol_parscan([1 end],:); y_data']; 
 figure('name','numer grad_desc') % state_var_flags={'state','var'};
 fcn_plot_paramfitting(var_type_flag,data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_settings)
 
 %% SAVE
-fig_name=strcat('grad_descent',num2str(numel(predictor_names)),'fittingpars');
-fcn_save_fig(fig_name,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
+fig_name=strcat('grad_descent_',var_type_flag,'_',num2str(numel(predictor_names)),'fittingpars');
+fcn_save_fig(fig_name,plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi)

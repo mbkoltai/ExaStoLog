@@ -55,10 +55,10 @@ fig_subpl3=subplot(1,3,3);
 fig_subpl3_vals=flipud([init_node_vals(sel_nodes); stationary_node_vals(sel_nodes)]');
 bar_subpl3=barh(fig_subpl3_vals, 'grouped','BarWidth',barwidth_states_val*1.5); grid on; set(gca,'FontSize',fontsize_hm);
 xlabel('stationary probability', 'FontSize', fontsize_hm);
-title('nodes','FontSize',fontsize_stat_sol,'FontWeight','normal'); 
+title('variables','FontSize',fontsize_stat_sol,'FontWeight','normal'); 
 set(fig_subpl3,'Position',[0.72 y_position 0.27 0.815]);
-set(gca,'ytick',1:numel(sel_nodes)); set(gca,'YtickLabel',strrep(fliplr(nodes(sel_nodes)),'_',' ')); shift=0.4; 
-ylim([1-shift numel(sel_nodes)+shift])
+set(gca,'ytick',1:numel(sel_nodes)); set(gca,'YtickLabel',strrep(fliplr(nodes(sel_nodes)),'_',' ')); shift_val=0.4; 
+ylim([1-shift_val numel(sel_nodes)+shift_val])
 set(bar_subpl3(2),'FaceColor',[1 0 0],'EdgeColor',[1 0 0]);
 [~,min_ind]=min(max(fig_subpl3_vals,[],2));
 leg=legend(bar_subpl3,{'x_0', 'steady state'},'FontSize',fontsize_stat_sol/1.2,'Location','SouthEast'); % 'Location','SouthEast',
