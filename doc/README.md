@@ -746,66 +746,52 @@ Typically, as in this example, the results are similar to linear regression, but
 
 ### 7. Parameter fitting
 
-#### Simulated annealing
-
 Finally, if we have experimental (or simulated) data for a given model, it is possible to perform parameter fitting on the transition rates.
 
+We can fit a model in terms of the stationary probability values of attractor states or of model variables. Keep in mind that the values for model variables are linear combinations of the values of states.
+First we need to provide the parameters we want to fit, which can be eg. the sensitive transition rates identified above.
+We also need to provide a vector of values for the model's variables or states that we want to fit the model to, this is our data.
+
+```MATLAB
+[~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes); 
+% define data vector (generate some data OR load from elsewhere)
+data_param_vals=lognrnd(1,1,1,numel(predictor_names)); 
+% initial guess for parameters
+init_par_vals=data_param_vals.*lognrnd(1,2,size(predictor_names)); 
+
+% initial true value of variables/states, values of states/variables with the initial parameter scan, initial error
+var_type_flag='states'; % 'vars' 'states'
+[y_data,y_init_pred,init_error]=fcn_param_fitting_data_initguess_error(var_type_flag,x0,stg_table,data_param_vals,init_par_vals,...
+                                            stg_sorting_cell,nodes,predictor_names);
+```
+
+We also need to define anonymous functions to calculate the stationary solution for a given parameter set and its squared error relative to the data:
+These functions need to be rerun if we change the data for fitting.
+```MATLAB
+[fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_handles_fitting(var_type_flag,y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
+```
+
+Next we need to decide what parameter fitting method we use.
+
+#### Simulated annealing
+
 Since we do not have the gradient of the stationary solution, a gradient-free method is needed. 
-We use below a [simulated annealing script from MATLAB Central](https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm), with the following modifications to store the convergence process:
+We use first a [simulated annealing script from MATLAB Central](https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm), with the following modifications (to store the convergence process):
 - defining \<T_loss\> as 3rd output of the function,
 - inserting <counter=0> before the while loop
 - inserting <T_loss(counter,:)=[T oldenergy];> at line 175 within the while loop.
 
 (These changes are already written into the script, you do not need to do anything about them.)
 
-First we need to provide the parameters we want to fit, which can be the sensitive transition rates identified above.
-As data, we also need to provide a vector of values for the model's variables that we want to fit the model to.
-```MATLAB
-% names of selected transition rates
-[~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes); 
-
-% define data vector (generate some data OR load from elsewhere)
-data_param_vals=lognrnd(1,1,1,numel(predictor_names)); 
-transition_rates_table_optim=...
-	fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,data_param_vals);
-
-y_data=fcn_calc_init_stat_nodevals(x0,...
-	split_calc_inverse(fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),...
-	stg_sorting_cell,transition_rates_table_optim,x0),'x0');
-```
-
-We also need to define anonymous functions to calculate the stationary solution for a given parameter set and its squared error relative to the data:
-These functions need to be rerun if we change the data for fitting.
-```MATLAB
-[fcn_statsol_sum_sq_dev,~]=...
-	fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
-```
-
-The hyperparameters of fitting are defined as the structure _fitting\_arguments_: we set 'Verbosity' to 1 so we can see the convergence process, and 'Stopval' to (eg.) 10% of the initial error (the value of the sum of squared error to stop the fitting process):
+The hyperparameters of fitting are defined as the structure _fitting\_arguments_: we set 'Verbosity' to 1 so we can see the convergence process, and 'Stopval' to (eg.) 10% of the initial error (the value of the sum of squared error to stop the fitting process). Then we start the fitting:
 ```MATLAB
 % default values for fitting hyperparameters:
 % struct('CoolSched',@(T) (0.8*T), 'Generator',@(x) (x+(randperm(length(x))==length(x))*randn/100),...
 % 'InitTemp',1,'MaxConsRej',1000, 'MaxSuccess',20,...
 % 'MaxTries',300, 'StopTemp',1e-8, 'StopVal',-Inf, 'Verbosity',1);
-
-fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10);
-```
-
-Then we define an initial guess and run the algorithm:
-```MATLAB
-% initial guess for parameters
-init_par_vals=data_param_vals.*lognrnd(0,2,size(predictor_names)); 
-init_error=fcn_statsol_sum_sq_dev(init_par_vals);
-
-% initial value of model nodes (with the initial parameter guess)
-y_init=fcn_calc_init_stat_nodevals(x0,...
-    split_calc_inverse(fcn_build_trans_matr(stg_table,...
-		fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,init_par_vals),''),...
-		stg_sorting_cell,transition_rates_table_optim,x0),'');
-
-tic; 
-[optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); 
-toc 
+fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10, 'MaxTries',30,'MaxConsRej',100);
+% FIT
+tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); toc;
 ```
 
 Note that simulated annealing typically shows slow convergence and it can also fail to converge. 
@@ -814,33 +800,32 @@ For error reductions between 50-99% we have encountered convergence times of 1-3
 Below are the commands to plot the convergence process (first subplot) and the true, initial guess and fitted values of model variables (second subplot) of the EMT model:
 
 ```MATLAB
-% model variable values with fitted parameters
-y_optim_param=fcn_calc_init_stat_nodevals(x0,...
-  split_calc_inverse(fcn_build_trans_matr(stg_table,...
-  fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,optim_par_vals),''),...
-  stg_sorting_cell,transition_rates_table,x0),'');
+% model/state stationary values with the fitted parameters
+[y_optim_param,~,~]=fcn_param_fitting_data_initguess_error(var_type_flag,x0,stg_table,data_param_vals,optim_par_vals,...
+                                            stg_sorting_cell,nodes,predictor_names);
 
-% model variables: initial guess, true values (data), fitted values
+% [initial guess, true values (data), fitted values]
 data_init_optim=[y_init; y_data; y_optim_param]; 
-min_val=min(min(data_init_optim(:,3:end))); 
-max_val=max(max(data_init_optim(:,3:end)));
+min_val=min(min(data_init_optim(:,3:end))); max_val=max(max(data_init_optim(:,3:end)));
 % parameters: initial guess, true values, fitted values
 param_sets=[init_par_vals;data_param_vals;optim_par_vals];
 
+% PLOT: simulated annealing
 figure('name','param fitting (simul.ann.)'); 
 % select nodes to plot (here we selected nodes that are not always 0 or 1)
 sel_nodes=find(sum(data_init_optim)>0 & sum(data_init_optim)<3);
 % PLOT fitting process
 thres_ind=size(T_loss,1); % thres_ind=find(T_loss(:,2)<1e-2,1); 
-plot_settings=[24 30];
+plot_settings=[24 30]; 
+% var_type_flag='vars'; % 'states'
 figure('name','simul anneal')
-fcn_plot_paramfitting(data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plot_settings)
+fcn_plot_paramfitting(var_type_flag,data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plot_settings)
 ```
 
 ![simulated_annealing_6fittingpars](readmeplots/simulated_annealing_6fittingpars.png)
 
-This plot is for a sample fitting process. Since we randomly generate the data and initial guess for parameters, it will look different for a new fitting.
-
+This plot is for a sample fitting process, here model variables were fit with 6 transition rates. 
+Since we randomly generate the data and initial guess for parameters, it will look different for a new fitting.
 
 <!---##################################################################--->
 
@@ -852,29 +837,6 @@ Therefore we can take an initial, numerically calculated gradient of the error (
 This method is rather crude and does not guarentee to converge, but in some cases we have found it does. 
 We have built in a condition into the function that if the error is growing for 2 consecutive steps the fitting process stops, so that a diverging process is automatically stopped. The evolution of the fitting error is displayed by the function. 
 
-Again we need to set up anonymous functions and define a vector of datapoints to fit to, as well as generate an initial guess for the transition rates:
-
-```MATLAB
-[~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes); 
-% create simulated data by randomly generating parameter values
-data_param_vals=lognrnd(1,1,1,numel(predictor_names)); 
-transition_rates_table_optim=fcn_trans_rates_table(nodes,'uniform',[],[],...
-	predictor_names,data_param_vals);
-
-% generate 'data' from parameters
-y_data=fcn_calc_init_stat_nodevals(x0,split_calc_inverse(...
-	fcn_build_trans_matr(stg_table,transition_rates_table_optim,''),stg_sorting_cell,...
-	transition_rates_table_optim,x0),'x0');
-
-% anonymous functions for fitting
-[~,fcn_statsol_values]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
-
-% initial values for parameters, model variables and error
-init_par_vals=data_param_vals.*lognrnd(0,2,size(predictor_names));
-init_vals=fcn_statsol_values(init_par_vals); 
-init_error=sum((y_data-init_vals).^2); 
-```
-
 We define at what % of the original error we want the fitting to stop and with what step size the rates are incremented (by their initial derivatives). We then run the fitting function:
 ```MATLAB
 error_thresh_fraction=0.1; 	% what % of initial error to stop?
@@ -885,9 +847,13 @@ init_error_table=[]; % if we have it from previous fitting than feed it to fcn
 % incr_resol: change in param values during gradient descent
 incr_resol_init=0.15; incr_resol=0.03;
 
-[init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(init_error_table,...
-	{y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
-	init_par_vals,incr_resol,incr_resol_init,error_thresh_fraction,[]);
+% FIT
+% var_type_flag: 'states' or 'vars'
+% careful that <var_type_flag> and data type are consistent!!
+sel_nodes=[];
+data_init_optim=[statsol_parscan([1 end],:); y_data']; 
+figure('name','numer grad_desc') % state_var_flags={'state','var'};
+fcn_plot_paramfitting(var_type_flag,data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_settings)
 ```
 
 and plot the results by
@@ -904,7 +870,7 @@ fig_name=strcat('grad_descent',num2str(numel(predictor_names)),'fittingpars');
 fcn_save_fig(fig_name,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
 ```
 
-Below is an example of a succesful fitting by the initial gradient with the following values for the parameters:
+Below is an example of a succesful fitting of model variables by the initial gradient with the following initial values for the parameters:
 ```MATLAB
 scan_params_sensit=[11 13 15 16];; scan_params_up_down_sensit={2, 1, [1 2], 2};
 data_param_vals=[6.7960 2.1261 7.721 8.9191 0.5793];
