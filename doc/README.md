@@ -3,7 +3,7 @@
 ## What is this?
 
 ExaStoLog is a MATLAB toolbox for the exact solution of stochastic, continuous-time logical models. It was developed in the [Computational Systems Biology group](http://sysbio.curie.fr/) of Institut Curie, by Mihály Koltai.
-It is the accompanying tool to a manuscript that will be made available here once accepted.\\
+It is the accompanying tool to a manuscript that will be made available here once accepted.  
 The toolbox calculates the stationary solution of stochastic logical models by an exact method, without Monte Carlo approximations. Users can input their own logical models in Boolnet format or as text with logical notation in MATLAB. Currently the toolbox can accommodate logical models up to 20-few variables. Pushing the limits of this exact method to larger models is currently explored.
 Besides the calculation itself, the toolbox has a range of other functions for the visualization of solutions, and also to perform different types of parameter sensitivity analysis, as well as parameter fitting.
 
