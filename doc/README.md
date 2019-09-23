@@ -1,5 +1,12 @@
 # Tutorial for ExaStoLog: Exact calculation of stationary states + parameter analysis & fitting of stochastic logical models
 
+## What is this?
+
+ExaStoLog is a MATLAB toolbox for the exact solution of stochastic, continuous-time logical models. It was develeoped in the [Computational Systems Biology group](http://sysbio.curie.fr/) of Institut Curie, by Mihály Koltai.
+It is the accompanying tool to a manuscript that will be made available once accepted.
+The toolbox calculates the stationary solution of stochastic logical models by an exact method, without Monte Carlo approximations. Users can input their own logical models in Boolnet format or as text with logical notation in MATLAB.
+Besides the calculation itself, the toolbox has a range of other functions for the visualization of solutions, and also to perform different types of parameter sensitivity analysis, as well as parameter fitting.
+
 ## Table of contents
 
 1. [Requirements](#1-requirements)
@@ -30,7 +37,7 @@
 ### The steps below are contained in and can be directly run from the MATLAB file [tutorial_commands.m](https://github.com/mbkoltai/exact-stoch-log-mod/blob/master/tutorial_commands.m). 
 The file [wrapper.m](https://github.com/mbkoltai/exact-stoch-log-mod/blob/master/wrapper.m) contains these commands with further options and explanations.
 
-### 1. Prerequisites
+### 1. Requirements
 
 #### - MATLAB version 2015b or later. (Tested in MATLAB 2015b, 2018b, 2019a.)
 
