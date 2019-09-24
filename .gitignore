@@ -14,7 +14,9 @@ doc/sample_plots/
 exact_stochlog_toolbox.zip
 model_files/EMT_cohen
 model_files/other
+# compiled files
 ExaStoLog/
+ExaStoLog.prj
 
 # files to ignore M~ files
 *m~
