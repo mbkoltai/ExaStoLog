@@ -753,9 +753,8 @@ Typically, as in this example, the results are similar to linear regression, but
 
 ### 7. Parameter fitting
 
-Finally, if we have experimental (or simulated) data for a given model, it is possible to perform parameter fitting on the transition rates.
-
-We can fit a model in terms of the stationary probability values of attractor states or of model variables. Keep in mind that the values for model variables are linear combinations of the values of states.
+Finally, if we have experimental (or simulated) data for a given model, it is possible to perform parameter fitting on the transition rates.  
+We can fit a model in terms of the stationary probability values of attractor states or of model variables. Keep in mind that the values for model variables are linear combinations of the values of states.  
 First we need to provide the parameters we want to fit, which can be eg. the sensitive transition rates identified above.
 We also need to provide a vector of values for the model's variables or states that we want to fit the model to, this is our data.
 
@@ -767,7 +766,7 @@ data_param_vals=lognrnd(1,1,1,numel(predictor_names));
 init_par_vals=data_param_vals.*lognrnd(1,2,size(predictor_names)); 
 
 % true value of variables/states, values of states/variables with init param guess, initial error
-var_type_flag='states'; % 'vars' 'states'
+var_type_flag='vars'; % 'vars' 'states'
 [y_data,y_init_pred,init_error]=fcn_param_fitting_data_initguess_error(var_type_flag,...
 					x0,stg_table,data_param_vals,init_par_vals,...
 					stg_sorting_cell,nodes,predictor_names);
@@ -792,7 +791,8 @@ We use first a [simulated annealing script from MATLAB Central](https://mathwork
 
 (These changes are already written into the script, you do not need to do anything about them.)
 
-The hyperparameters of fitting are defined as the structure _fitting\_arguments_: we set 'Verbosity' to 1 so we can see the convergence process, and 'Stopval' to (eg.) 10% of the initial error (the value of the sum of squared error to stop the fitting process). Then we start the fitting:
+The hyperparameters of fitting are defined as the structure _fitting\_arguments_: we set 'Verbosity' to 1 so we can see the convergence process, and 'Stopval' to (eg.) 10% of the initial error, this is the value of the sum of squared error to stop the fitting process at. 
+Then we start the fitting:
 ```MATLAB
 % default values for fitting hyperparameters:
 % struct('CoolSched',@(T) (0.8*T), 'Generator',@(x) (x+(randperm(length(x))==length(x))*randn/100),...
@@ -842,10 +842,10 @@ Since we randomly generate the data and initial guess for parameters, it will lo
 #### Fitting by initial numerical gradient
 
 For the 5 models we analyzed the transition rates have a monotonic effect on model variable values. 
-Therefore we can take an initial, numerically calculated gradient of the error (SSE) as a function of the rates and attempt to reduce the error by incrementing the rates with their initial direction. 
+We can take an initial, numerically calculated gradient of the error (SSE) as a function of the rates and attempt to reduce the error by incrementing the rates with their initial direction. 
 
 This method is rather crude and does not guarentee to converge, but in some cases we have found it does. 
-We have built in a condition into the function that if the error is growing for 2 consecutive steps the fitting process stops, so that a diverging process is automatically stopped. The evolution of the fitting error is displayed by the function. 
+We have built in a condition into the function that if the error is growing (or stagnating) for 2 consecutive steps the fitting process stops, so that a diverging process is automatically stopped. The evolution of the fitting error is displayed by the function. 
 
 We define at what % of the original error we want the fitting to stop and with what step size the rates are incremented (by their initial derivatives). We then run the fitting function:
 ```MATLAB
@@ -862,14 +862,14 @@ incr_resol_init=0.15; incr_resol=0.03;
 % careful that <var_type_flag> and data type are consistent!!
 sel_nodes=[];
 data_init_optim=[statsol_parscan([1 end],:); y_data']; 
-figure('name','numer grad_desc') % state_var_flags={'state','var'};
+figure('name','numer grad_desc') 
 fcn_plot_paramfitting(var_type_flag,data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_settings)
 ```
 
 and plot the results by
 ```MATLAB
 % PLOT
-% which vars to show, if empty all are shown
+% which vars/states to show, if empty all are shown
 sel_nodes=[];
 data_init_optim=[statsol_parscan([1 end],:); y_data];
 figure('name','numer grad_desc')
