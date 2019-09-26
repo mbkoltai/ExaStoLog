@@ -1,13 +1,14 @@
 % commands for tutorial
 
-% FIRST: unzip the file toolboxes.zip!
+% FIRST: unzip the file 'toolboxes.zip' for external libraries
+if exist('toolboxes.zip','file')>0; unzip toolboxes.zip; end
 
 % go to the folder of the file
-editor_service=com.mathworks.mlservices.MLEditorServices; editor_app=editor_service.getEditorApplication;
-active_editor=editor_app.getActiveEditor; storage_location=active_editor.getStorageLocation;
-file=char(storage_location.getFile); path_to_toolbox=fileparts(file); cd(path_to_toolbox);
+% editor_service=com.mathworks.mlservices.MLEditorServices; editor_app=editor_service.getEditorApplication;
+% active_editor=editor_app.getActiveEditor; storage_location=active_editor.getStorageLocation;
+% file=char(storage_location.getFile); path_to_toolbox=fileparts(file); cd(path_to_toolbox);
 
-% ADD FUNCTIONS to PATH: required toolboxes are in <toolboxes.zip>
+% ADD FUNCTIONS and external libraries (from 'toolboxes.zip') to PATH
 add_functions
 
 %% READ IN model

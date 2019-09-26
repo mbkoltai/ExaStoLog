@@ -14,17 +14,14 @@ doc/sample_plots/
 exact_stochlog_toolbox.zip
 model_files/EMT_cohen
 model_files/other
-# compiled files
+# compiled files runtime
 ExaStoLog/
-ExaStoLog.prj
+runtime_commands.m
 
 # files to ignore M~ files
 *m~
 *md~
 *dat
-launch_calc.m
-fitting_script.m
-fcn_truthtable.m
 # wrapper.mlx
 doc/README.html
 
