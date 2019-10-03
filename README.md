@@ -22,6 +22,6 @@ Author: Mihály Koltai, [Computational Systems Biology of Cancer at Institut Cur
 
 These libraries are for visualizations and parameter fitting, not for the calculations themselves, so they are optional, but we recommend using them for all the features of the toolbox.
 
-#### - enter the directory and add the folders to the path by running 'add_functions'
+#### - enter the directory and add the folders to the path by running 'add_toolboxes_paths'
 
 For the detailed examples of calculations read the [tutorial here](https://github.com/mbkoltai/exact-stoch-log-mod/tree/master/doc).
