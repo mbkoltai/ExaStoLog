@@ -34,12 +34,12 @@ nonzero_states=truth_table_inputs(nonzero_states_inds,:);
 if strcmp(var_type_flag,'state') || strcmp(var_type_flag,'states')
     % scan_variable = stationary_state_vals_onedimscan;
     if size(scan_variable,3)~=size(nonzero_states,1)
-        error('input variable (should be ''stationary_state_vals_onedimscan'') does not have correct dimension')
+        error('input variable does not have correct dimension (should be ''stationary_state_vals_onedimscan'')')
     end
 elseif strcmp(var_type_flag,'node') || strcmp(var_type_flag,'nodes')
     % scan_variable = stationary_node_vals_onedimscan;
      if size(scan_variable,3)~=numel(nodes)
-        error('input variable (should be ''stationary_node_vals_onedimscan'') does not have correct dimension')
+        error('input variable does not have correct dimension (should be ''stationary_node_vals_onedimscan'')')
     end
 end
 
@@ -122,7 +122,7 @@ for k=1:size(scan_variable_sensit_parts,3)
     if strcmp(var_type_flag,'node') || strcmp(var_type_flag,'nodes')
         title(strrep(nodes(sensit_vars(k)),'_','\_'), 'FontWeight','normal','FontSize',fontsize_title); ylim([0 1]); 
     else
-       title(strcat(num2str(nonzero_states_inds(sensit_vars(k))),', ',strrep(num2str(nonzero_states(sensit_vars(k),:)),' ',''),')'), ...
+       title(strcat(num2str(nonzero_states_inds(sensit_vars(k))),' (',strrep(num2str(nonzero_states(sensit_vars(k),:)),' ',''),')'), ...
            'FontWeight','normal','FontSize',fontsize_title); 
     end
     if rem(k,ncol)==1

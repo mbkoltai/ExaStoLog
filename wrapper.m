@@ -12,7 +12,7 @@ active_editor=editor_app.getActiveEditor; storage_location=active_editor.getStor
 file=char(storage_location.getFile); path_to_toolbox=fileparts(file); cd(path_to_toolbox);
 
 % ADD FUNCTIONS to PATH: required toolboxes are in <toolboxes.zip>
-add_functions
+add_toolboxes_paths
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% model set-up

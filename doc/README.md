@@ -39,7 +39,7 @@ The file [wrapper.m](https://github.com/mbkoltai/exact-stoch-log-mod/blob/master
 
 ### 1. Requirements
 
-#### - MATLAB version 2015b or later. (Tested in MATLAB 2015b, 2018b, 2019a.)
+#### - MATLAB version 2015b or later. The toolbox was tested on Linux (CentOS) and Windows, in MATLAB 2015b, 2018a, 2018b, 2019a.
 
 #### - clone the [repository](https://github.com/mbkoltai/exact-stoch-log-mod) and enter the directory
 
@@ -52,9 +52,9 @@ The file [wrapper.m](https://github.com/mbkoltai/exact-stoch-log-mod/blob/master
 - [tight subplots](https://mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w) (for customizable gaps between subplots)  
 - [Simulated annealing](https://mathworks.com/matlabcentral/fileexchange/10548-general-simulated-annealing-algorithm) (parameter fitting by simulated annealing)  
 
-These libraries are for visualizations and parameter fitting, not for the calculations themselves, so they are optional, but we recommend using them for all the features of the toolbox.
+These libraries are for visualizations and parameter fitting, not for the calculations themselves, so they are optional, but we recommend using them for all the features of the toolbox. The extra libraries should now be in the folder *exact\-stoch\-log\-mod*.
 
-#### - add the folders to the path by typing 'add_functions'
+#### - add the library folders to the path by 'add_toolboxes_paths'
 
 
 ### 2. Model creation
@@ -63,7 +63,7 @@ These libraries are for visualizations and parameter fitting, not for the calcul
 
 Models can be defined by entering the list of nodes and their corresponding rules as a cell of strings, using MATLAB logical notation ('&', '|', '~', '(', ')'), or by providing the path to a BoolNet file.
 
-We provide below the names of the models we analyzed in the paper and select the EMT model (Cohen et al 2015) to be read in by the function *fcn_bnet_readin*, also specifying a folder to save plots to:
+We provide below the names of the models we analyzed in the paper and select the EMT model (Cohen et al 2015) to be read in by the function *fcn_bnet_readin*, also specifying a folder to save plots to (we create here a subfolder 'doc/sample_plots/' which will contain the figures):
 
 
 ```MATLAB
@@ -263,13 +263,11 @@ Call the function _fcn\_plot\_A\_K\_stat\_sol_ with the following arguments:
 sel_nodes=[];
 min_max_col=[0 1]; barwidth_states_val=0.8;
 % fontsize: [fontsize of plot, fontsize of titles, fontsize of binary states]
-fontsize=[24 40 20]; 
+fontsize=[18 20 10]; 
 plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.03;
 
 figure('name','A_K_stat_sol')
 fcn_plot_A_K_stat_sol(A_sparse,nodes,sel_nodes,stat_sol,x0,plot_settings,prob_thresh)
-
-% remove ylabels from 2nd subplot by selecting it and running: set(gca,'yticklabel','');
 ```
 
 ![single_solution_states_nodes_stat_sol_with_matrix](./readmeplots/single_solution_states_nodes_stat_sol_with_matrix.png)
@@ -285,7 +283,11 @@ overwrite_flag='yes';
 resolution_dpi='-r350';
 % SAVE
 fcn_save_fig('single_solution_states_nodes_stat_sol',plot_save_folder,...
-fig_file_type{3},overwrite_flag,resolution_dpi)
+fig_file_type{1},overwrite_flag,resolution_dpi)
+
+% to export to PDF you need to have GhostScript installed, install from: https://www.ghostscript.com/
+% to export to eps requires pdftops, part of the Xpdf package, install from: % http://www.xpdfreader.com
+% see also tutorial of export_fig at: https://github.com/altmany/export_fig/blob/master/README.md
 ```
 
 #### Visualize binary heatmap of nonzero stationary states
@@ -323,7 +325,7 @@ In the case of cyclic attractors containing multiple states these rows have no g
 Save the figure by
 ```MATLAB
 resolution_dpi='-r350';
-fcn_save_fig('binary_heatmap_states',plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi);
+fcn_save_fig('binary_heatmap_states',plot_save_folder,fig_file_type{1},overwrite_flag,resolution_dpi);
 ```
 
 <!---##################################################################--->
@@ -383,7 +385,8 @@ We now need to provide the range of values we want to scan in, the resolution of
 parscan_min_max = [1e-2 1e2]; n_steps=10; sampling_types={'log','linear'};
 ```
 
-Now we can build the table with the parameter values and start the scan:
+Now we can build the table with the parameter values and start the scan. With the settings above we will scan in 36 transition rates, 10 values for each, ie. we'll do 360 calculations, that takes around 15 minutes. Decrease the number of transition rates and/or the resolution of the scan (*n_steps*)
+to reduce the calculation time.
 ```MATLAB
 % matrix of parameter values
 parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_down,...
@@ -407,7 +410,7 @@ nonzero_states_inds=find(stat_sol>0);
 height_width_gap=[0.08 0.03]; bott_top_marg =[0.05 0.05]; left_right_marg=[0.04 0.01];
 params_tight_subplots={height_width_gap bott_top_marg left_right_marg};
 % plot_param_settings: [fontsize_axes,fs_title,fs_legend,linewidth,params_tight_subplots,model_name]
-plot_param_settings={24,34,24,4,params_tight_subplots,model_name};
+plot_param_settings={14,22,12,4,params_tight_subplots,model_name};
 % plotting stater or variables (nodes)?
 state_or_node_flags={'nodes','states'};
 % cutoff for minimal variation to show a variable
@@ -446,7 +449,7 @@ sensit_cutoff=0.1;
 height_width_gap=[0.1 0.04]; bott_top_marg=[0.03 0.1]; left_right_marg=[0.07 0.02]; 
 params_tight_subplots={height_width_gap bott_top_marg left_right_marg};
 % plot_param_settings: [fontsize_axes,fontsize_title,params_tight_subplots,model_name]
-plot_param_settings={30,30,params_tight_subplots,model_name,'colorbar'};
+plot_param_settings={20,20,params_tight_subplots,model_name,'colorbar'};
 % plot_param_settings={12,14,[],model_name}; 
 % select type of plot
 plot_types={{'lineplot','heatmap'} {'nodes','states'} {'values','sensitivity'}};
@@ -561,6 +564,7 @@ fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{1},'overwrite',reso
 
 To perform LHS we need to provide the arguments for the type and properties of the distribution and the sample size. 
 For transition rates we can use the sensitive parameters identified by one-dimensional parameter scan.
+Below we specify 1000 parameter sets, if the calculation of the stationary solution was 3 seconds, then this would be around 3000 seconds. Decrease *lhs_scan_dim* to reduce the calculation time.
 
 ```MATLAB
 sampling_types={'lognorm','linear','logunif'}; sampling_type=sampling_types{3};
@@ -614,7 +618,7 @@ fcn_multidim_parscan_scatterplot(var_ind,all_par_vals_lhs,scan_values,...
 
 % SAVE
 resolution_dpi='-r200'; 
-fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
+fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi);
 ```
 
 Below are the results for the apoptotic state with p63\_73 activation:
@@ -642,7 +646,7 @@ figure('name',strjoin(plot_type_flag))
 
 % SAVE
 resolution_dpi='-r350'; 
-fcn_save_fig(fig_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
+fcn_save_fig(fig_prefix,plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi);
 ```
 
 The plot for our EMT model with the selected variables looks as:
@@ -672,7 +676,7 @@ scan_values=stat_sol_states_lhs_parscan; % or: stat_sol_nodes_lhs_parscan
 
 % SAVE
 fig_prefix=strjoin(plot_type_flag,'_'); resolution_dpi='-r350'; 
-fcn_save_fig(fig_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
+fcn_save_fig(fig_prefix,plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi)
 ```
 
 Below is the plot of the regression coefficients for the three attractor states of the EMT model:
@@ -740,7 +744,7 @@ xticklabels({'Metastasis','Apoptosis (p53)','Apoptosis (p63_73)'})
 
 % SAVE
 resolution_dpi='-r350'; 
-fcn_save_fig('sobol_sensitivity_index',plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
+fcn_save_fig('sobol_sensitivity_index',plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi)
 ```
 
 Below is the heatmap of the Sobol total sensitivity indices for the three attractor states of the EMT model:
@@ -877,7 +881,7 @@ fcn_plot_paramfitting(data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_sett
 
 % SAVE
 fig_name=strcat('grad_descent',num2str(numel(predictor_names)),'fittingpars');
-fcn_save_fig(fig_name,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
+fcn_save_fig(fig_name,plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi)
 ```
 
 Below is an example of a succesful fitting of model variables by the initial gradient with the following initial values for the parameters:

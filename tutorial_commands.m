@@ -9,7 +9,7 @@ if exist('toolboxes.zip','file')>0; unzip toolboxes.zip; end
 % file=char(storage_location.getFile); path_to_toolbox=fileparts(file); cd(path_to_toolbox);
 
 % ADD FUNCTIONS and external libraries (from 'toolboxes.zip') to PATH
-add_functions
+add_toolboxes_paths
 
 %% READ IN model
 
@@ -70,7 +70,6 @@ initial_fixed_nodes_vals_list = {[0 0 0 1 1 1 1 1], ... % mammalian_cc
             [1 1 zeros(1,5) 1 0],... % EMT-Cohen model: [0/1 0/1 zeros(1,5)]
             [1 0 0 0 1 1]}; % 1 zeros(1,numel(initial_fixed_nodes_list{model_index})-3) 1 1
 
-
 % select the initial condition for the model we are working on
 initial_fixed_nodes=initial_fixed_nodes_list{model_index}; 
 initial_fixed_nodes_vals=initial_fixed_nodes_vals_list{model_index};
@@ -112,7 +111,7 @@ tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_s
 sel_nodes=[];
 min_max_col=[0 1]; barwidth_states_val=0.8;
 % fontsize: [fontsize of plot, fontsize of titles, fontsize of binary states]
-fontsize=[24 40 20]; 
+fontsize=[18 20 10]; 
 plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.03;
 
 figure('name','A_K_stat_sol')
@@ -127,7 +126,11 @@ overwrite_flag='yes';
 % resolution of the figures (dpi)
 resolution_dpi='-r350';
 % SAVE
-fcn_save_fig('single_solution_states_nodes_stat_sol',plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi)
+fcn_save_fig('single_solution_states_nodes_stat_sol',plot_save_folder,fig_file_type{1},overwrite_flag,resolution_dpi)
+
+% to export to PDF you need to have GhostScript installed, install from: https://www.ghostscript.com/
+% to export to eps requires pdftops, part of the Xpdf package, install from: % http://www.xpdfreader.com
+% see also tutorial of export_fig at: https://github.com/altmany/export_fig/blob/master/README.md
 
 %% Visualize binary heatmap of nonzero stationary states
 
@@ -153,7 +156,7 @@ term_verts_cell,nodes,sel_nodes,plot_param_settings,tight_subplot_flag,ranking_f
 
 %% SAVE
 resolution_dpi='-r350';
-fcn_save_fig('binary_heatmap_states',plot_save_folder,fig_file_type{3},overwrite_flag,resolution_dpi);
+fcn_save_fig('binary_heatmap_states',plot_save_folder,fig_file_type{1},overwrite_flag,resolution_dpi);
 
 %% select transition rates for 1-dimensional parameter scan
 
@@ -161,7 +164,7 @@ popul_subgraphs=cellfun(@(x) sum(ismember(find(x0>0), x)), cell_subgraphs)>0;
 subgraph_states=cell2mat(cell_subgraphs(popul_subgraphs)');
 par_inds_table=unique(stg_table(ismember(stg_table(:,1), subgraph_states) | ...
 					ismember(stg_table(:,2), subgraph_states),3:4),'rows');
-                
+
 % most common transitions
 for k=1:size(par_inds_table,1)
     param_freq(k) = sum(stg_table(:,3)==par_inds_table(k,1) & stg_table(:,4)==par_inds_table(k,2));
@@ -180,7 +183,7 @@ scan_params_up_down=arrayfun(@(x) par_inds_table(par_inds_table(:,1)==x,2)', sca
 %% CALCULATE 1-dimensional scan
 
 % min and max of range of values; resolution of the scan; linear or logarithmic sampling
-parscan_min_max = [1e-2 1e2]; n_steps=10; sampling_types={'log','linear'};
+parscan_min_max = [1e-2 1e2]; n_steps=5; sampling_types={'log','linear'};
 
 % matrix of parameter values
 parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_down,...
@@ -198,18 +201,19 @@ nonzero_states_inds=find(stat_sol>0);
 height_width_gap=[0.08 0.03]; bott_top_marg =[0.05 0.05]; left_right_marg=[0.04 0.01];
 params_tight_subplots={height_width_gap bott_top_marg left_right_marg};
 % plot_param_settings: [fontsize_axes,fs_title,fs_legend,linewidth,params_tight_subplots,model_name]
-plot_param_settings={24,34,24,4,params_tight_subplots,model_name};
+plot_param_settings={14,22,12,4,params_tight_subplots,model_name};
 % plotting stater or variables (nodes)?
 state_or_node_flags={'nodes','states'};
 % cutoff for minimal variation to show a variable
 diff_cutoff=0.15;
 figure('name','onedim parscan by param')
-[fig_filename,onedim_paramscan_output_cell]=fcn_onedim_parscan_plot_by_params(state_or_node_flags{1},...
+[fig_filename,onedim_paramscan_output_cell]=fcn_onedim_parscan_plot_by_params(state_or_node_flags{2},...
 		stationary_node_vals_onedimscan,stationary_state_vals_onedimscan,...
 		nonzero_states_inds,parscan_matrix,nodes,...
 		scan_params,scan_params_up_down,... % selected parameters
 		diff_cutoff,... % minimal variation for variable to be shown on plot
 		plot_param_settings);
+
 %% SAVE
 
 fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(diff_cutoff),'.','p')),...
@@ -225,11 +229,11 @@ sensit_cutoff=0.1;
 height_width_gap=[0.1 0.04]; bott_top_marg=[0.03 0.1]; left_right_marg=[0.07 0.02]; 
 params_tight_subplots={height_width_gap bott_top_marg left_right_marg};
 % plot_param_settings: [fontsize_axes,fontsize_title,params_tight_subplots,model_name]
-plot_param_settings={30,30,params_tight_subplots,model_name,'colorbar'};
+plot_param_settings={20,20,params_tight_subplots,model_name,'colorbar'};
 % plot_param_settings={12,14,[],model_name}; 
 % select type of plot
 plot_types={{'lineplot','heatmap'} {'nodes','states'} {'values','sensitivity'}};
-plot_type_options=[1 2 1];
+plot_type_options=[1 1 1];
 
 figure('name','onedim parscan by vars')
 [resp_coeff,scan_params_sensit,scan_params_up_down_sensit,fig_filename]=...
@@ -335,7 +339,7 @@ fcn_multidim_parscan_scatterplot(var_ind,all_par_vals_lhs,scan_values,...
 
 %% SAVE
 resolution_dpi='-r200'; 
-fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
+fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi);
 
 %% PLOT Correlations between model variables
 
@@ -353,7 +357,7 @@ figure('name',strjoin(plot_type_flag))
 
 %% SAVE
 resolution_dpi='-r350'; 
-fcn_save_fig(fig_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi);
+fcn_save_fig(fig_prefix,plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi);
 
 %% Regression of variables by transition rates
 
@@ -374,7 +378,7 @@ scan_values=stat_sol_states_lhs_parscan; % or: stat_sol_nodes_lhs_parscan
 
 %% SAVE plot
 fig_prefix=strjoin(plot_type_flag,'_'); resolution_dpi='-r350'; 
-fcn_save_fig(fig_prefix,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
+fcn_save_fig(fig_prefix,plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi)
 
 %% Sobol total sensitivity index
 
@@ -392,7 +396,7 @@ scan_params_up_down_filtered=...
 
 % CALCULATION
 sel_nodes=[]; 	% if left empty, all nodes/states are analyzed
-sample_size=[]; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
+sample_size=10; % if left empty, the sample size is half of the original param scan <all_par_vals_lhs>
 % how often (what %) should the progress of calculation be displayed?
 disp_freq=10;
 % plot settings set to empty bc we are doing the calculation here
@@ -419,7 +423,7 @@ xticklabels({'Metastasis','Apoptosis (p53)','Apoptosis (p63_73)'})
 
 %% SAVE
 resolution_dpi='-r350'; 
-fcn_save_fig('sobol_sensitivity_index',plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
+fcn_save_fig('sobol_sensitivity_index',plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi)
 
 %% PARAMETER FITTING: define data, initial guess
 

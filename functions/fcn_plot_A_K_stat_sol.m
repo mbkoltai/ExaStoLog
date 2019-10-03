@@ -39,8 +39,10 @@ if ~isempty(nonzero_flag); nnz_vals=find(stat_sol>nonzero_flag)'; state_vals=sta
 fig_subpl2=subplot(1,3,2); barplot_object=barh(state_vals,'BarWidth',barwidth_states_val,'FaceColor',[0 0.5 0],'EdgeColor',[0 0.5 0]); 
 
 if ~isempty(nonzero_flag)
-    set(fig_subpl2,'ytick',1:numel(nnz_vals)); set(fig_subpl2,'yticklabel',nnz_vals,'FontSize',fontsize(1)); xlim([0 1.5*max(state_vals)])
-    set(fig_subpl2,'Position',[0.39 y_position 0.27 0.82])
+    % set(fig_subpl2,'ytick',1:numel(nnz_vals)); set(fig_subpl2,'yticklabel',nnz_vals,'FontSize',fontsize(1)); 
+    set(gca,'yticklabel','')
+    xlim([0 1.5*max(state_vals)])
+    set(fig_subpl2,'Position',[0.34 y_position 0.27 0.82])
     binary_states_cell=arrayfun(@(x) sprintf('%d', truth_table_inputs(nnz_vals(x),:)), 1:numel(nnz_vals),'un',0);
     arrayfun(@(k) text(barplot_object.YData(k)+max(state_vals)/50,barplot_object.XData(k),binary_states_cell{k}, 'FontSize',fontsize(3)),...
         1:numel(binary_states_cell), 'un',0)
