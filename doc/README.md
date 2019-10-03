@@ -795,7 +795,7 @@ We use first a [simulated annealing script from MATLAB Central](https://mathwork
 
 (These changes are already written into the script, you do not need to do anything about them.)
 
-**Note that simulated annealing typically shows slow convergence and it can also fail to converge. For error reductions between 50-99% we have encountered convergence times of 1-3 hours.** We provide the convergence process for one of our tested models (Zanudo 2017) in the file T_loss.csv.
+**Note that simulated annealing typically shows slow convergence and it can also fail to converge. For error reductions between 50-99% we have encountered convergence times of 1-3 hours.** We provide the convergence process for one of our tested models (Zanudo 2017) in [this csv file](https://github.com/mbkoltai/exact-stoch-log-mod/blob/master/doc/readmeplots/zanudo2017_simul_ann_T_loss.csv).
 
 The hyperparameters of fitting are defined as the structure _fitting\_arguments_: we set 'Verbosity' to 1 so we can see the convergence process, and 'Stopval' to (eg.) 10% of the initial error, this is the value of the sum of squared error to stop the fitting process at. 
 Then we start the fitting:
@@ -899,8 +899,7 @@ init_par_vals=[1.2834 0.4969 48.4048 4.9638 0.1760];
 Cohen, D. P., Martignetti, L., Robine, S., Barillot, E., Zinovyev, A., and Calzone, L. (2015). Mathematical modelling of molecular pathways
 enabling tumour cell invasion and migration. PLoS computational biology, 11 (11), e1004571
 
-Zañudo,  J.  G.  T.,  Scaltriti,  M.,  and  Albert,  R.  (2017). A  network modeling approach to elucidate drug resistance mechanisms and predict
-combinatorial drug treatments in breast cancer. Cancer convergence, 1(1), 5.
+Zañudo, J. G. T., Scaltriti, M., and Albert, R. (2017). A network modeling approach to elucidate drug resistance mechanisms and predict combinatorial drug treatments in breast cancer. Cancer convergence, 1(1), 5.
 
 <!---##################################################################--->
 <!---##################################################################--->
