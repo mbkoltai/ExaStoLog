@@ -433,7 +433,7 @@ fcn_save_fig('sobol_sensitivity_index',plot_save_folder,fig_file_type{1},'overwr
 % define data vector (generate some data OR load from elsewhere)
 data_param_vals=lognrnd(1,1,1,numel(predictor_names)); 
 % initial guess for parameters
-init_par_vals=data_param_vals.*lognrnd(1,2,size(predictor_names)); 
+init_par_vals=data_param_vals.*lognrnd(1,3,size(predictor_names)); 
 
 % initial true value of variables/states, initial guess
 var_type_flag='states'; % 'vars' 'states'
@@ -443,7 +443,7 @@ var_type_flag='states'; % 'vars' 'states'
 
 %% function handles for fitting
 [fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_handles_fitting(var_type_flag,...
-                                y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
+                    y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
 
 %% FITTING by simul anneal
 
@@ -451,7 +451,7 @@ var_type_flag='states'; % 'vars' 'states'
 % struct('CoolSched',@(T) (0.8*T), 'Generator',@(x) (x+(randperm(length(x))==length(x))*randn/100),...
 % 'InitTemp',1,'MaxConsRej',1000, 'MaxSuccess',20,...
 % 'MaxTries',300, 'StopTemp',1e-8, 'StopVal',-Inf, 'Verbosity',1);
-fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10, 'MaxTries',30,'MaxConsRej',100);
+fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/5, 'MaxTries',30,'MaxConsRej',100);
 % FIT
 tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); toc;
 
@@ -477,6 +477,7 @@ plot_settings=[24 30];
 % var_type_flag='vars'; % 'states'
 figure('name','simul anneal')
 fcn_plot_paramfitting(var_type_flag,data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plot_settings)
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Fitting by initial numerical gradient
 
