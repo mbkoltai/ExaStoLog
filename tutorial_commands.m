@@ -433,7 +433,7 @@ fcn_save_fig('sobol_sensitivity_index',plot_save_folder,fig_file_type{1},'overwr
 % define data vector (generate some data OR load from elsewhere)
 data_param_vals=lognrnd(1,1,1,numel(predictor_names)); 
 % initial guess for parameters
-init_par_vals=data_param_vals.*lognrnd(1,3,size(predictor_names)); 
+init_par_vals=data_param_vals.*lognrnd(1,2,size(predictor_names)); 
 
 % initial true value of variables/states, initial guess
 var_type_flag='states'; % 'vars' 'states'
@@ -451,7 +451,7 @@ var_type_flag='states'; % 'vars' 'states'
 % struct('CoolSched',@(T) (0.8*T), 'Generator',@(x) (x+(randperm(length(x))==length(x))*randn/100),...
 % 'InitTemp',1,'MaxConsRej',1000, 'MaxSuccess',20,...
 % 'MaxTries',300, 'StopTemp',1e-8, 'StopVal',-Inf, 'Verbosity',1);
-fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/5, 'MaxTries',30,'MaxConsRej',100);
+fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10, 'MaxTries',30,'MaxConsRej',100);
 % FIT
 tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); toc;
 

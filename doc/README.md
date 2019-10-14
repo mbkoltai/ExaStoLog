@@ -1,6 +1,6 @@
 # Tutorial for ExaStoLog: Exact calculation of stationary states + parameter analysis & fitting of stochastic logical models
 
-## What is this?
+## What is ExaStoLog?
 
 ExaStoLog is a MATLAB toolbox for the exact solution of stochastic, continuous-time logical models. It was developed in the [Computational Systems Biology group](http://sysbio.curie.fr/) of Institut Curie, by Mihály Koltai.
 It is the accompanying tool to a manuscript that will be made available here once accepted.  
