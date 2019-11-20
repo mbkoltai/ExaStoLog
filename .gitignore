@@ -17,11 +17,17 @@ model_files/other
 # compiled files runtime
 ExaStoLog/
 runtime_commands.m
+# experimental script
+stg_storage.m
+# cytoscape
+model_expansion.cys
 
 # files to ignore M~ files
 *m~
 *md~
 *dat
+sandbox.m
+single_commands.m
 # wrapper.mlx
 doc/README.html
 

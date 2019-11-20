@@ -3,7 +3,7 @@ function tau_i=fcn_multidim_parscan_sobol_sensit_index(sobol_sensit_index,var_ty
                                             sample_size,...
                                             sequential_indices_lhs,...
                                             scan_params_sobol,scan_params_up_down_sobol,...
-                                            stg_table,transition_rates_table,x0,nodes,...
+                                            stg_cell,transition_rates_table,x0,nodes,...
                                             sel_nodes,plot_settings,disp_freq)
 
 par_ind_table=[repelem(scan_params_sobol, cellfun(@(x) numel(x),scan_params_up_down_sobol))', horzcat(scan_params_up_down_sobol{:})'];
@@ -60,9 +60,9 @@ end
     B_i = A; B_i(:,k) = B(:,k);
         % rerun calculations
       if strcmp(var_type,'node')
-          [f_B_i,~]=fcn_calc_paramsample_table(B_i,scan_params_sobol,scan_params_up_down_sobol,transition_rates_table,stg_table,x0,disp_var);
+          [f_B_i,~]=fcn_calc_paramsample_table(B_i,scan_params_sobol,scan_params_up_down_sobol,transition_rates_table,stg_cell,x0,disp_var);
       elseif strcmp(var_type,'state')
-          [~,f_B_i]=fcn_calc_paramsample_table(B_i,scan_params_sobol,scan_params_up_down_sobol,transition_rates_table,stg_table,x0,disp_var);
+          [~,f_B_i]=fcn_calc_paramsample_table(B_i,scan_params_sobol,scan_params_up_down_sobol,transition_rates_table,stg_cell,x0,disp_var);
       end
       
         % sensit index

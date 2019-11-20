@@ -1,6 +1,6 @@
 function x0=fcn_define_initial_states(initial_fixed_nodes,initial_fixed_nodes_vals,dom_prob,nodes,distrib_type,plot_flag)
                                    
-n_nodes=numel(nodes); truth_table_inputs=rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2);
+n_nodes=numel(nodes); truth_table_inputs=fliplr(rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2));
 % define initial values
 x0=zeros(2^n_nodes,1); 
 % defining a dominant initial state (eg. dom_prob=0.8, ie. 80% probability)

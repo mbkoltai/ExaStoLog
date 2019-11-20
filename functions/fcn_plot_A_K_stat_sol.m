@@ -5,7 +5,7 @@ fontsize=plot_settings(1:3); barwidth_states_val=plot_settings(4);
 
 [stationary_node_vals,init_node_vals]=fcn_calc_init_stat_nodevals(x0,stat_sol,'x0');
 n=numel(nodes); 
-truth_table_inputs=rem(floor([0:((2^n)-1)].'*pow2(0:-1:-n+1)),2);
+truth_table_inputs=fliplr(rem(floor([0:((2^n)-1)].'*pow2(0:-1:-n+1)),2));
 
 if isempty(sel_nodes)
     sel_nodes=1:numel(nodes); 

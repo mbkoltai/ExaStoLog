@@ -20,7 +20,7 @@ model_name_list = {'mammalian_cc', ...
 'EMT_cohen_ModNet',...
 'sahin_breast_cancer_refined'}; %
 % select the index of one model
-model_index=4;
+model_index=2;
 model_name=model_name_list{model_index};
 
 % read in model from BOOLNET file
@@ -33,7 +33,7 @@ plot_save_folder=strcat('doc/sample_plots/',model_name,'/');
 % write file with logical rules
 truth_table_filename='fcn_truthtable.m'; fcn_write_logicrules(nodes,rules,truth_table_filename)
 % build STG
-tic; stg_table=fcn_build_stg_table(truth_table_filename,nodes); toc
+tic; stg_cell=fcn_build_stg_cell(truth_table_filename,nodes); toc
 % density of STG: size(stg_table,1)/(2^(2*numel(nodes)))
 
 %% choose transition rates
@@ -48,7 +48,7 @@ transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,
                     
 %% BUILD transition matrix
 
-[A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,'');
+[A_sparse,~]=fcn_build_trans_matr_stgcell(stg_cell,transition_rates_table,'');
 
 % visualize
 % spy(A_sparse); xlabel('model states'); ylabel('model states'); set(gca,'FontSize',24)
@@ -160,18 +160,15 @@ fcn_save_fig('binary_heatmap_states',plot_save_folder,fig_file_type{1},overwrite
 
 %% select transition rates for 1-dimensional parameter scan
 
-popul_subgraphs=cellfun(@(x) sum(ismember(find(x0>0), x)), cell_subgraphs)>0;
+popul_subgraphs=cellfun(@(x) sum(ismember(find(x0>0),x)), cell_subgraphs)>0;
 subgraph_states=cell2mat(cell_subgraphs(popul_subgraphs)');
-par_inds_table=unique(stg_table(ismember(stg_table(:,1), subgraph_states) | ...
-					ismember(stg_table(:,2), subgraph_states),3:4),'rows');
+% subgraph_states=cell2mat(cell_subgraphs(~cellfun(@(x) isempty(x),term_verts_cell))');
+state_trans_freq=cell2mat(cellfun(@(x) sum(ismember(x,subgraph_states)), stg_cell','un',0));
+[a,b,~]=find(state_trans_freq>0); par_inds_table=[a,b];
 
 % most common transitions
-for k=1:size(par_inds_table,1)
-    param_freq(k) = sum(stg_table(:,3)==par_inds_table(k,1) & stg_table(:,4)==par_inds_table(k,2));
-end
-% top n most frequent transitions
-[~,top_freq_trans_rates]=sort(param_freq,'descend');
-
+[~,top_freq_trans_rates]=sort(cell2mat(arrayfun(@(x) state_trans_freq(par_inds_table(x,1),par_inds_table(x,2)),...
+                                1:size(par_inds_table,1),'un',0)),'descend');
 % all
 scan_params=unique(par_inds_table(:,1))';
 % most common: scan_params=par_inds_table(top_freq_trans_rates(1:6),1)';
@@ -191,7 +188,7 @@ parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_dow
 
 % calculation
 [stationary_state_vals_onedimscan,stationary_node_vals_onedimscan,stationary_state_inds_scan]=...
-    fcn_onedim_parscan_calc(stg_table,transition_rates_table,x0,nodes,parscan_matrix,scan_params,scan_params_up_down);
+    fcn_onedim_parscan_calc(stg_cell,transition_rates_table,x0,nodes,parscan_matrix,scan_params,scan_params_up_down);
 
 %% PLOT 1-dimensional scan grouped by transition rates
 
@@ -244,6 +241,7 @@ figure('name','onedim parscan by vars')
 		sensit_cutoff,plot_param_settings);
 
 %% SAVE
+
 fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),...
 	plot_save_folder,fig_file_type{1},'overwrite','-r200');
 
@@ -283,12 +281,12 @@ multiscan_pars=[11 13]; multiscan_pars_up_down={1 1};
 disp_var=5; % show at every n% the progress
 [stat_sol_paramsample_table,stat_sol_states_paramsample_table]=...
     fcn_calc_paramsample_table(paramsample_table,multiscan_pars,...
-		multiscan_pars_up_down,transition_rates_table,stg_table,x0,disp_var);
+		multiscan_pars_up_down,transition_rates_table,stg_cell,x0,disp_var);
     
 %% PLOT as heatmap
 
 % what model variables to plot?
-sel_nodes=4;
+sel_nodes=7;
 % plot_settings: [fontsize on plot, fs axes, fs subplot titles, fs axes labels]
 plot_settings=[28 30 40]; figure('name','2D scan')
 fcn_plot_twodim_parscan(stat_sol_paramsample_table,scanvals,...
@@ -317,7 +315,7 @@ lhs_scan_dim=100;
 [all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan]=... % outputs
     fcn_multidim_parscan_latinhypcube(par_min_mean,max_stdev,sampling_type,lhs_scan_dim, ...
                           scan_params_sensit,scan_params_up_down_sensit, ...
-                          transition_rates_table,stg_table,x0,nodes);
+                          transition_rates_table,stg_cell,x0,nodes);
                       
 %% Visualize multi-dimensional parameter scans by scatter plots
 
@@ -407,7 +405,7 @@ sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{2},...
 	sample_size,... % # of calculations per parameter
 	sequential_indices_lhs,... % indices of transition rates in the original LHS
 	scan_params_filtered,scan_params_up_down_filtered,... % or: scan_params_sensit,scan_params_up_down_sensit
-	stg_table,transition_rates_table,x0,nodes,sel_nodes,plot_settings,disp_freq);
+	stg_cell,transition_rates_table,x0,nodes,sel_nodes,plot_settings,disp_freq);
 
 %% PLOT
 
@@ -438,12 +436,12 @@ init_par_vals=data_param_vals.*lognrnd(1,2,size(predictor_names));
 % initial true value of variables/states, initial guess
 var_type_flag='states'; % 'vars' 'states'
 [y_data,y_init_pred,init_error]=fcn_param_fitting_data_initguess_error(var_type_flag,...
-                                        x0,stg_table,data_param_vals,init_par_vals,...
+                                        x0,stg_cell,data_param_vals,init_par_vals,...
                                         stg_sorting_cell,nodes,predictor_names);
 
 %% function handles for fitting
 [fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_handles_fitting(var_type_flag,...
-                    y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
+                    y_data,x0,stg_cell,stg_sorting_cell,nodes,predictor_names);
 
 %% FITTING by simul anneal
 
@@ -457,12 +455,12 @@ tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_v
 
 % RESULTS
 % values with fitted parameters
-[y_optim_param,~,~]=fcn_param_fitting_data_initguess_error(var_type_flag,x0,stg_table,data_param_vals,optim_par_vals,...
+[y_optim_param,~,~]=fcn_param_fitting_data_initguess_error(var_type_flag,x0,stg_cell,data_param_vals,optim_par_vals,...
                                             stg_sorting_cell,nodes,predictor_names);
 
 % values of fitted variables: [initial guess, true values (data), fitted values]
 % careful with dimensions: for states, these are column vectors
-data_init_optim=[y_init_pred; y_data; y_optim_param]; 
+data_init_optim=[y_init_pred';y_data';y_optim_param']; 
 % parameters: initial guess, true values, fitted values
 param_sets=[init_par_vals;data_param_vals;optim_par_vals];
 
@@ -477,8 +475,9 @@ plot_settings=[24 30];
 % var_type_flag='vars'; % 'states'
 figure('name','simul anneal')
 fcn_plot_paramfitting(var_type_flag,data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plot_settings)
-
+% fcn_plot_paramfitting(var_type_flag,data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plot_settings)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %% Fitting by initial numerical gradient
 
 error_thresh_fraction=0.1; 	% what % of initial error to stop?
@@ -493,12 +492,12 @@ incr_resol_init=0.15; incr_resol=0.03;
 % var_type_flag: 'states' or 'vars'
 % careful that string and data type are consistent!!
 [init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(var_type_flag,init_error_table,...
-	{y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
+	{y_data,x0,stg_cell,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
 	init_par_vals,incr_resol,incr_resol_init,error_thresh_fraction,step_thresh);
 
 %% PLOT
 % which vars/states to show, if empty all are shown
-sel_nodes=[]; plot_settings=[24 30]; 
+sel_nodes=[]; plot_settings=[24 30];
 % if its states you fitted, take the transpose of ydata
 data_init_optim=[statsol_parscan([1 end],:); y_data']; 
 figure('name','numer grad_desc') % state_var_flags={'state','var'};

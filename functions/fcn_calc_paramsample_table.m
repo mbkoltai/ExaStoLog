@@ -1,21 +1,30 @@
 function [stat_sol_lhs_parscan,stat_sol_states_lhs_parscan]=fcn_calc_paramsample_table(paramsample_table,...
                                                                 multiscan_pars,multiscan_pars_up_down,...
-                                                                transition_rates_table,stg_table,x0,disp_var)
+                                                                transition_rates_table,stg_cell,x0,disp_var)
 
 par_ind_table=[repelem(multiscan_pars, cellfun(@(x) numel(x),multiscan_pars_up_down))', horzcat(multiscan_pars_up_down{:})'];
 trans_rate_scan_inds=(par_ind_table(:,1)-1)*2 + par_ind_table(:,2);
 transition_rates_table_mod=transition_rates_table;
+n_nodes=size(transition_rates_table,2);
 
 A_dim=2^size(transition_rates_table,2);
 % states corresponding to the transition rates
-% trans_matr_inds=cell2mat(arrayfun(@(x) find(ismember(2*(stg_table(:,3)-1)+stg_table(:,4),x)),trans_rate_scan_inds,'un',0)); % 0.8 sec
-trans_matr_inds_cell=arrayfun(@(x) find(ismember(2*(stg_table(:,3)-1)+stg_table(:,4),x)),trans_rate_scan_inds,'un',0);
-% trans_matr_inds_length=cell2mat(arrayfun(@(x) sum(ismember(2*(stg_table(:,3)-1)+stg_table(:,4),x)),trans_rate_scan_inds,'un',0)); % 0.8 sec
-% i_row=cellfun(@(x) stg_table(x,1), trans_matr_inds_cell,'un',0); j_col=cellfun(@(x) stg_table(x,2), trans_matr_inds_cell,'un',0);
-seq_inds=cellfun(@(x) stg_table(x,1) + (stg_table(x,2)-1)*A_dim, trans_matr_inds_cell,'un',0); % i_row+(j_col-1)*A_dim;
+% trans_matr_inds_cell=arrayfun(@(x) find(ismember(2*(stg_table(:,3)-1)+stg_table(:,4),x)),trans_rate_scan_inds,'un',0);
+% seq_inds=cellfun(@(x) stg_table(x,1) + (stg_table(x,2)-1)*A_dim, trans_matr_inds_cell,'un',0); % i_row+(j_col-1)*A_dim;
+plus_minus_inds = par_ind_table(:,2)'; plus_minus_inds(plus_minus_inds==2)=-1;
+row_inds=arrayfun(@(x) stg_cell{par_ind_table(x,2),par_ind_table(x,1)},1:size(par_ind_table,1),'un',0);
+col_inds=arrayfun(@(x) stg_cell{par_ind_table(x,2),par_ind_table(x,1)}+plus_minus_inds(x)*2^(n_nodes-par_ind_table(x,1)),1:size(par_ind_table,1),'un',0);
+seq_inds=arrayfun(@(x) row_inds{x} + (col_inds{x}-1)*A_dim, 1:numel(col_inds),'un',0); 
+
+% i_row=stg_cell{scan_par_inds(k)}; 
+% if rem(scan_par_inds(k),2)>0; j_col=i_row+2^(numel(nodes) - ceil(scan_par_inds(k)/2)); 
+% else; j_col=i_row-2^(numel(nodes) - ceil(scan_par_inds(k)/2)); 
+% end
+% seq_inds=i_row+(j_col-1)*A_dim;
 
 % n_par=numel(trans_rate_scan_inds);
-[A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,'');
+% [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,'');
+[A_sparse,~]=fcn_build_trans_matr_stgcell(stg_cell,transition_rates_table,'');
 stg_sorting_cell=fcn_scc_subgraphs(A_sparse,x0);
 
 stat_sol_states_lhs_parscan=cell(size(paramsample_table,1),1); % zeros(size(all_par_vals_lhs,1),sum(stat_sol>0));

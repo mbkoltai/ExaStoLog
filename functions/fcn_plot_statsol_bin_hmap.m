@@ -4,7 +4,7 @@ function binary_heatmap=fcn_plot_statsol_bin_hmap(stat_sol,prob_thresh,term_vert
 % param_settings=[numsize_plot fontsize hor_gap bottom_marg left_marg];
 num_size_plot=plot_param_settings(1); fontsize=plot_param_settings(2); hor_gap=plot_param_settings(3); 
 bottom_marg=plot_param_settings(4); left_marg=plot_param_settings(5);
-n=numel(nodes); truth_table_inputs=rem(floor([0:((2^n)-1)].'*pow2(0:-1:-n+1)),2);
+n=numel(nodes); truth_table_inputs=fliplr(rem(floor([0:((2^n)-1)].'*pow2(0:-1:-n+1)),2));
 
 % tight_subplot(Nh, Nw, gap, marg_h, marg_w): 
 % gap: gaps between the axes in normalized units

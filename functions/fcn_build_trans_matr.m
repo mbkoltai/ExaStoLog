@@ -21,3 +21,6 @@ if ~isempty(kin_matr_flag)
 else
     K_sparse=[];
 end
+
+% down_trans_target=arrayfun(@(x) [[down_trans_source{x}]-2^(n_nodes-x) repmat([x 2],numel(down_trans_source{x}),1)],1:numel(down_trans_source),'un',0);
+% up_trans_target=arrayfun(@(x) [[up_trans_source{x}]+2^(n_nodes-x) repmat([x 1],numel(up_trans_source{x}),1)], 1:numel(up_trans_source),'un',0);

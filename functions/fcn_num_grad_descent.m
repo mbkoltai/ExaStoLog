@@ -1,14 +1,14 @@
 function [init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(state_var_ind,init_error_table,input_cell,data_param_vals,...
                                                                          init_par_vals,incr_resol,incr_resol_init,error_thresh,step_thresh)
 
-% input_cell = {y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names};
-y_data=input_cell{1}; x0=input_cell{2}; stg_table=input_cell{3}; stg_sorting_cell=input_cell{4}; nodes=input_cell{5};
+% input_cell = {y_data,x0,stg_cell,stg_sorting_cell,nodes,predictor_names};
+y_data=input_cell{1}; x0=input_cell{2}; stg_cell=input_cell{3}; stg_sorting_cell=input_cell{4}; nodes=input_cell{5};
 predictor_names=input_cell{6};
 if strcmp(state_var_ind,'var')
-    [~,fcn_statsol_values]=fcn_handles_fitting(y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
+    [~,fcn_statsol_values]=fcn_handles_fitting(y_data,x0,stg_cell,stg_sorting_cell,nodes,predictor_names);
     init_error=sum((y_data - fcn_statsol_values(init_par_vals) ).^2); % fcn_statsol_sum_sq_dev(init_par_vals);
 else
-    [fcn_statsol_states_sum_sq_dev,fcn_statsol_values_states]=fcn_handles_fitting('states',y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
+    [fcn_statsol_states_sum_sq_dev,fcn_statsol_values_states]=fcn_handles_fitting('states',y_data,x0,stg_cell,stg_sorting_cell,nodes,predictor_names);
     init_error=fcn_statsol_states_sum_sq_dev(init_par_vals); 
     % state data is column vector, so we transpose
 end
