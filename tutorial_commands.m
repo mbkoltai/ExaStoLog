@@ -34,7 +34,7 @@ plot_save_folder=strcat('doc/sample_plots/',model_name,'/');
 truth_table_filename='fcn_truthtable.m'; fcn_write_logicrules(nodes,rules,truth_table_filename)
 % build STG
 tic; stg_cell=fcn_build_stg_cell(truth_table_filename,nodes); toc
-% density of STG: size(stg_table,1)/(2^(2*numel(nodes)))
+% density of STG: sum(sum(cellfun(@(x) numel(x),stg_cell)))/(2^(2*numel(nodes)))
 
 %% choose transition rates
 

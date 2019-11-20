@@ -4,7 +4,7 @@
 
 ExaStoLog is a MATLAB toolbox for the exact solution of stochastic, continuous-time logical models. It was developed in the [Computational Systems Biology group](http://sysbio.curie.fr/) of Institut Curie, by Mihály Koltai.
 It is the accompanying tool to [this manuscript](https://www.biorxiv.org/content/10.1101/794230v1).  
-The toolbox calculates the stationary solution of stochastic logical models by an exact method, without Monte Carlo approximations. Users can input their own logical models in Boolnet format or as text with logical notation in MATLAB. Currently the toolbox can accommodate logical models up to 20-few variables. Pushing the limits of this exact method to larger models is currently explored.  
+The toolbox calculates the stationary solution of stochastic logical models by an exact method, without Monte Carlo simulations. Users can input their own logical models in Boolnet format or as logical formulas in MATLAB. Currently the toolbox can accommodate logical models up to 20-few variables. Pushing the limits of this exact method to larger models is currently explored.  
 Besides the calculation itself, the toolbox has a range of other functions for the visualization of solutions, and also to perform different types of parameter sensitivity analysis, as well as parameter fitting.
 
 ## Table of contents
@@ -100,13 +100,13 @@ fcn_write_logicrules(nodes,rules,truth_table_filename)
 
 From this function file we generate the state transition graph (STG) of the logical model. This step can take a few seconds and it is independent of the values of transition rates, so it needs to be done only once for a given model:
 ```MATLAB
-tic; stg_table=fcn_build_stg_table(truth_table_filename,nodes); toc
+tic; stg_cell=fcn_build_stg_cell(truth_table_filename,nodes); toc
 ```
 
 We can check the density of the STG by dividing the number of actual transitions by that of all possible transitions. 
 For the EMT model the density is 8.4e-06:
 ```MATLAB
-size(stg_table,1)/(2^(2*numel(nodes)))
+sum(sum(cellfun(@(x) numel(x),stg_cell)))/(2^(2*numel(nodes)))
 ```
 
 #### Defining transition rates
@@ -136,13 +136,13 @@ transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,
 
 Now we can build the transition matrix of the model with the specified transition rates:
 ```MATLAB
-[A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,'');
+[A_sparse,~]=fcn_build_trans_matr_stgcell(stg_cell,transition_rates_table,'');
 ```
 
 For the subsequent calculations only the transition matrix *A* is needed as a variable (it is converted to the kinetic matrix within functions).
-If we want to have the kinetic matrix *K* as a variable (*dp(t)/dt=Kp(t)*, as opposed to *p(t+1)=p(t)A*), then run the function as:
+If we also want to have the kinetic matrix *K* as a variable (*dp(t)/dt=Kp(t)*, as opposed to *p(t+1)=p(t)A*), then run the function as:
 ```MATLAB
-[A_sparse,K_sparse]=fcn_build_trans_matr(stg_table,transition_rates_table,'kinetic');
+[A_sparse,K_sparse]=fcn_build_trans_matr_stgcell(stg_cell,transition_rates_table,'kinetic');
 ```
 We can visualize the transition matrix by:
 ```MATLAB
@@ -338,10 +338,11 @@ To investigate the effect of the transition rates we can first perform one-dimen
 First we need to select the nodes whose transition rates we want to scan in.
 We can for instance select all rates that have actual transitions in the subgraph of the STG:
 ```MATLAB
-popul_subgraphs=cellfun(@(x) sum(ismember(find(x0>0), x)), cell_subgraphs)>0;
+popul_subgraphs=cellfun(@(x) sum(ismember(find(x0>0),x)), cell_subgraphs)>0;
 subgraph_states=cell2mat(cell_subgraphs(popul_subgraphs)');
-par_inds_table=unique(stg_table(ismember(stg_table(:,1), subgraph_states) | ...
-					ismember(stg_table(:,2), subgraph_states),3:4),'rows');
+% subgraph_states=cell2mat(cell_subgraphs(~cellfun(@(x) isempty(x),term_verts_cell))');
+state_trans_freq=cell2mat(cellfun(@(x) sum(ismember(x,subgraph_states)), stg_cell','un',0));
+[a,b,~]=find(state_trans_freq>0); par_inds_table=[a,b];
 ```
 
 Now _par\_inds\_table_ contains these transition rates, the first column containing the indices of the corresponding nodes and the second the indices for the type of transition: 1->0 (1) or the 0->1 (2).  
@@ -349,11 +350,8 @@ Now _par\_inds\_table_ contains these transition rates, the first column contain
 We can also quantify the number of occurrences by transition rates and take the _n_ most common ones:
 ```MATLAB
 % most common transitions
-for k=1:size(par_inds_table,1)
-    param_freq(k) = sum(stg_table(:,3)==par_inds_table(k,1) & stg_table(:,4)==par_inds_table(k,2));
-end
-% transition rates sorted by their number of occurrence in STG
-[~,top_freq_trans_rates]=sort(param_freq,'descend');
+[~,top_freq_trans_rates]=sort(cell2mat(arrayfun(@(x) state_trans_freq(par_inds_table(x,1),par_inds_table(x,2)),...
+                                1:size(par_inds_table,1),'un',0)),'descend');
 ```
 
 We can now select which transition rates we want to scan in.
@@ -394,7 +392,7 @@ parscan_matrix=fcn_onedim_parscan_generate_matrix(scan_params,scan_params_up_dow
 
 % calculation
 [stationary_state_vals_onedimscan,stationary_node_vals_onedimscan,stationary_state_inds_scan]=...
-    fcn_onedim_parscan_calc(stg_table,transition_rates_table,x0,...
+    fcn_onedim_parscan_calc(stg_cell,transition_rates_table,x0,...
 		nodes,parscan_matrix,scan_params,scan_params_up_down);
 ```
 
@@ -538,7 +536,7 @@ multiscan_pars=[11 13]; multiscan_pars_up_down={1 1};
 disp_var=5; % show at every n% the progress
 [stat_sol_paramsample_table,stat_sol_states_paramsample_table]=...
 		fcn_calc_paramsample_table(paramsample_table,multiscan_pars,...
-		multiscan_pars_up_down,transition_rates_table,stg_table,x0,disp_var);
+		multiscan_pars_up_down,transition_rates_table,stg_cell,x0,disp_var);
 ```
 
 Plot the results as a two-dimensional heatmap for selected model variable(s), in our case metastasis:
@@ -582,7 +580,7 @@ lhs_scan_dim=1000;
 [all_par_vals_lhs,stat_sol_nodes_lhs_parscan,stat_sol_states_lhs_parscan]=... % outputs
     fcn_multidim_parscan_latinhypcube(par_min_mean,max_stdev,sampling_type,lhs_scan_dim, ...
                           scan_params_sensit,scan_params_up_down_sensit, ...
-                          transition_rates_table,stg_table,x0,nodes);
+                          transition_rates_table,stg_cell,x0,nodes);
 ```
 
 The outputs are:
@@ -726,7 +724,7 @@ sobol_sensit_index=fcn_multidim_parscan_sobol_sensit_index([],var_types{2},...
 	sample_size,... % # of calculations per parameter
 	sequential_indices_lhs,... % indices of transition rates in the original LHS
 	scan_params_filtered,scan_params_up_down_filtered,... % or: scan_params_sensit,scan_params_up_down_sensit
-	stg_table,transition_rates_table,x0,nodes,sel_nodes,plot_settings,disp_freq);
+	stg_cell,transition_rates_table,x0,nodes,sel_nodes,plot_settings,disp_freq);
 ```
 
 To plot the results, provide the table **sobol_sensit_index** of results as the function's first argument:
@@ -772,7 +770,7 @@ init_par_vals=data_param_vals.*lognrnd(1,2,size(predictor_names));
 % true value of variables/states, values of states/variables with init param guess, initial error
 var_type_flag='vars'; % 'vars' 'states'
 [y_data,y_init_pred,init_error]=fcn_param_fitting_data_initguess_error(var_type_flag,...
-					x0,stg_table,data_param_vals,init_par_vals,...
+					x0,stg_cell,data_param_vals,init_par_vals,...
 					stg_sorting_cell,nodes,predictor_names);
 ```
 
@@ -780,7 +778,7 @@ We also need to define anonymous functions to calculate the stationary solution 
 These functions need to be rerun if we change the data for fitting.
 ```MATLAB
 [fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_handles_fitting(var_type_flag,...
-				y_data,x0,stg_table,stg_sorting_cell,nodes,predictor_names);
+				y_data,x0,stg_cell,stg_sorting_cell,nodes,predictor_names);
 ```
 
 Next we need to decide what parameter fitting method we use.
@@ -815,11 +813,11 @@ Below are the commands to plot the convergence process (first subplot) and the t
 ```MATLAB
 % model/state stationary values with the fitted parameters
 [y_optim_param,~,~]=fcn_param_fitting_data_initguess_error(var_type_flag,...
-			x0,stg_table,data_param_vals,optim_par_vals,...
+			x0,stg_cell,data_param_vals,optim_par_vals,...
 			stg_sorting_cell,nodes,predictor_names);
 
 % [initial guess, true values (data), fitted values]
-data_init_optim=[y_init; y_data; y_optim_param]; 
+data_init_optim=[y_init'; y_data'; y_optim_param']; 
 min_val=min(min(data_init_optim(:,3:end))); max_val=max(max(data_init_optim(:,3:end)));
 % parameters: initial guess, true values, fitted values
 param_sets=[init_par_vals;data_param_vals;optim_par_vals];
@@ -904,75 +902,3 @@ Zañudo, J. G. T., Scaltriti, M., and Albert, R. (2017). A network modeling appr
 <!---##################################################################--->
 <!---##################################################################--->
 
-<!---  
-### 5. Visualizing the state transition graph
-
-As a next step we can visualize the STG of our model.
-If the model has multiple disconnected subgraphs in its STG, we can visualize both the global STG and the subgraph that we have the fixed points we are interested in.
-```MATLAB
-% show the full STG and a selected (counter) subgraph
-subgraph_index=find(cellfun(@(x) numel(x), term_verts_cell)>0); % select non-empty subgraph
-titles = {'Full state transition graph',strcat('subgraph #',num2str(subgraph_index))};
-% cropping the subplots (optional)
-xlim_vals=[0 21;-5 5]; ylim_vals=[0 23;-5 5];
-% parameters for plot
-default_settings=[20 1 7 5 8]; % fontsize, linewidth_val, arrowsize, default_markersize, highlight_markersize
-% color of source states of STG
-source_color='blue';
-
-plot_STG(A_sparse,subgraph_index,default_settings,xlim_vals,ylim_vals,titles,source_color)
-```
-This is the plot for the STG of the 10-node KRAS model and its 4 subgraph with its source (green) and sink (red) states:
-![STG_10nodes_full_subgraph](./readmeplots)
-
-We can also plot the entire STG only (if there are no disconnected subgraphs) or one of the subgraphs:
-```MATLAB
-% cropping (optional)
-xlim_vals=[-4 5]; ylim_vals = [-5 5];
-titles ={strcat('subgraph #',num2str(subgraph_index))};
-A_sub=A_sparse(cell_subgraphs{subgraph_index},cell_subgraphs{subgraph_index});
-default_settings=[20 1 7 5 8]; % fontsize,linewidth_val, arrowsize, default_markersize, highlight_markersize
-
-plot_STG(A_sub,'',default_settings,xlim_vals,ylim_vals,titles,source_color)
-```
-We can also visually investigate the distribution of the individual transition rates across the STG, with the following function:
-```MATLAB
-selected_pars=[1 3 4 5 6 11 9 8]; % parameters to highlight, either 'all', or numeric array [1 2 3]
-plot_pars=[20 0.1 7 3 6]; % plot_pars=[fontsize,linewidth_val, arrowsize, default_markersize, highlight_markersize]
-% parameters for highlighted transitions: color and width of corresp edges
-highlight_settings={'yellow',3};
-% if using tight_subplots toolbox:
-tight_subpl_flag='yes'; tight_subplot_pars=[0.06 0.02; 0.05 0.05; 0.05 0.05];
-% cropping plot (optional, for better visibility)
-limits=[-4 5;-5 5];
-
-plot_STG_sel_param(A_sparse,counter,nodes,cell_subgraphs,selected_pars,
-  stg_table,plot_pars,highlight_settings,limits,tight_subpl_flag,tight_subplot_pars)
-```
-![STG_10nodes_highlight](./readmeplots)
---->
-
-<!---
-
-#### Importance of transition rates by regression tree
-
-The relative importance of transition rates as predictors of the model's variables can be quantified by a regression tree and the results visualized with the following function:
-```MATLAB
-% for STATES or NODES?
-scan_values=stat_sol_lhs_parscan; % stat_sol_states_lhs_parscan
-sel_nodes=3:numel(nodes); % STATES or NODES to be analyzed
-
-% CALCULATE and PLOT predictor importance
-plot_type_flags={'line','bar'};
-[predictor_names,predictorImportance_vals]=...
-fcn_multidim_parscan_predictorimport(scan_params,scan_params_up_down,...
-all_par_vals_lhs,scan_values,nodes,sel_nodes,plot_type_flags{2});
-
-save_folder='sample_plots/'; fig_file_type={'.png','.eps'}; fig_name=strcat(save_folder,model_name,'_','regression_tree_pred_import',fig_file_type{2});
-export_fig(fig_name,'-transparent','-nocrop')
-```
-
-The plot for the 15-node KRAS model is below:
-
-![kras15vars_regression_tree_pred_import](./readmeplots)
---->
