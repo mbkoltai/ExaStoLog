@@ -77,7 +77,7 @@ else % if there are cycles we need reordering of metagraph of SCC
         stat_sol_submatr_blocks=fcn_block_inversion(K_sp_sub_reord,vert_topol_sort,x0,submatrix_inds);
         stat_sol_blocks(submatrix_inds(vert_topol_sort))=stat_sol_submatr_blocks;
         term_verts_cell{counter}=num2cell(submatrix_inds(vert_topol_sort(diag(K_sp_sub_reord)==0)));
-    else % if there are terminal cycles, stat sol calc a bit more complicated
+    else % if there are terminal cycles, stat sol calc a bit more complicated,
          % need to identify terminal cycles, for corresponding columns of
          % kernel we'll need to calculate adjugate matrix
          %

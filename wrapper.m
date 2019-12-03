@@ -1,7 +1,7 @@
 %% ExaStoLog
 % This file contains the commands to run the functions 
 % calculating the stationary solution of stochastic logical models, 
-% plot results and perform parametric analysis
+% plot results and perform sensitivity analysis (wrt transition rates)
 %
 % READ the tutorial at: https://github.com/mbkoltai/exact-stoch-log-mod
 % author: Mihaly Koltai, mihaly.koltai@curie.fr
@@ -25,13 +25,15 @@ add_toolboxes_paths
 % nodes={'A','B','C','D'}; rules={'~B','~A&C','B|C&~D','C'}
 
 % LIST of MODELS
-model_name_list = {'mammalian_cc', ...
+model_name_list={'mammalian_cc', ...
 'krasmodel15vars', ...
 'breast_cancer_zanudo2017'....
 'EMT_cohen_ModNet',...
-'sahin_breast_cancer_refined'}; % 
+'sahin_breast_cancer_refined',...
+'charitemodel_v6', ...
+'toymodel'}; % 
 % name of the model
-model_index=4;
+model_index=6;
 model_name=model_name_list{model_index};
 % 'dnarepair_rodriguez_15nodes',...
 
@@ -48,11 +50,13 @@ fcn_nodes_rules_cmp(nodes,rules)
 truth_table_filename='fcn_truthtable.m'; fcn_write_logicrules(nodes,rules,truth_table_filename)
 
 % from the model we generate the STG table, that is independent of values of transition rates
-% this takes ~10 seconds for 20 node model (but need to do it only once)
-tic; stg_table=fcn_build_stg_table(truth_table_filename,nodes); toc
+% this takes ~5 seconds for 20 node model (but need to do it only once)
+tic; stg_cell=fcn_build_stg_cell(truth_table_filename,nodes); toc
 
+% number of transitions
+log10(sum(sum(cellfun(@(x) numel(x),stg_cell))))
 % density of transition matrix
-size(stg_table,1)/(2^(2*numel(nodes)))
+sum(sum(cellfun(@(x) numel(x),stg_cell)))/(2^(2*numel(nodes)))
 % visualize transition matrix
 % spy(A_sparse); xlabel('model states'); ylabel('model states'); set(gca,'FontSize',24)
 % save: export_fig(strcat(save_folder,model_name,'_A_sparse.pdf'),'-transparent','-nocrop','-r350')
@@ -73,7 +77,7 @@ transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,
 % meanval=1; sd_val=1; transition_rates_table=fcn_trans_rates_table(nodes,'random',meanval,sd_val,chosen_rates,chosen_rates_vals)
 
 % build transition matrix A with parameter values
-tic; [A_sparse,~]=fcn_build_trans_matr(stg_table,transition_rates_table,''); toc
+tic; [A_sparse,~]=fcn_build_trans_matr_stgcell(stg_cell,transition_rates_table,''); toc
 % if we want the kinetic matrix too, this is the 2nd output of the function
 % tic; [A_sparse,K_sparse]=fcn_build_trans_matr(stg_table,transition_rates_table,'kinetic'); toc
     
@@ -105,17 +109,19 @@ n_nodes=numel(nodes);
 % initial_fixed_nodes={'cc','KRAS','cell_death'}; initial_fixed_nodes_vals=[1 1 0];
 
 initial_fixed_nodes_list={ {'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}, ... % mammalian_cc
-        {'cc','KRAS','DSB','cell_death'}, ...                              % krasmodel15vars
-        {'Alpelisib', 'Everolimus','PIM','Proliferation','Apoptosis'},...  % breast_cancer_zanudo2017
-        {'ECMicroenv','DNAdamage','Metastasis','Migration','Invasion','EMT','Apoptosis','Notch_pthw','p53'}, ... % EMT_cohen_ModNet 
-        {'EGF','ERBB1','ERBB2','ERBB3','p21','p27'}}; % sahin_breast_cancer_refined
-        % 'EGF','ERBB1','ERBB2','ERBB3','ERBB_12','ERBB_13','ERBB_23','CDK6','p21','p27'
+  {'cc','KRAS','DSB','cell_death'}, ...                              % krasmodel15vars
+  {'Alpelisib', 'Everolimus','PIM','Proliferation','Apoptosis'},...  % breast_cancer_zanudo2017
+  {'ECMicroenv','DNAdamage','Metastasis','Migration','Invasion','EMT','Apoptosis','Notch_pthw','p53'}, ... % EMT_cohen_ModNet 
+  {'EGF','ERBB1','ERBB2','ERBB3','p21','p27'}, ... % sahin_breast_cancer_refined % 'EGF','ERBB1','ERBB2','ERBB3','ERBB_12','ERBB_13','ERBB_23','CDK6','p21','p27'
+  {'Apoptosis_CC3','mitotic_catastrophe','Mitosis','DSB_SSB','GFR'} };
+    
 
 initial_fixed_nodes_vals_list={[0 0 0 1 1 1 1 1], ...   % mammalian_cc
     [1 1 1 0], ... % krasmodel15vars: [1 1] is cell cycle ON, KRAS mutation ON
     [0 1 0 zeros(1,2)],...  % breast_cancer_zanudo2017
     [1 1 zeros(1,5) 1 0],... % EMT-Cohen model: [0/1 0/1 zeros(1,5)]
-    [1 0 0 0 1 1]}; % 1 zeros(1,numel(initial_fixed_nodes_list{model_index})-3) 1 1
+    [1 0 0 0 1 1], ... % 1 zeros(1,numel(initial_fixed_nodes_list{model_index})-3) 1 1
+    [0 0 0 1 1]};
 initial_fixed_nodes=initial_fixed_nodes_list{model_index}; initial_fixed_nodes_vals=initial_fixed_nodes_vals_list{model_index};
 
 % what is the probability of this state, (eg. dom_prob=0.8, ie. 80% probability)
@@ -147,12 +153,12 @@ tic; stg_sorting_cell=fcn_scc_subgraphs(A_sparse,x0); toc
 % sorted_vertices_cell: states (vertices) topologically sorted in each nonempty subgraph, #4
 % cyclic_sorted_subgraphs_cell: sorted states within cycles} #5
 
-% calculated stationary solution
+%% calculate stationary solution
 tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_sorting_cell,transition_rates_table,x0); toc
 
 % OUTPUTS
 % stat_sol: stationary solution for all the states
-% term_verts_cell: index of nonzero states. If the STG is disconnected the nonzero states corresp to these disconn subgraphs are in separate cells
+% term_verts_cell: index of nonzero states. If STG is disconnected the nonzero states in these disconn subgraphs are in separate cells
 % cell_subgraphs: indices of states belonging to disconnected subgraphs (if any)
 
 % query size of objects larger than x (in Mbytes)

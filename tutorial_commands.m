@@ -34,7 +34,8 @@ plot_save_folder=strcat('doc/sample_plots/',model_name,'/');
 truth_table_filename='fcn_truthtable.m'; fcn_write_logicrules(nodes,rules,truth_table_filename)
 % build STG
 tic; stg_cell=fcn_build_stg_cell(truth_table_filename,nodes); toc
-% density of STG: sum(sum(cellfun(@(x) numel(x),stg_cell)))/(2^(2*numel(nodes)))
+% density of STG: 
+sum(sum(cellfun(@(x) numel(x),stg_cell)))/(2^(2*numel(nodes)))
 
 %% choose transition rates
 
@@ -48,7 +49,7 @@ transition_rates_table=fcn_trans_rates_table(nodes,distr_type{1},meanval,sd_val,
                     
 %% BUILD transition matrix
 
-[A_sparse,~]=fcn_build_trans_matr_stgcell(stg_cell,transition_rates_table,'');
+tic; [A_sparse,~]=fcn_build_trans_matr_stgcell(stg_cell,transition_rates_table,''); toc
 
 % visualize
 % spy(A_sparse); xlabel('model states'); ylabel('model states'); set(gca,'FontSize',24)
