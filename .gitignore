@@ -14,6 +14,7 @@ doc/sample_plots/
 exact_stochlog_toolbox.zip
 model_files/EMT_cohen
 model_files/other
+model_files/test_models.cys
 # compiled files runtime
 ExaStoLog/
 runtime_commands.m

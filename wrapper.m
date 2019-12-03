@@ -26,14 +26,11 @@ add_toolboxes_paths
 
 % LIST of MODELS
 model_name_list={'mammalian_cc', ...
-'krasmodel15vars', ...
 'breast_cancer_zanudo2017'....
 'EMT_cohen_ModNet',...
-'sahin_breast_cancer_refined',...
-'charitemodel_v6', ...
-'toymodel'}; % 
+'sahin_breast_cancer_refined'}; % 
 % name of the model
-model_index=6;
+model_index=2;
 model_name=model_name_list{model_index};
 % 'dnarepair_rodriguez_15nodes',...
 
@@ -109,19 +106,14 @@ n_nodes=numel(nodes);
 % initial_fixed_nodes={'cc','KRAS','cell_death'}; initial_fixed_nodes_vals=[1 1 0];
 
 initial_fixed_nodes_list={ {'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}, ... % mammalian_cc
-  {'cc','KRAS','DSB','cell_death'}, ...                              % krasmodel15vars
-  {'Alpelisib', 'Everolimus','PIM','Proliferation','Apoptosis'},...  % breast_cancer_zanudo2017
-  {'ECMicroenv','DNAdamage','Metastasis','Migration','Invasion','EMT','Apoptosis','Notch_pthw','p53'}, ... % EMT_cohen_ModNet 
-  {'EGF','ERBB1','ERBB2','ERBB3','p21','p27'}, ... % sahin_breast_cancer_refined % 'EGF','ERBB1','ERBB2','ERBB3','ERBB_12','ERBB_13','ERBB_23','CDK6','p21','p27'
-  {'Apoptosis_CC3','mitotic_catastrophe','Mitosis','DSB_SSB','GFR'} };
-    
+ {'Alpelisib', 'Everolimus','PIM','Proliferation','Apoptosis'},...  % breast_cancer_zanudo2017
+ {'ECMicroenv','DNAdamage','Metastasis','Migration','Invasion','EMT','Apoptosis','Notch_pthw','p53'}, ... % EMT_cohen_ModNet 
+ {'EGF','ERBB1','ERBB2','ERBB3','p21','p27'}}; % sahin_breast_cancer_refined % 'EGF','ERBB1','ERBB2','ERBB3','ERBB_12','ERBB_13','ERBB_23','CDK6','p21','p27'
 
 initial_fixed_nodes_vals_list={[0 0 0 1 1 1 1 1], ...   % mammalian_cc
-    [1 1 1 0], ... % krasmodel15vars: [1 1] is cell cycle ON, KRAS mutation ON
-    [0 1 0 zeros(1,2)],...  % breast_cancer_zanudo2017
+     [0 1 0 zeros(1,2)],...  % breast_cancer_zanudo2017
     [1 1 zeros(1,5) 1 0],... % EMT-Cohen model: [0/1 0/1 zeros(1,5)]
-    [1 0 0 0 1 1], ... % 1 zeros(1,numel(initial_fixed_nodes_list{model_index})-3) 1 1
-    [0 0 0 1 1]};
+    [1 0 0 0 1 1]}; % 1 zeros(1,numel(initial_fixed_nodes_list{model_index})-3) 1 1
 initial_fixed_nodes=initial_fixed_nodes_list{model_index}; initial_fixed_nodes_vals=initial_fixed_nodes_vals_list{model_index};
 
 % what is the probability of this state, (eg. dom_prob=0.8, ie. 80% probability)

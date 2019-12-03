@@ -15,7 +15,6 @@ add_toolboxes_paths
 
 % names of models
 model_name_list = {'mammalian_cc', ...
-'krasmodel15vars', ...
 'breast_cancer_zanudo2017'....
 'EMT_cohen_ModNet',...
 'sahin_breast_cancer_refined'}; %
@@ -59,14 +58,12 @@ tic; [A_sparse,~]=fcn_build_trans_matr_stgcell(stg_cell,transition_rates_table,'
 % selected nodes for inital conditions
 initial_fixed_nodes_list=...
 { {'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}, ... % mammalian_cc
-{'cc','KRAS','DSB','cell_death'}, ... % krasmodel15vars
 {'Alpelisib', 'Everolimus','PIM','Proliferation','Apoptosis'},...  % breast_cancer_zanudo2017
 {'ECMicroenv','DNAdamage','Metastasis','Migration','Invasion','EMT','Apoptosis','Notch_pthw','p53'}, ... % EMT
 {'EGF','ERBB1','ERBB2','ERBB3','p21','p27'}}; % sahin_breast_cancer_refined
 
 % values for selected nodes
 initial_fixed_nodes_vals_list = {[0 0 0 1 1 1 1 1], ... % mammalian_cc
-            [1 1 1 0], ... % krasmodel15vars: [1 1] is cell cycle ON, KRAS mutation ON
             [0 1 0 zeros(1,2)],...  % breast_cancer_zanudo2017
             [1 1 zeros(1,5) 1 0],... % EMT-Cohen model: [0/1 0/1 zeros(1,5)]
             [1 0 0 0 1 1]}; % 1 zeros(1,numel(initial_fixed_nodes_list{model_index})-3) 1 1
