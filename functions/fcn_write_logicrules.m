@@ -25,6 +25,11 @@ node_match_cell=regexp(rules{k},'\w*','match');
 [~,b]=ismember(node_match_cell,nodes); inds_print=arrayfun(@num2str, b, 'UniformOutput', false);
 node_repl_cell=strcat('list_binary_states(:,',inds_print,')');
 rules_rewritten{k}=regexprep(rules{k},node_match_cell,node_repl_cell);
+
+if isempty(rules{k})
+    rules_rewritten{k}='zeros(2^n,1)'; % zeros(2^n,1)
+end
+
 end
 
 % print to a file
