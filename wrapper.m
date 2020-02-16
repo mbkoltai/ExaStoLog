@@ -30,7 +30,7 @@ model_name_list={'mammalian_cc', ...
 'EMT_cohen_ModNet',...
 'sahin_breast_cancer_refined'}; % 
 % name of the model
-model_index=2;
+model_index=3;
 model_name=model_name_list{model_index};
 % 'dnarepair_rodriguez_15nodes',...
 
@@ -167,6 +167,9 @@ tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_s
 % Comparing with simulation of mammalian cell cycle model with 12 nodes: 
 % look in folder 'doc/sample_plots/maboss'
 
+% for dynamical simulation of small (<5) models use:
+% [~,x]=ode45(@(t,x)fcn_K_ode(t,x,full(K_sparse)),tspan,x0);
+
 %% PLOTTING RESULTS
 
 % this function plots 2 or 3 subplots:
@@ -184,7 +187,7 @@ tic; [stat_sol,term_verts_cell,cell_subgraphs]=split_calc_inverse(A_sparse,stg_s
 % prob_thresh: minimal value for probability to display (if non-empty, only plot nonzero states, useful for visibility if many states)
 sel_nodes=[];
 min_max_col=[0 1]; barwidth_states_val=0.8;fontsize=[24 40 20]; % [fontsize of plot, fontsize of titles, fontsize of binary states]
-plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.03;
+plot_settings = [fontsize barwidth_states_val min_max_col]; prob_thresh=0.02;
 % WARNING!!! if more than 12 nodes, generating the figure for A/K can be time-consuming
 % leave first variable (A_sparse) empty ([]) to have plot without matrix
 figure('name','A_K_stat_sol')

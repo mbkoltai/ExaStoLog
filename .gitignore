@@ -10,6 +10,8 @@ tight_subplot/
 doc/manual/
 doc/manuscript/
 doc/sample_plots/
+# unused functions
+# functions/fcn_K_ode.m
 # zip of existing files
 exact_stochlog_toolbox.zip
 model_files/EMT_cohen/
