@@ -18,8 +18,6 @@ model_files/EMT_cohen/
 model_files/other/
 model_files/test_models.cys
 model_files/maboss/candidate_models/
-model_files/maboss/krasmodel15vars.bnd
-model_files/maboss/krasmodel15vars.cfg
 # compiled files runtime
 ExaStoLog/
 runtime_commands.m
@@ -33,7 +31,7 @@ model_expansion.cys
 *md~
 *dat
 sandbox.m
-single_commands.m
+single_example_commands.m
 # wrapper.mlx
 doc/README.html
 

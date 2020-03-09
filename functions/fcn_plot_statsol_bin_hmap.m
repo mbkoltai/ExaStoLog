@@ -52,7 +52,7 @@ if iscell(inds); inds=cell2mat(term_verts_inds_cell_thresh{k}); end
     else
         ranking=1:numel(inds);
     end
-n_prec=2;
+n_prec=3;
     if numel(term_verts_inds_cell_thresh{k})>1
         for inner_c=1:numel(term_verts_inds_cell_thresh{k})
             subplot_counter=subplot_counter+1;

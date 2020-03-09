@@ -10,9 +10,9 @@ num_subnets=length(unique(subnetws));
 % preallocate cell of term vertices and of subgraphs
 term_verts_cell=cell(num_subnets,1); cell_subgraphs=cell(num_subnets,1);
 
-if num_subnets>1
-    disp('STG has multiple subgraphs')
-end
+% if num_subnets>1
+%     disp('STG has multiple subgraphs')
+% end
 
 counter_subgraphs=0;
 
@@ -20,9 +20,9 @@ for counter=nonempty_subgraphs
 
 counter_subgraphs=counter_subgraphs+1; submatrix_inds=find(subnetws==counter); cell_subgraphs{counter}=submatrix_inds;
 
-if num_subnets>1
-    disp( strcat('calculating subgraph #', num2str(counter), ' of ', num2str(num_subnets)))
-end
+% if num_subnets>1
+%     disp( strcat('calculating subgraph #', num2str(counter), ' of ', num2str(num_subnets)))
+% end
 
 A_sparse_sub=A_sparse(subnetws==counter,subnetws==counter); dim_matr=size(A_sparse_sub,1); scc_submat=scc_submat_cell{counter};
 

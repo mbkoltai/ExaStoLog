@@ -10,10 +10,13 @@ rate_inds_matr=cell2mat(arrayfun(@(n) cell2mat(vertcat(arrayfun(@(x) repelem([x 
     1:size(rate_inds_numel,1),'un',0)');
 rate_inds=(rate_inds_matr(:,1)-1)*2 + rate_inds_matr(:,2);
 
-up_trans=vertcat(stg_cell{1,:}); down_trans=vertcat(stg_cell{2,:});
-B=sparse([up_trans; down_trans], ...
-         [up_trans; down_trans] + [repelem(1,numel(up_trans),1);repelem(-1,numel(down_trans),1)].*(2.^(n_nodes - rate_inds_matr(:,1))), ...
+% up_trans=vertcat(stg_cell{1,:}); down_trans=vertcat(stg_cell{2,:});
+
+B=sparse([vertcat(stg_cell{1,:}); vertcat(stg_cell{2,:})], ...
+         [vertcat(stg_cell{1,:}); vertcat(stg_cell{2,:})] + [repelem(1,numel(vertcat(stg_cell{1,:})),1);...
+         repelem(-1,numel(vertcat(stg_cell{2,:})),1)].*(2.^(n_nodes - rate_inds_matr(:,1))), ...
     transition_rates_table(rate_inds)/sum(transition_rates_table(:)),dim_matr,dim_matr);
+% clearvars stg_cell
 
 A_sparse_fast = B + (speye(size(B)) - diag(sum(B,2)));
 
