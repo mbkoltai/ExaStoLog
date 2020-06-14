@@ -796,8 +796,9 @@ lsqnonlin_opts={'iter',[],[],[],[],[]};
 % lower and upper bounds for the values of fitting parameters
 lbnds=zeros(size(init_par_vals)); upbnds=1e2*ones(size(init_par_vals));
 % run the fitting
-tic; [bestfit_par_vals,~,exitflag,output,history]=exastolog_lsqnonlin(var_type_flag,y_data,init_par_vals,lbnds,upbnds,...
-                                                x0,stg_cell,stg_sorting_cell,nodes,predictor_names,lsqnonlin_opts); toc
+tic; [bestfit_par_vals,~,exitflag,output,history]=...
+exastolog_lsqnonlin(var_type_flag,y_data,init_par_vals,lbnds,upbnds,...
+        x0,stg_cell,stg_sorting_cell,nodes,predictor_names,lsqnonlin_opts); toc
 % true values, initial guess, optimized paramset
 data_init_optim_pars=[data_param_vals;init_par_vals;bestfit_par_vals];
 if strcmp(var_type_flag,'states')
@@ -808,7 +809,7 @@ else
 end
 ```
 
-Then we can plot the convergence of the sum of squared errors as well as visualize if the parameters are converging to their true values, in the case that we actually have them (with real data this would not be the case):
+Then we can plot the convergence of the sum of squared errors as well as visualize if the parameters are converging to their true values, in the case that we have them (with real data this would not be the case):
 
 ```MATLAB
 figure('name','lsqnonlin (pars)')
@@ -830,7 +831,7 @@ end
 
 ![lsqnonlin_convergence_8params](readmeplots/lsqnonlin_convergence_8params.png)
 
-Alternatively, we can plot the error convergence and the convergence of the values of *variables*:
+Alternatively, we can plot the error convergence and the convergence of the values of *variables* from their value with the initial parameter guess to their values after optimization:
 ```matlab
 plot_settings=[20 22];
 if strcmp(var_type_flag,'vars'); sel_nodes=3:15; else; sel_nodes=[]; end
@@ -938,6 +939,8 @@ Since we randomly generate the data and initial guess for parameters, it will lo
 <!---##################################################################--->
 
 #### Fitting by initial numerical gradient
+
+**this is a crude method and often leads to divergence, we recommend using the lsqnonlin-based method above**
 
 For the 5 models we analyzed the transition rates have a monotonic effect on model variable values.
 We can take an initial, numerically calculated gradient of the error (SSE) as a function of the rates and attempt to reduce the error by incrementing the rates with their initial direction.
