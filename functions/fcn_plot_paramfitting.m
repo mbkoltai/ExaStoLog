@@ -18,27 +18,21 @@ else
     if isempty(vars_show); vars_show=2;end
 end
 
-if isempty(thres_ind)
-    thres_ind=max(size(T_loss)); init_error=T_loss(1); best_error=T_loss(end);
-end
+if isempty(thres_ind); thres_ind=max(size(T_loss)); init_error=T_loss(1); best_error=T_loss(end); end
 
 fig_subpl1=subplot(1,2,1); 
 plot(1:thres_ind, error_data,'LineWidth',4); xlim([1 thres_ind]); if init_error/best_error>30; set(gca,'yscale','log'); end
-set(gca,'FontSize',label_ticks_fontsize);
-legend_strs={'temperature','sum of squared error'}; 
-if numel(vars_show)==1
-ylabel(legend_strs(2),'FontSize',label_fontsize); 
-else
-    legend(legend_strs(vars_show));
-end
-grid on;
-xlabel('number of iterations','FontSize',label_fontsize); 
+set(gca,'FontSize',label_ticks_fontsize); legend_strs={'temperature','sum of squared error'}; 
+if numel(vars_show)==1; ylabel(legend_strs(2),'FontSize',label_fontsize); else; legend(legend_strs(vars_show)); end
+grid on; xlabel('number of iterations','FontSize',label_fontsize); title('fitting convergence','FontSize',label_fontsize*1.2)
+set(fig_subpl1,'Position',[0.07 0.11 0.4 0.815]); 
 % title('Parameter fitting by simulated annealing','FontSize',22)
 fig_subpl2=subplot(1,2,2); 
 barplot_gca=barh(data_init_optim(:,sel_nodes)'); set(fig_subpl2,'ytick',1:numel(sel_nodes)); 
-legend({'initial guess','data','optimized'},'FontSize',label_fontsize,'Box', 'off')
+legend({'data','initial guess','optimized'},'FontSize',label_fontsize,'Box', 'off')
 set(gca,'FontSize',label_ticks_fontsize); 
 % xticklabels=get(gca,'xtick'); set(fig_subpl2,'xticklabel',xticklabels,'FontSize',label_ticks_fontsize);
 xlabel('stationary probabilities','FontSize',label_fontsize); 
-% set(fig_subpl2,'yticklabel',''); % strrep(nodes(sel_nodes),'_','\_'),'FontSize',label_fontsize
-set(fig_subpl2,'yticklabel',xlabels_strings,'FontSize',label_fontsize);
+set(fig_subpl2,'yticklabel',xlabels_strings,'FontSize',label_fontsize,'Position',[0.58 0.11 0.4 0.815]);
+title('model variables (data, pre-, post-fitting)','FontSize',label_fontsize*1.2)
+grid on;

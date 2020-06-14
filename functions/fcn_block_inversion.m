@@ -3,7 +3,7 @@ function stat_sol_submatr_blocks=fcn_block_inversion(K_sp_sub_reord,sorted_verti
 % this function calculates kernels and stationary solution if all terminal
 % SCCs are single vertices (states)
 
-disp('calculating nullspace, no terminal cycles')
+% disp('calculating nullspace, no terminal cycles')
 
 % construct kernels from matrix blocks
 dim_kernel=sum(diag(K_sp_sub_reord)==0); dim_matr=size(K_sp_sub_reord,1); % bc this is no cycles branch of IF gate

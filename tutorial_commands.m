@@ -17,9 +17,10 @@ add_toolboxes_paths
 model_name_list = {'mammalian_cc', ...
 'breast_cancer_zanudo2017'....
 'EMT_cohen_ModNet',...
-'sahin_breast_cancer_refined'}; %
+'sahin_breast_cancer_refined',...
+'krasmodel15vars'}; %
 % select the index of one model
-model_index=2;
+model_index=5;
 model_name=model_name_list{model_index};
 
 % read in model from BOOLNET file
@@ -60,14 +61,15 @@ initial_fixed_nodes_list=...
 { {'CycE','CycA','CycB','Cdh1','Rb_b1','Rb_b2','p27_b1','p27_b2'}, ... % mammalian_cc
 {'Alpelisib', 'Everolimus','PIM','Proliferation','Apoptosis'},...  % breast_cancer_zanudo2017
 {'ECMicroenv','DNAdamage','Metastasis','Migration','Invasion','EMT','Apoptosis','Notch_pthw','p53'}, ... % EMT
-{'EGF','ERBB1','ERBB2','ERBB3','p21','p27'}}; % sahin_breast_cancer_refined
+{'EGF','ERBB1','ERBB2','ERBB3','p21','p27'},... % sahin_breast_cancer_refined
+{'cc','KRAS','DSB','CDC25B','g2m_trans','cell_death'}};
 
 % values for selected nodes
 initial_fixed_nodes_vals_list = {[0 0 0 1 1 1 1 1], ... % mammalian_cc
-            [0 1 0 zeros(1,2)],...  % breast_cancer_zanudo2017
-            [1 1 zeros(1,5) 1 0],... % EMT-Cohen model: [0/1 0/1 zeros(1,5)]
-            [1 0 0 0 1 1]}; % 1 zeros(1,numel(initial_fixed_nodes_list{model_index})-3) 1 1
-
+        [0 1 0 zeros(1,2)],...  % breast_cancer_zanudo2017
+        [1 1 zeros(1,5) 1 0],... % EMT-Cohen model: [0/1 0/1 zeros(1,5)]
+        [1 0 0 0 1 1],... % 1 zeros(1,numel(initial_fixed_nodes_list{model_index})-3) 1 1
+        [1 1 1 0 0 0]};
 % select the initial condition for the model we are working on
 initial_fixed_nodes=initial_fixed_nodes_list{model_index}; 
 initial_fixed_nodes_vals=initial_fixed_nodes_vals_list{model_index};
@@ -219,7 +221,7 @@ fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(diff_cutoff),'.','p'))
 % nonzero states of the model
 nonzero_states_inds=find(stat_sol>0);
 % sensit_cutoff: minimal value for local sensitivity or variation of model/state values
-sensit_cutoff=0.1; 
+sensit_cutoff=0.2;
 % parameters of plot
 height_width_gap=[0.1 0.04]; bott_top_marg=[0.03 0.1]; left_right_marg=[0.07 0.02]; 
 params_tight_subplots={height_width_gap bott_top_marg left_right_marg};
@@ -266,6 +268,7 @@ figure('name',strjoin(arrayfun(@(x) plot_types{x}{plot_type_options(x)}, ...
 fcn_save_fig(strcat(fig_filename,'_cutoff',strrep(num2str(sensit_cutoff),'.','p')),...
 	plot_save_folder,fig_file_type{1},'overwrite','-r200');
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Multidimensional (2D) parameter scanning with regular grids
 
 n_scanvals=5; scanvals=logspace(-2,2,n_scanvals);  % with zero: [0 logspace(-2,2,n_scanvals-1)]
@@ -296,6 +299,7 @@ resolution_dpi='-r200';
 file_name_prefix=strcat('twodim_parscan_',strjoin(nodes(sel_nodes),'_'));
 fcn_save_fig(file_name_prefix,plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Multidimensional parameter scanning with Latin Hypercube Sampling
 
 sampling_types={'lognorm','linear','logunif'}; sampling_type=sampling_types{3};
@@ -354,6 +358,7 @@ figure('name',strjoin(plot_type_flag))
 %% SAVE
 resolution_dpi='-r350'; 
 fcn_save_fig(fig_prefix,plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi);
+
 
 %% Regression of variables by transition rates
 
@@ -421,86 +426,184 @@ xticklabels({'Metastasis','Apoptosis (p53)','Apoptosis (p63_73)'})
 resolution_dpi='-r350'; 
 fcn_save_fig('sobol_sensitivity_index',plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi)
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% PARAMETER FITTING: define data, initial guess
 
-% scan_params_sensit=[11 13 15 16]; scan_params_up_down_sensit={2,1,2,[1 2]};
-% names of selected transition rates
 [~,~,predictor_names]=fcn_get_trans_rates_tbl_inds(scan_params_sensit,scan_params_up_down_sensit,nodes); 
-% define data vector (generate some data OR load from elsewhere)
-data_param_vals=lognrnd(1,1,1,numel(predictor_names)); 
-% initial guess for parameters
-init_par_vals=data_param_vals.*lognrnd(1,2,size(predictor_names)); 
+
+% DEFINE PARAMETER VECTOR (generate some data OR load from elsewhere)
+stdev=3; data_param_vals=lognrnd(1,stdev,1,numel(predictor_names)); 
+% INITIAL GUESS for parameters
+init_par_vals=lognrnd(1,stdev,size(predictor_names)); 
 
 % initial true value of variables/states, initial guess
 var_type_flag='states'; % 'vars' 'states'
 [y_data,y_init_pred,init_error]=fcn_param_fitting_data_initguess_error(var_type_flag,...
-                                        x0,stg_cell,data_param_vals,init_par_vals,...
-                                        stg_sorting_cell,nodes,predictor_names);
+                                   x0,stg_cell,data_param_vals,init_par_vals, stg_sorting_cell,nodes,predictor_names);
+% OR TAKE 'y_data' from data
 
-%% function handles for fitting
-[fcn_statsol_sum_sq_dev,fcn_statsol_values]=fcn_handles_fitting(var_type_flag,...
-                    y_data,x0,stg_cell,stg_sorting_cell,nodes,predictor_names);
+% init error:
+% MSE: ((y_data-y_init_pred)'*(y_data-y_init_pred))/sum(y_data>0)
+% MAE: mean(abs(y_data-fcn_statsol_values(init_par_vals)))
 
-%% FITTING by simul anneal
+%%% function handles for fitting (y_data is an input!!)
+[fcn_statsol_sum_sq_dev,fcn_statsol_values]=...
+    fcn_handles_fitting(var_type_flag,y_data,x0,stg_cell,stg_sorting_cell,nodes,predictor_names);
 
-% default values for fitting hyperparameters:
-% struct('CoolSched',@(T) (0.8*T), 'Generator',@(x) (x+(randperm(length(x))==length(x))*randn/100),...
-% 'InitTemp',1,'MaxConsRej',1000, 'MaxSuccess',20,...
-% 'MaxTries',300, 'StopTemp',1e-8, 'StopVal',-Inf, 'Verbosity',1);
-fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10, 'MaxTries',30,'MaxConsRej',100);
-% FIT
-tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); toc;
+% init_error=fcn_statsol_sum_sq_dev(init_par_vals); y_init_pred=fcn_statsol_values(init_par_vals); y_data=fcn_statsol_values(data_param_vals);
 
-% RESULTS
-% values with fitted parameters
-[y_optim_param,~,~]=fcn_param_fitting_data_initguess_error(var_type_flag,x0,stg_cell,data_param_vals,optim_par_vals,...
-                                            stg_sorting_cell,nodes,predictor_names);
+%% fitting by LSQNONLIN (local search algorithm based on trust regions)
 
-% values of fitted variables: [initial guess, true values (data), fitted values]
-% careful with dimensions: for states, these are column vectors
-data_init_optim=[y_init_pred';y_data';y_optim_param']; 
-% parameters: initial guess, true values, fitted values
-param_sets=[init_par_vals;data_param_vals;optim_par_vals];
+% store output of lsqnonlin
+lsqnonlin_opts={'iter',[],[],[],[],[]}; % Display, MaxFunctionEvaluations, MaxIterations, FunctionTolerance, OptimalityTolerance, StepTolerance
+lbnds=zeros(size(init_par_vals)); upbnds=1e2*ones(size(init_par_vals));
+tic; [bestfit_par_vals,~,exitflag,output,history]=exastolog_lsqnonlin(var_type_flag,y_data,init_par_vals,lbnds,upbnds,...
+                                                x0,stg_cell,stg_sorting_cell,nodes,predictor_names,lsqnonlin_opts); toc
+% true values, initial guess, optimized paramset
+data_init_optim_pars=[data_param_vals;init_par_vals;bestfit_par_vals];
+if strcmp(var_type_flag,'states')
+    data_init_optim_vars=[y_data'; y_init_pred'; fcn_statsol_values(bestfit_par_vals)']; 
+    data_init_optim_vars=full(data_init_optim_vars(:,sum(data_init_optim_vars)>0));
+else
+    data_init_optim_vars=[y_data; y_init_pred; fcn_statsol_values(bestfit_par_vals)];
+end
 
-%% PLOT: simulated annealing
+%% plot error & params convergence
 
-figure('name','param fitting (simul.ann.)'); 
-% select nodes to plot (here we selected nodes that are not always 0 or 1)
-sel_nodes=find(sum(data_init_optim)>0 & sum(data_init_optim)<3);
-% PLOT fitting process
-thres_ind=size(T_loss,1); % thres_ind=find(T_loss(:,2)<1e-2,1); 
-plot_settings=[24 30]; 
-% var_type_flag='vars'; % 'states'
-figure('name','simul anneal')
-fcn_plot_paramfitting(var_type_flag,data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plot_settings)
-% fcn_plot_paramfitting(var_type_flag,data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plot_settings)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+figure('name','lsqnonlin (pars)')
+%%%%% SUBPLOT1
+subpl1=subplot(1,2,1); semilogy(1:size(history,1),history(:,end),'Marker','o','MarkerSize',3); xlim([1 size(history,1)*1.02]); set(gca,'FontSize',16)
+title('SSE convergence','FontSize',24); set(subpl1,'Position',[0.05 0.08 0.43 0.86]); xlabel('iterations'); grid on
+%%%%% SUBPLOT2: plot convergence of params
+subpl2=subplot(1,2,2); plt_parvals=semilogy(size(history,1),data_param_vals,'Marker','o','MarkerSize',10,'LineStyle','none'); 
+xlim([1 size(history,1)*1.02]); set(gca,'FontSize',16); 
+for k=1:numel(plt_parvals); plt_parvals(k).MarkerFaceColor=plt_parvals(k).Color; end; title('parameter convergence','FontSize',24)
+set(gca,'ColorOrderIndex',1); hold on; set(subpl2,'Position',[0.55 0.08 0.43 0.86]); grid on; xlabel('iterations');
+semilogy(1:size(history,1),history(:,1:end-1),'LineWidth',4); legends_str=legend('NumColumns',2,'FontSize',16);
+hold off;
 
-%% Fitting by initial numerical gradient
+for k=1:numel(data_param_vals)
+    legends_str.String{k}=strcat('true val ',num2str(k)); legends_str.String{k+numel(data_param_vals)}=strcat('par. est. ',num2str(k)); 
+end
 
-error_thresh_fraction=0.1; 	% what % of initial error to stop?
-step_thresh=[]; 	% what step # to stop? you can leave this empty 
-% init_error_table: changes to initial error when increasing or decreasing parameter values
-init_error_table=[]; % if we have it from previous fitting than feed it to fcn
-% incr_resol_init: initial % change from initial param values to calculate the numerical gradient
-% incr_resol: change in param values during gradient descent
-incr_resol_init=0.15; incr_resol=0.03;
+% export_fig(strcat('plots/lsqnonlin_convergence_',num2str(numel(data_param_vals)),'params.png'),'-transparent','-nocrop','-r70')
 
-% FIT
-% var_type_flag: 'states' or 'vars'
-% careful that string and data type are consistent!!
-[init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(var_type_flag,init_error_table,...
-	{y_data,x0,stg_cell,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
-	init_par_vals,incr_resol,incr_resol_init,error_thresh_fraction,step_thresh);
+%% plot error & variable convergence
 
-%% PLOT
-% which vars/states to show, if empty all are shown
-sel_nodes=[]; plot_settings=[24 30];
+plot_settings=[20 22];
+if strcmp(var_type_flag,'vars'); sel_nodes=3:15; else; sel_nodes=[]; end
 % if its states you fitted, take the transpose of ydata
-data_init_optim=[statsol_parscan([1 end],:); y_data']; 
-figure('name','numer grad_desc') % state_var_flags={'state','var'};
-fcn_plot_paramfitting(var_type_flag,data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_settings)
+% data_init_optim_vars=[y_data'; y_init_pred'; y_optim']; 
+figure('name','LSQNONLIN (vars)') 
+% state_var_flags={'state','var'};
+error_conv=history(:,end);
+fcn_plot_paramfitting(var_type_flag,data_init_optim_vars,error_conv,nodes,sel_nodes,[],[],plot_settings)
 
-%% SAVE
-fig_name=strcat('grad_descent_',var_type_flag,'_',num2str(numel(predictor_names)),'fittingpars');
-fcn_save_fig(fig_name,plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi)
+%%% SAVE
+% fig_name=strcat('lsqnonlin_',var_type_flag,'_',num2str(numel(predictor_names)),'fittingpars');
+% fcn_save_fig(fig_name,plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi)
+
+%% multidim sampling of parameter values
+
+scan_vals=logspace(-2,2,2); % sort(data_param_vals)+normrnd(0,0.1,1,5); % logspace(-0.5,1,n_scanvals);
+n_scanvals=numel(scan_vals); n_pars=numel(cell2mat(scan_params_up_down_sensit));
+paramsample_table=scan_vals(fliplr(rem(floor([0:((n_scanvals^n_pars)-1)].'*n_scanvals.^(0:-1:-n_pars+1)),n_scanvals))+1);
+
+fcn_diff_statsol_data=@(p,y) y-fcn_statsol_values(p);  y=y_data; % lsqnonlin_opts=optimoptions('lsqnonlin','Display','iter');
+lsqnonlin_options=optimoptions('lsqnonlin'); paramoptim_table=zeros(size(paramsample_table) + [0 1]);
+
+tic;
+for k=1:size(paramsample_table,1)
+    [bestfit_par_vals,resnorm,residual,~,~]=lsqnonlin(@(p) fcn_diff_statsol_data(p,y),paramsample_table(k,:),lbnds,upbnds,lsqnonlin_options);
+    paramoptim_table(k,:)=[bestfit_par_vals resnorm];
+    disp(k)
+end
+toc;
+
+% 256 sets (8 params): 1133 sec ≈ 19 min
+% 1070 sec
+
+%% boxplot results of multistart search
+
+figure('name','boxplot')
+x_w=0.92; y_h=0.45;
+% SUBPLOT1
+subpl1=subplot(2,1,1); semilogy(1:size(paramoptim_table,1),paramoptim_table(:,end)/full(sum(y>0))); ylabel('MSE','FontSize',24); 
+set(subpl1,'Position',[0.05 0.54 x_w y_h]); xlabel('# paramset','FontSize',24); xlim([0 size(paramoptim_table,1)+1]); grid on
+% SUBPLOT2: boxplot of param estimates
+boxplot_labels={''}; for k=1:numel(data_param_vals); boxplot_labels{k}=predictor_names{k}; end
+subpl2=subplot(2,1,2); boxplot(paramoptim_table(:,1:numel(bestfit_par_vals)),'Notch','on','Labels',boxplot_labels); ylabel('fitted values','FontSize',24)
+set(subpl2,'Position',[0.05 0.03 x_w 0.44]); ylim([min(min(paramoptim_table(:,1:end-1))),max(max(paramoptim_table(:,1:end-1)))])
+set(gca,'YScale','log'); hold on; grid on
+plot(1:numel(data_param_vals),data_param_vals,'LineStyle','none','Marker','o','MarkerFaceColor',[1 0 0],'MarkerSize',9)
+legend('true value','FontSize',24)
+
+save_flag=0; plot_save_folder='plots/';
+if save_flag==1
+    fig_name=strcat('lsqnonlin_',var_type_flag,'_',num2str(numel(predictor_names)),'fitpars_initconds_boxplots_parset2');
+    fcn_save_fig(fig_name,plot_save_folder,fig_file_type{3},'overwrite',resolution_dpi)
+end
+
+%% FITTING by simul anneal (this is very slow, we recommend using lsqnonlin)
+% 
+% % default values for fitting hyperparameters:
+% % struct('CoolSched',@(T) (0.8*T), 'Generator',@(x) (x+(randperm(length(x))==length(x))*randn/100),...
+% % 'InitTemp',1,'MaxConsRej',1000, 'MaxSuccess',20,...
+% % 'MaxTries',300, 'StopTemp',1e-8, 'StopVal',-Inf, 'Verbosity',1);
+% fitting_arguments=struct('Verbosity',2, 'StopVal', init_error/10, 'MaxTries',30,'MaxConsRej',100);
+% % FIT
+% tic; [optim_par_vals,best_error,T_loss]=anneal(fcn_statsol_sum_sq_dev,init_par_vals,fitting_arguments); toc;
+% 
+% % RESULTS
+% % values with fitted parameters
+% [y_optim_param,~,~]=fcn_param_fitting_data_initguess_error(var_type_flag,x0,stg_cell,data_param_vals,optim_par_vals,...
+%                                             stg_sorting_cell,nodes,predictor_names);
+% 
+% % values of fitted variables: [initial guess, true values (data), fitted values]
+% % careful with dimensions: for states, these are column vectors
+% data_init_optim=[y_init_pred';y_data';y_optim_param']; 
+% % parameters: initial guess, true values, fitted values
+% param_sets=[init_par_vals;data_param_vals;optim_par_vals];
+% 
+% %% PLOT: simulated annealing
+% 
+% figure('name','param fitting (simul.ann.)'); 
+% % select nodes to plot (here we selected nodes that are not always 0 or 1)
+% sel_nodes=find(sum(data_init_optim)>0 & sum(data_init_optim)<3);
+% % PLOT fitting process
+% thres_ind=size(T_loss,1); % thres_ind=find(T_loss(:,2)<1e-2,1); 
+% plot_settings=[24 30]; 
+% % var_type_flag='vars'; % 'states'
+% figure('name','simul anneal')
+% fcn_plot_paramfitting(var_type_flag,data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plot_settings)
+% % fcn_plot_paramfitting(var_type_flag,data_init_optim,T_loss,nodes,sel_nodes,[1 2],thres_ind,plot_settings)
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% %% Fitting by initial numerical gradient
+% 
+% error_thresh_fraction=0.1; 	% what % of initial error to stop?
+% step_thresh=[]; 	% what step # to stop? you can leave this empty 
+% % init_error_table: changes to initial error when increasing or decreasing parameter values
+% init_error_table=[]; % if we have it from previous fitting than feed it to fcn
+% % incr_resol_init: initial % change from initial param values to calculate the numerical gradient
+% % incr_resol: change in param values during gradient descent
+% incr_resol_init=0.15; incr_resol=0.03;
+% 
+% % FIT
+% % var_type_flag: 'states' or 'vars'
+% % careful that string and data type are consistent!!
+% [init_error_table,optim_pars_conv,statsol_parscan,error_conv]=fcn_num_grad_descent(var_type_flag,init_error_table,...
+% 	{y_data,x0,stg_cell,stg_sorting_cell,nodes,predictor_names},data_param_vals,...
+% 	init_par_vals,incr_resol,incr_resol_init,error_thresh_fraction,step_thresh);
+% 
+% %% PLOT
+% % which vars/states to show, if empty all are shown
+% sel_nodes=[]; plot_settings=[24 30];
+% % if its states you fitted, take the transpose of ydata
+% data_init_optim=[statsol_parscan([1 end],:); y_data']; 
+% figure('name','numer grad_desc') % state_var_flags={'state','var'};
+% fcn_plot_paramfitting(var_type_flag,data_init_optim,error_conv,nodes,sel_nodes,[],[],plot_settings)
+% 
+% %% SAVE
+% fig_name=strcat('grad_descent_',var_type_flag,'_',num2str(numel(predictor_names)),'fittingpars');
+% fcn_save_fig(fig_name,plot_save_folder,fig_file_type{1},'overwrite',resolution_dpi)

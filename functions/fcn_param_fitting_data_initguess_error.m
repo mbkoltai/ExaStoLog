@@ -15,12 +15,12 @@ init_error=sum((y_data-y_init_pred).^2);
 else
     
 y_data=split_calc_inverse(fcn_build_trans_matr_stgcell(stg_cell,transition_rates_table_optim,''),stg_sorting_cell,transition_rates_table_optim,x0);
-y_data=full(y_data(y_data>0));
+% y_data=full(y_data(y_data>0));
 % prediction with init guess
 y_init_pred=split_calc_inverse(fcn_build_trans_matr_stgcell(stg_cell,...
 		fcn_trans_rates_table(nodes,'uniform',[],[],predictor_names,init_par_vals),''),...
 		stg_sorting_cell,transition_rates_table_optim,x0);
-y_init_pred=full(y_init_pred(y_init_pred>0));
+% y_init_pred=full(y_init_pred(y_init_pred>0));
 init_error=sum((y_data-y_init_pred).^2);
     
 end

@@ -9,7 +9,7 @@ function [resp_coeff,scan_pars_sensit,scan_params_sensit_up_down,fig_filename]=f
 z=arrayfun(@(x) plot_types{x}(plot_type_options(x)), 1:numel(plot_type_options),'un',0); z=horzcat(z{:}); 
 str_plot_type=cell2mat(strcat(z,'_'));
 fig_filename=strcat('onedim_parscan_',str_plot_type,param_settings{4},'_by_vars');
-fig_filename
+
 plot_type_flag=z{1}; var_type_flag=z{2};readout_type_flag=z{3};
 
 if strfind(var_type_flag,'node')
@@ -117,7 +117,7 @@ for k=1:size(scan_variable_sensit_parts,3)
     end
     
  ylim([0 1]); legend(trans_rates_names(scan_par_inds(sensit_pars(sensit_pars_indiv_var))),'Interpreter','none');
- sensit_pars(sensit_pars_indiv_var)
+ % sensit_pars(sensit_pars_indiv_var)
     
     if strcmp(var_type_flag,'node') || strcmp(var_type_flag,'nodes')
         title(strrep(nodes(sensit_vars(k)),'_','\_'), 'FontWeight','normal','FontSize',fontsize_title); ylim([0 1]); 
