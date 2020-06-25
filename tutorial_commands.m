@@ -1,4 +1,8 @@
 % commands for tutorial
+% go to the folder of the file
+editor_service=com.mathworks.mlservices.MLEditorServices; editor_app=editor_service.getEditorApplication;
+active_editor=editor_app.getActiveEditor; storage_location=active_editor.getStorageLocation;
+file=char(storage_location.getFile); path_to_toolbox=fileparts(file); cd(path_to_toolbox);
 
 % FIRST: unzip the file 'toolboxes.zip' for external libraries
 if exist('toolboxes.zip','file')>0; unzip toolboxes.zip; end

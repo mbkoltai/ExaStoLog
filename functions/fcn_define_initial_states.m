@@ -1,5 +1,11 @@
 function x0=fcn_define_initial_states(initial_fixed_nodes,initial_fixed_nodes_vals,dom_prob,nodes,distrib_type,plot_flag)
-                                   
+
+% if initial_fixed_nodes is in a different order than nodes need to rearrange!
+[~,b]=ismember(nodes,initial_fixed_nodes);
+if ~isequal(sort(b(b>0)),b(b>0))
+    initial_fixed_nodes=initial_fixed_nodes(b(b>0)); initial_fixed_nodes_vals=initial_fixed_nodes_vals(b(b>0));
+end
+
 n_nodes=numel(nodes); truth_table_inputs=fliplr(rem(floor([0:((2^n_nodes)-1)].'*pow2(0:-1:-n_nodes+1)),2));
 % define initial values
 x0=zeros(2^n_nodes,1); 
@@ -24,7 +30,7 @@ end
 % rounding precision
 n_prec=3;
 if round(sum(x0),n_prec)==1
-    disp('sum(x0)=1, OK.')
+    % disp('sum(x0)=1, OK.')
 else
      disp('sum(x0)~=1, something wrong!')
 end
